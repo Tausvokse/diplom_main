@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id               String          @id @default(uuid())
+  email            String          @unique
+  password         String // Спрощена авторизація/хеш
+  role             String          @default("STUDENT") // STUDENT, ADMIN_COMMANDANT, ADMIN_CAMPUS
+  firstName        String
+  lastName         String
+  dormitoryId      String?         // Для ADMIN_COMMANDANT
+  dormitory        Dormitory?      @relation(fields: [dormitoryId], references: [id])
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+  StudentProfile   StudentProfile?
+  sentMessages     Message[]       @relation("SentMessages")
+  receivedMessages Message[]       @relation("ReceivedMessages")
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  content    String
+  createdAt  DateTime @default(now())
+}
+
+model PrivilegeCategory {
+  id              String           @id @default(uuid())
+  name            String
+  multiplier      Float
+  description     String?
+  StudentProfiles StudentProfile[]
+}
+
+model GroupReferral {
+  id             String           @id @default(uuid())
+  code           String           @unique
+  creatorId      String
+  maxMembers     Int              @default(4)
+  currentMembers Int              @default(1)
+  createdAt      DateTime         @default(now())
+  expiresAt      DateTime
+  members        StudentProfile[]
+}
+
+model StudentProfile {
+  id                  String             @id @default(uuid())
+  userId              String             @unique
+  user                User               @relation(fields: [userId], references: [id])
+  studentIdNumber     String             @unique
+  course              Int
+  faculty             String
+  privilegeCategoryId String?
+  privilege           PrivilegeCategory? @relation(fields: [privilegeCategoryId], references: [id])
+  clusteringVector    String? // JSON string: { chronotype, sociability, noiseTolerance, cleanliness }
+  priorityScore       Float              @default(0.0)
+  groupId             String?
+  group               GroupReferral?     @relation(fields: [groupId], references: [id])
+  isVerifiedByDiia    Boolean            @default(false)
+  applications        Application[]
+  allocations         RoomAllocation[]
+}
+
+model Dormitory {
+  id            String   @id @default(uuid())
+  name          String
+  address       String
+  totalCapacity Int
+  floors        Floor[]
+  admins        User[]
+}
+
+model Floor {
+  id            String    @id @default(uuid())
+  dormitoryId   String
+  dormitory     Dormitory @relation(fields: [dormitoryId], references: [id])
+  floorNumber   Int
+  rooms         Room[]
+}
+
+model Room {
+  id               String           @id @default(uuid())
+  floorId          String
+  floor            Floor            @relation(fields: [floorId], references: [id])
+  roomNumber       String
+  capacity         Int
+  currentOccupancy Int              @default(0)
+  status           String           @default("AVAILABLE") // AVAILABLE, FULL, MAINTENANCE
+  allocations      RoomAllocation[]
+}
+
+model Application {
+  id               String         @id @default(uuid())
+  studentId        String
+  student          StudentProfile @relation(fields: [studentId], references: [id])
+  status           String         @default("SUBMITTED") // DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED
+  scanDocumentsUrl String // Comma separated URLs
+  rejectionReason  String?
+  submittedAt      DateTime       @default(now())
+  reviewedAt       DateTime?
+}
+
+model RoomAllocation {
+  id          String         @id @default(uuid())
+  roomId      String
+  room        Room           @relation(fields: [roomId], references: [id])
+  studentId   String
+  student     StudentProfile @relation(fields: [studentId], references: [id])
+  allocatedAt DateTime       @default(now())
+  status      String         @default("ACTIVE") // ACTIVE, EVICTED
+}
