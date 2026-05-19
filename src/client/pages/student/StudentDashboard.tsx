@@ -16,16 +16,11 @@ export const StudentDashboard: React.FC = () => {
 
   const fetchDashboardData = useCallback(async () => {
     try {
-      // In a real app, these endpoints would return the active application and group
-      const [appRes, groupRes] = await Promise.all([
-        api.get<Application>('/student/application').catch(() => null),
-        api.get<GroupReferral>('/student/group').catch(() => null)
-      ]);
-      
-      if (appRes && appRes.data) setApplication(appRes.data);
-      if (groupRes && groupRes.data) setGroup(groupRes.data);
+      const res = await api.get('/student/dashboard', { _silent: true } as any);
+      if (res.data.application) setApplication(res.data.application);
+      if (res.data.group) setGroup(res.data.group);
     } catch (error) {
-      toast.error('Помилка завантаження даних дашборду');
+      console.warn('Дані дашборду не знайдено або помилка', error);
     } finally {
       setIsLoading(false);
     }

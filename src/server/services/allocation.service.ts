@@ -112,10 +112,10 @@ export class AllocationService {
             }
           });
 
-          // Позначаємо заяву як завершену (необов'язково, але логічно)
-          await tx.application.updateMany({
-            where: { studentId: st.id, status: 'APPROVED' },
-            data: { status: 'ALLOCATED' } as any // Якщо розширити статуси
+          // Оновлюємо гуртожиток і кімнату в профілі студента
+          await tx.studentProfile.update({
+            where: { id: st.id },
+            data: { roomId: targetRoom.id, dormitoryId: targetRoom.dormitoryId }
           });
         }
 
@@ -153,7 +153,14 @@ export class AllocationService {
     });
   }
 
-  static async evictStudent(studentId: string) {
+  static async evictStudent(studentId: string, adminUserId?: string) {
+    const admin = adminUserId ? await prisma.user.findUnique({ where: { id: adminUserId } }) : null;
+    const profile = await prisma.studentProfile.findUnique({ where: { id: studentId } });
+
+    if (admin?.role === 'ADMIN_COMMANDANT' && admin.dormitoryId !== profile?.dormitoryId) {
+      throw new Error('Ви не маєте прав виселяти студентів з іншого гуртожитку');
+    }
+
     const allocation = await prisma.roomAllocation.findFirst({
       where: { studentId, status: 'ACTIVE' }
     });

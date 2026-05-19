@@ -26,8 +26,8 @@ const DirectorDashboard: React.FC = () => {
 
   const fetchStudents = async () => {
     try {
-      const res = await api.get('/admin/students');
-      setStudents(res.data);
+      const res = await api.get('/admin/students?page=1&limit=500'); // Temp limit for now
+      setStudents(res.data.data ? res.data.data : res.data); // Support both old and new formats during transition
     } catch (error) {
       console.error(error);
     } finally {

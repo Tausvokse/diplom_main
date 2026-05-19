@@ -12,6 +12,7 @@ router.use(requireRole(['ADMIN_CAMPUS', 'ADMIN_COMMANDANT', 'ADMIN'])); // Keepi
 // Dormitories & Rooms
 router.get('/dormitories', AdminController.getDormitories);
 router.patch('/rooms/:roomId/status', AdminController.updateRoomStatus);
+router.get('/rooms/:roomId/students', AdminController.getRoomStudents);
 
 // Applications
 router.get('/applications', AdminController.getApplications);

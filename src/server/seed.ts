@@ -1,8 +1,6 @@
-import { PrismaClient } from '@prisma/client';
+import { prisma } from './lib/prisma';
 import bcrypt from 'bcryptjs';
 import { KMeansAlgorithm, KmeansStudent, ClusteringVector } from './utils/algorithms/kmeans.util';
-
-const prisma = new PrismaClient();
 
 const ukrainianFirstNamesMale = ['Олександр', 'Максим', 'Іван', 'Петро', 'Андрій', 'Дмитро', 'Сергій', 'Богдан', 'Володимир', 'Тарас', 'Євген', 'Михайло', 'Юрій', 'Артем', 'Денис'];
 const ukrainianFirstNamesFemale = ['Анна', 'Марія', 'Анастасія', 'Олена', 'Вікторія', 'Катерина', 'Юлія', 'Дар\'я', 'Оксана', 'Наталія', 'Ірина', 'Тетяна', 'Софія', 'Аліна'];

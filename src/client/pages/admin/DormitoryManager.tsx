@@ -75,10 +75,8 @@ export const DormitoryManager: React.FC = () => {
     setIsRoomModalOpen(true);
     setIsModalLoading(true);
     try {
-      // Create a temporary endpoint in admin routes if needed, or filter students
-      const res = await api.get('/admin/students');
-      const studentsInRoom = res.data.filter((s: any) => s.room?.roomNumber === room.roomNumber && s.dormitory?.name === dormitories.find(d => d.floors.some(f => f.id === room.floorId))?.name);
-      setRoomStudents(studentsInRoom);
+      const res = await api.get(`/admin/rooms/${room.id}/students`);
+      setRoomStudents(res.data);
     } catch (error) {
       toast.error('Не вдалося завантажити мешканців кімнати');
     } finally {

@@ -36,11 +36,14 @@ const StudentFinancials: React.FC = () => {
   const [donateAmount, setDonateAmount] = useState<Record<string, string>>({});
   const [donateComment, setDonateComment] = useState<Record<string, string>>({});
 
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
+    setIsLoading(true);
     try {
       const [jarsRes, payRes] = await Promise.all([
         api.get('/student/jars'),
@@ -50,6 +53,8 @@ const StudentFinancials: React.FC = () => {
       setPayments(payRes.data);
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -83,6 +88,8 @@ const StudentFinancials: React.FC = () => {
       console.error(error);
     }
   };
+
+  if (isLoading) return <div className="p-8 text-center text-gray-500">Завантаження...</div>;
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

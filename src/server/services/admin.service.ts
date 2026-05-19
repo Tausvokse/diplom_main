@@ -22,6 +22,21 @@ export class AdminService {
     });
   }
 
+  static async getRoomStudents(roomId: string) {
+    return prisma.studentProfile.findMany({
+      where: { roomId },
+      select: {
+        id: true,
+        fullName: true,
+        course: true,
+        faculty: true,
+        studentIdNumber: true,
+        room: { select: { roomNumber: true } },
+        dormitory: { select: { name: true } }
+      }
+    });
+  }
+
   static async getApplications() {
     return prisma.application.findMany({
       include: {
@@ -70,14 +85,30 @@ export class AdminService {
     });
   }
 
-  static async getAllStudents() {
-    return prisma.studentProfile.findMany({
-      include: {
-        dormitory: { select: { name: true } },
-        room: { select: { roomNumber: true } }
-      },
-      orderBy: { fullName: 'asc' }
-    });
+  static async getAllStudents(page: number = 1, limit: number = 50) {
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      prisma.studentProfile.findMany({
+        skip,
+        take: limit,
+        include: {
+          dormitory: { select: { name: true } },
+          room: { select: { roomNumber: true } }
+        },
+        orderBy: { fullName: 'asc' }
+      }),
+      prisma.studentProfile.count()
+    ]);
+
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
   static async getAnalytics() {

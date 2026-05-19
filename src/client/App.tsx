@@ -38,8 +38,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
-    navigate('/login');
+    if (window.confirm('Ви впевнені, що хочете вийти з системи?')) {
+      logout();
+      navigate('/login');
+    }
   };
 
   const isAdmin = user?.role === 'ADMIN' || user?.role === 'ADMIN_CAMPUS' || user?.role === 'ADMIN_COMMANDANT';

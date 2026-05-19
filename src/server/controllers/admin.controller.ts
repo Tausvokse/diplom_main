@@ -3,7 +3,6 @@ import { AdminService } from '../services/admin.service';
 import { AuthService } from '../services/auth.service';
 
 export class AdminController {
-  // ... попередні методи
   static async getDormitories(req: Request, res: Response, next: NextFunction) {
     try {
       const dorms = await AdminService.getDormitories();
@@ -17,9 +16,18 @@ export class AdminController {
     try {
       const { roomId } = req.params;
       const { status } = req.body;
-      
-      const updated = await AdminService.updateRoomStatus(roomId, status);
-      res.json(updated);
+      const room = await AdminService.updateRoomStatus(roomId, status);
+      res.json(room);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getRoomStudents(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { roomId } = req.params;
+      const students = await AdminService.getRoomStudents(roomId);
+      res.json(students);
     } catch (error) {
       next(error);
     }
@@ -75,8 +83,10 @@ export class AdminController {
 
   static async getAllStudents(req: Request, res: Response, next: NextFunction) {
     try {
-      const students = await AdminService.getAllStudents();
-      res.json(students);
+      const page = parseInt(req.query.page as string) || 1;
+      const limit = parseInt(req.query.limit as string) || 50;
+      const studentsData = await AdminService.getAllStudents(page, limit);
+      res.json(studentsData);
     } catch (error) {
       next(error);
     }

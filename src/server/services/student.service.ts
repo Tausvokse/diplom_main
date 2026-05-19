@@ -12,7 +12,10 @@ export class StudentService {
 
     if (!profile) return { application: null, group: null };
 
-    const activeApp = profile.applications.length > 0 ? profile.applications[profile.applications.length - 1] : null;
+    const activeApp = profile.applications.length > 0 
+      ? profile.applications.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0]
+      : null;
+      
     return { application: activeApp, group: profile.group };
   }
 
@@ -24,10 +27,11 @@ export class StudentService {
     clusteringVectorRaw: any, 
     files: Express.Multer.File[]
   ) {
-    // 1. Управління профілем студента
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new Error('Користувача не знайдено');
+
     let profile = await prisma.studentProfile.findUnique({ where: { userId } });
     
-    // SQLite: Зберігаємо вектор як рядок
     const clusteringVectorString = typeof clusteringVectorRaw === 'string' 
       ? clusteringVectorRaw 
       : JSON.stringify(clusteringVectorRaw);
@@ -35,20 +39,19 @@ export class StudentService {
     const parsedPrivilegeId = (privilegeCategoryId === 'null' || privilegeCategoryId === 'undefined' || !privilegeCategoryId) ? null : privilegeCategoryId;
 
     if (!profile) {
-      // Імітація номеру квитка для нового профілю
       const studentIdNumber = `KB-${Math.floor(100000 + Math.random() * 900000)}`;
       profile = await prisma.studentProfile.create({
         data: {
           userId,
           studentIdNumber,
-          fullName: 'Невідомо', // Placeholder if not provided by Diia/registration
-          email: 'unknown@example.com',
-          phone: '+380000000000',
+          fullName: `${user.lastName} ${user.firstName}`,
+          email: user.email,
+          phone: '+380000000000', // Still mocked, should come from registration in a real app
           course: Number(course),
           faculty,
           privilegeCategoryId: parsedPrivilegeId,
           clusteringVector: clusteringVectorString,
-          isVerifiedByDiia: false // Відбувається через вебхук Дії
+          isVerifiedByDiia: false
         }
       });
     } else {
@@ -63,15 +66,13 @@ export class StudentService {
       });
     }
 
-    // 2. Збереження документів (імітація завантаження в S3)
     const fileUrls = files.map(file => `/uploads/${file.filename}`);
 
-    // 3. Створення заяви
     const application = await prisma.application.create({
       data: {
         studentId: profile.id,
         status: 'SUBMITTED',
-        scanDocumentsUrl: fileUrls.join(','), // SQLite обмеження: масив через кому
+        scanDocumentsUrl: fileUrls.join(','),
       }
     });
 
@@ -138,6 +139,12 @@ export class StudentService {
   static async submitComplaint(userId: string, accusedId: string, content: string, evidenceUrl?: string) {
     const accuser = await prisma.studentProfile.findUnique({ where: { userId } });
     if (!accuser) throw new Error('Профіль не знайдено');
+    if (!accuser.roomId) throw new Error('Ви не поселені в кімнату');
+
+    const neighbor = await prisma.studentProfile.findFirst({
+      where: { id: accusedId, roomId: accuser.roomId }
+    });
+    if (!neighbor) throw new Error('Можна подати скаргу лише на сусіда по кімнаті');
 
     return prisma.complaint.create({
       data: {
@@ -161,7 +168,7 @@ export class StudentService {
     });
   }
 
-  static async submitRepairRequest(userId: string, description: string) {
+  static async submitRepairRequest(userId: string, description: string, masterId?: string) {
     const profile = await prisma.studentProfile.findUnique({ where: { userId } });
     if (!profile) throw new Error('Профіль не знайдено');
     if (!profile.roomId) throw new Error('Ви не поселені в кімнату');
@@ -170,12 +177,24 @@ export class StudentService {
       data: {
         roomId: profile.roomId,
         description,
-        status: 'PENDING'
+        status: 'PENDING',
+        masterId: masterId || null
       }
     });
   }
 
   static async getRepairRequests(userId: string) {
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return [];
+
+    if (user.role.startsWith('MASTER_')) {
+      return prisma.repairRequest.findMany({
+        where: { masterId: user.id },
+        include: { room: true },
+        orderBy: { createdAt: 'desc' }
+      });
+    }
+
     const profile = await prisma.studentProfile.findUnique({ where: { userId } });
     if (!profile || !profile.roomId) return [];
 
@@ -233,11 +252,12 @@ export class StudentService {
   }
 
   static async donateToJar(userId: string, jarId: string, amount: number, comment?: string) {
+    if (amount <= 0) throw new Error('Сума має бути більше 0');
     const profile = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!profile) throw new Error('Профіль не знайдено');
+    if (!profile || !profile.dormitoryId) throw new Error('Профіль не знайдено або ви не поселені');
 
-    const jar = await prisma.jar.findUnique({ where: { id: jarId } });
-    if (!jar) throw new Error('Банку не знайдено');
+    const jar = await prisma.jar.findFirst({ where: { id: jarId, dormitoryId: profile.dormitoryId } });
+    if (!jar) throw new Error('Банку не знайдено у вашому гуртожитку');
 
     await prisma.$transaction([
       prisma.jarTransaction.create({
@@ -278,7 +298,16 @@ export class StudentService {
   }
 
   static async payPayment(userId: string, paymentId: string) {
-    // Імітація оплати
+    const profile = await prisma.studentProfile.findUnique({ where: { userId } });
+    if (!profile) throw new Error('Профіль не знайдено');
+
+    const payment = await prisma.payment.findFirst({
+      where: { id: paymentId, studentId: profile.id }
+    });
+    
+    if (!payment) throw new Error('Платіж не знайдено або не належить вам');
+    if (payment.status === 'PAID') throw new Error('Платіж вже оплачено');
+
     return prisma.payment.update({
       where: { id: paymentId },
       data: { status: 'PAID', paidAt: new Date() }

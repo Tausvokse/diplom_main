@@ -1,4 +1,4 @@
-export type Role = 'STUDENT' | 'ADMIN' | 'ADMIN_CAMPUS' | 'ADMIN_COMMANDANT';
+export type Role = 'STUDENT' | 'ADMIN' | 'ADMIN_CAMPUS' | 'ADMIN_COMMANDANT' | 'MASTER_SLESAR' | 'MASTER_SANTEKHNIK' | 'MASTER_ELECTRIC';
 
 export type RoomStatus = 'AVAILABLE' | 'FULL' | 'MAINTENANCE';
 

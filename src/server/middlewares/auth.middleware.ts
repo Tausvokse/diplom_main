@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { Role } from '@prisma/client';
 import { config } from '../config';
+import { prisma } from '../lib/prisma';
 
 export interface AuthRequest extends Omit<Request, 'user'> {
   user?: {

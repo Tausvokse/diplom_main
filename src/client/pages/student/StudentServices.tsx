@@ -46,11 +46,14 @@ const StudentServices: React.FC = () => {
   const [repairDesc, setRepairDesc] = useState('');
   const [selectedMasterId, setSelectedMasterId] = useState('');
 
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
     fetchData();
   }, []);
 
   const fetchData = async () => {
+    setIsLoading(true);
     try {
       const [neighRes, compRes, repRes, mastRes, dashRes] = await Promise.all([
         api.get('/student/neighbors'),
@@ -63,10 +66,11 @@ const StudentServices: React.FC = () => {
       setComplaints(compRes.data);
       setRepairs(repRes.data);
       setMasters(mastRes.data);
-      // Hacky way to get room number for display if we can't easily fetch it from profile
-      setRoomNumber(dashRes.data?.application?.student?.room?.roomNumber || 'Ваша кімната');
+      setRoomNumber(dashRes.data?.application?.student?.room?.roomNumber || '');
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -129,6 +133,21 @@ const StudentServices: React.FC = () => {
       default: return 'Майстер';
     }
   };
+
+  if (isLoading) return <div className="p-8 text-center text-gray-500">Завантаження...</div>;
+
+  if (!roomNumber) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Студентські сервіси</h1>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 flex flex-col items-center text-center">
+          <AlertTriangle className="w-12 h-12 text-yellow-500 mb-4" />
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Функції недоступні</h2>
+          <p className="text-gray-600">Сервіси скарг та заявок на ремонт стануть доступними після вашого поселення в гуртожиток. Заповніть заяву на поселення в особистому кабінеті.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

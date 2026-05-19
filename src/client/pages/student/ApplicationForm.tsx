@@ -409,20 +409,22 @@ export const ApplicationForm: React.FC = () => {
               Далі
             </button>
           ) : (
-            <button
-              onClick={submitApplication}
-              disabled={isSubmitting}
-              className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center"
-            >
-              {isSubmitting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                  Обробка...
-                </>
-              ) : (
-                'Подати заяву (Без Дії)' // Fallback for testing
-              )}
-            </button>
+            import.meta.env.MODE === 'development' && (
+              <button
+                onClick={submitApplication}
+                disabled={isSubmitting}
+                className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center"
+              >
+                {isSubmitting ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                    Обробка...
+                  </>
+                ) : (
+                  'Подати заяву (Без Дії)' // Fallback for testing
+                )}
+              </button>
+            )
           )}
         </div>
       </div>

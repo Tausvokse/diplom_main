@@ -5,32 +5,54 @@ import { authenticate } from '../middlewares/auth.middleware';
 import { requireRole } from '../middlewares/role.middleware';
 
 const router = Router();
-const upload = multer({ dest: 'uploads/' }); // Просто для імітації збереження файлів
+const upload = multer({ 
+  dest: 'uploads/',
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'application/pdf'];
+    if (allowed.includes(file.mimetype)) {
+      cb(null, true);
+    } else {
+      cb(new Error('Недопустимий формат файлу. Дозволено лише JPEG, PNG та PDF.'));
+    }
+  }
+});
 
-// Захист всіх роутів для ролі STUDENT
+// Захист всіх роутів для ролі STUDENT (та майстрів для специфічних роутів)
 router.use(authenticate);
-router.use(requireRole(['STUDENT']));
 
-router.get('/dashboard', StudentController.getDashboardData);
-router.post('/application', upload.array('documents'), StudentController.submitApplication);
-router.post('/group/create', StudentController.createGroup);
-router.post('/group/join', StudentController.joinGroup);
+// Роути виключно для студентів
+const studentOnly = Router();
+studentOnly.use(requireRole(['STUDENT']));
 
-router.get('/neighbors', StudentController.getNeighbors);
-router.post('/complaints', upload.single('evidence'), StudentController.submitComplaint);
-router.get('/complaints', StudentController.getComplaints);
-router.get('/masters', StudentController.getMasters);
-router.post('/repairs', StudentController.submitRepairRequest);
-router.get('/repairs', StudentController.getRepairRequests);
+studentOnly.get('/dashboard', StudentController.getDashboardData);
+studentOnly.post('/application', upload.array('documents'), StudentController.submitApplication);
+studentOnly.post('/group/create', StudentController.createGroup);
+studentOnly.post('/group/join', StudentController.joinGroup);
+studentOnly.get('/neighbors', StudentController.getNeighbors);
+studentOnly.post('/complaints', upload.single('evidence'), StudentController.submitComplaint);
+studentOnly.get('/complaints', StudentController.getComplaints);
+studentOnly.get('/masters', StudentController.getMasters);
+studentOnly.post('/repairs', StudentController.submitRepairRequest);
 
 // Фінанси (Банки та Оплати)
-router.get('/jars', StudentController.getJars);
-router.post('/jars/donate', StudentController.donateToJar);
-router.get('/payments', StudentController.getPayments);
-router.post('/payments/:id/pay', StudentController.payPayment);
+studentOnly.get('/jars', StudentController.getJars);
+studentOnly.post('/jars/donate', StudentController.donateToJar);
+studentOnly.get('/payments', StudentController.getPayments);
+studentOnly.post('/payments/:id/pay', StudentController.payPayment);
 
 // Сповіщення
-router.get('/notifications', StudentController.getNotifications);
-router.patch('/notifications/:id/read', StudentController.markNotificationRead);
+studentOnly.get('/notifications', StudentController.getNotifications);
+studentOnly.patch('/notifications/:id/read', StudentController.markNotificationRead);
+
+router.use(studentOnly);
+
+// Роути для студентів та майстрів
+const sharedRoutes = Router();
+sharedRoutes.use(requireRole(['STUDENT', 'MASTER_SLESAR', 'MASTER_SANTEKHNIK', 'MASTER_ELECTRIC']));
+sharedRoutes.get('/repairs', StudentController.getRepairRequests);
+// Future: sharedRoutes.patch('/repairs/:id/status', StudentController.updateRepairStatus);
+
+router.use(sharedRoutes);
 
 export default router;
