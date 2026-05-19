@@ -152,4 +152,41 @@ export class AllocationService {
       orderBy: { priorityScore: 'desc' }
     });
   }
+
+  static async evictStudent(studentId: string) {
+    const allocation = await prisma.roomAllocation.findFirst({
+      where: { studentId, status: 'ACTIVE' }
+    });
+
+    if (!allocation) {
+      throw new Error('Студент не проживає в гуртожитку');
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Deactivate allocation
+      await tx.roomAllocation.update({
+        where: { id: allocation.id },
+        data: { status: 'EVICTED' }
+      });
+
+      // Update room occupancy
+      const room = await tx.room.findUnique({ where: { id: allocation.roomId } });
+      if (room) {
+        const newOccupancy = Math.max(0, room.currentOccupancy - 1);
+        await tx.room.update({
+          where: { id: room.id },
+          data: { 
+            currentOccupancy: newOccupancy,
+            status: newOccupancy < room.capacity ? 'AVAILABLE' : 'FULL'
+          }
+        });
+      }
+
+      // Remove room from profile
+      await tx.studentProfile.update({
+        where: { id: studentId },
+        data: { roomId: null, dormitoryId: null }
+      });
+    });
+  }
 }

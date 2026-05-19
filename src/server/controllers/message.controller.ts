@@ -59,7 +59,7 @@ export class MessageController {
   static async getAdmins(req: Request, res: Response, next: NextFunction) {
     try {
       const admins = await prisma.user.findMany({
-        where: { role: { in: ['ADMIN', 'ADMIN_CAMPUS', 'ADMIN_COMMANDANT'] } },
+        where: { role: { in: ['ADMIN_CAMPUS', 'ADMIN_COMMANDANT'] } },
         select: { id: true, firstName: true, lastName: true, role: true, email: true }
       });
       res.json(admins);

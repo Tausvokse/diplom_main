@@ -24,4 +24,18 @@ export class AllocationController {
       next(error);
     }
   }
+
+  static async evictStudent(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { studentId } = req.body;
+      if (!studentId) {
+        res.status(400).json({ message: 'studentId is required' });
+        return;
+      }
+      await AllocationService.evictStudent(studentId);
+      res.json({ success: true });
+    } catch (error: any) {
+      next(error);
+    }
+  }
 }

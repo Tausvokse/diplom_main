@@ -73,6 +73,24 @@ export class AdminController {
     }
   }
 
+  static async getAllStudents(req: Request, res: Response, next: NextFunction) {
+    try {
+      const students = await AdminService.getAllStudents();
+      res.json(students);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getAnalytics(req: Request, res: Response, next: NextFunction) {
+    try {
+      const stats = await AdminService.getAnalytics();
+      res.json(stats);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async createAdmin(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password, firstName, lastName, role, dormitoryId } = req.body;

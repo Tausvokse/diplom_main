@@ -18,12 +18,19 @@ router.get('/applications', AdminController.getApplications);
 router.post('/applications/:id/approve', AdminController.approveApplication);
 router.post('/applications/:id/reject', AdminController.rejectApplication);
 
-// Allocation (AHP + K-means)
+// Allocation (K-Means)
 router.get('/allocation/pool', AllocationController.getPool);
 router.post('/allocation/run', AllocationController.runAlgorithm);
+router.post('/allocation/evict', AllocationController.evictStudent);
 
 // Users (Admins)
 router.get('/users/admin', AdminController.getAdmins);
 router.post('/users/admin', AdminController.createAdmin);
+
+// Students (Director View)
+router.get('/students', AdminController.getAllStudents);
+
+// Analytics
+router.get('/analytics', AdminController.getAnalytics);
 
 export default router;

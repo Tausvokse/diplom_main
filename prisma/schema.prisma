@@ -3,24 +3,95 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = "file:./dev.db"
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// --- ENUMS ---
+
+enum Role {
+  STUDENT
+  ADMIN_COMMANDANT
+  ADMIN_CAMPUS
+  MASTER_SLESAR
+  MASTER_SANTEKHNIK
+  MASTER_ELECTRIC
+}
+
+enum ApplicationStatus {
+  DRAFT
+  SUBMITTED
+  UNDER_REVIEW
+  APPROVED
+  REJECTED
+}
+
+enum ApplicationType {
+  CHECK_IN
+  TRANSFER
+  CHECK_OUT
+}
+
+enum ComplaintStatus {
+  PENDING
+  INVESTIGATING
+  RESOLVED
+  DISMISSED
+}
+
+enum RepairStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  OVERDUE
+}
+
+enum NotificationType {
+  INFO
+  PAYMENT_REMINDER
+  COMPLAINT_ALERT
+  REPAIR_UPDATE
+}
+
+// --- MODELS ---
+
+model University {
+  id          String      @id @default(uuid())
+  name        String
+  city        String
+  dormitories Dormitory[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([name])
 }
 
 model User {
   id               String          @id @default(uuid())
   email            String          @unique
-  password         String // Спрощена авторизація/хеш
-  role             String          @default("STUDENT") // STUDENT, ADMIN_COMMANDANT, ADMIN_CAMPUS
+  password         String          // Hash
+  role             Role            @default(STUDENT)
   firstName        String
   lastName         String
-  dormitoryId      String?         // Для ADMIN_COMMANDANT
+  dormitoryId      String?         // For ADMIN_COMMANDANT
   dormitory        Dormitory?      @relation(fields: [dormitoryId], references: [id])
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
-  StudentProfile   StudentProfile?
+  
+  studentProfile   StudentProfile?
   sentMessages     Message[]       @relation("SentMessages")
   receivedMessages Message[]       @relation("ReceivedMessages")
+  assignedRepairs  RepairRequest[] @relation("MasterRepairs")
+
+  @@index([email])
+  @@index([role])
 }
 
 model Message {
@@ -31,6 +102,9 @@ model Message {
   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
   content    String
   createdAt  DateTime @default(now())
+
+  @@index([senderId])
+  @@index([receiverId])
 }
 
 model PrivilegeCategory {
@@ -38,7 +112,7 @@ model PrivilegeCategory {
   name            String
   multiplier      Float
   description     String?
-  StudentProfiles StudentProfile[]
+  studentProfiles StudentProfile[]
 }
 
 model GroupReferral {
@@ -50,33 +124,80 @@ model GroupReferral {
   createdAt      DateTime         @default(now())
   expiresAt      DateTime
   members        StudentProfile[]
+
+  @@index([code])
 }
 
 model StudentProfile {
   id                  String             @id @default(uuid())
   userId              String             @unique
   user                User               @relation(fields: [userId], references: [id])
+  
+  // Hard links for director access
+  fullName            String             // ПІБ
+  email               String             // Дублювання для швидкого пошуку
+  phone               String             // Номер телефону
+  
+  // Жорстка прив'язка до гуртожитку та кімнати
+  dormitoryId         String?
+  dormitory           Dormitory?         @relation(fields: [dormitoryId], references: [id])
+  roomId              String?
+  room                Room?              @relation(fields: [roomId], references: [id])
+  
   studentIdNumber     String             @unique
   course              Int
   faculty             String
+  
+  // Rating and Clustering
+  rating              Float              @default(5.0) // Залежить від скарг
+  clusterId           Int?               // Результат K-means
+  clusterMetadata     Json?              // Метадані кластера (центроїди, відстані)
+  clusteringVector    String?            // JSON string: { chronotype, sociability, noiseTolerance, cleanliness }
+  
+  priorityScore       Float              @default(0.0)
+  
+  // Relations
   privilegeCategoryId String?
   privilege           PrivilegeCategory? @relation(fields: [privilegeCategoryId], references: [id])
-  clusteringVector    String? // JSON string: { chronotype, sociability, noiseTolerance, cleanliness }
-  priorityScore       Float              @default(0.0)
   groupId             String?
   group               GroupReferral?     @relation(fields: [groupId], references: [id])
+  
   isVerifiedByDiia    Boolean            @default(false)
+  
   applications        Application[]
   allocations         RoomAllocation[]
+  complaintsFiled     Complaint[]        @relation("ComplaintsFiled")
+  complaintsAgainst   Complaint[]        @relation("ComplaintsAgainst")
+  donations           JarTransaction[]
+  notifications       Notification[]
+  payments            Payment[]
+
+  @@index([studentIdNumber])
+  @@index([userId])
+  @@index([fullName])
+  @@index([dormitoryId])
+  @@index([roomId])
 }
 
 model Dormitory {
-  id            String   @id @default(uuid())
+  id            String      @id @default(uuid())
   name          String
   address       String
+  universityId  String
+  university    University  @relation(fields: [universityId], references: [id])
+  
+  // Analytics fields
   totalCapacity Int
+  currentOccupancy Int      @default(0)
+  occupancyStatus  String   @default("STABLE") // Analytics: STABLE, NEAR_LIMIT, OVERLOADED
+  
   floors        Floor[]
   admins        User[]
+  jars          Jar[]
+  studentProfiles StudentProfile[]
+  
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
 }
 
 model Floor {
@@ -85,6 +206,8 @@ model Floor {
   dormitory     Dormitory @relation(fields: [dormitoryId], references: [id])
   floorNumber   Int
   rooms         Room[]
+
+  @@index([dormitoryId])
 }
 
 model Room {
@@ -95,18 +218,35 @@ model Room {
   capacity         Int
   currentOccupancy Int              @default(0)
   status           String           @default("AVAILABLE") // AVAILABLE, FULL, MAINTENANCE
+  
+  // K-means analytics for room
+  clusterId        Int?
+  clusterMetadata  Json?
+  
   allocations      RoomAllocation[]
+  repairRequests   RepairRequest[]
+  studentProfiles  StudentProfile[]
+
+  @@index([floorId])
+  @@index([status])
 }
 
 model Application {
-  id               String         @id @default(uuid())
+  id               String            @id @default(uuid())
   studentId        String
-  student          StudentProfile @relation(fields: [studentId], references: [id])
-  status           String         @default("SUBMITTED") // DRAFT, SUBMITTED, UNDER_REVIEW, APPROVED, REJECTED
-  scanDocumentsUrl String // Comma separated URLs
+  student          StudentProfile    @relation(fields: [studentId], references: [id])
+  
+  type             ApplicationType   @default(CHECK_IN)
+  status           ApplicationStatus @default(SUBMITTED)
+  
+  scanDocumentsUrl String            // Comma separated URLs
   rejectionReason  String?
-  submittedAt      DateTime       @default(now())
+  
+  submittedAt      DateTime          @default(now())
   reviewedAt       DateTime?
+
+  @@index([studentId])
+  @@index([status])
 }
 
 model RoomAllocation {
@@ -117,4 +257,109 @@ model RoomAllocation {
   student     StudentProfile @relation(fields: [studentId], references: [id])
   allocatedAt DateTime       @default(now())
   status      String         @default("ACTIVE") // ACTIVE, EVICTED
+
+  @@index([roomId])
+  @@index([studentId])
+}
+
+model Complaint {
+  id           String          @id @default(uuid())
+  accuserId    String
+  accuser      StudentProfile  @relation("ComplaintsFiled", fields: [accuserId], references: [id])
+  accusedId    String
+  accused      StudentProfile  @relation("ComplaintsAgainst", fields: [accusedId], references: [id])
+  
+  content      String
+  evidenceUrl  String?         // URL-доказ
+  status       ComplaintStatus @default(PENDING)
+  
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  @@index([accusedId])
+}
+
+model RepairRequest {
+  id          String       @id @default(uuid())
+  roomId      String
+  room        Room         @relation(fields: [roomId], references: [id])
+  
+  masterId    String?
+  master      User?        @relation("MasterRepairs", fields: [masterId], references: [id])
+  
+  description String
+  status      RepairStatus @default(PENDING)
+  
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([roomId])
+  @@index([masterId])
+}
+
+model Jar {
+  id            String           @id @default(uuid())
+  title         String
+  description   String?
+  goalAmount    Float
+  currentAmount Float            @default(0)
+  
+  dormitoryId   String
+  dormitory     Dormitory        @relation(fields: [dormitoryId], references: [id])
+  
+  transactions  JarTransaction[]
+  
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+}
+
+model JarTransaction {
+  id        String         @id @default(uuid())
+  jarId     String
+  jar       Jar            @relation(fields: [jarId], references: [id])
+  studentId String
+  student   StudentProfile @relation(fields: [studentId], references: [id])
+  
+  amount    Float
+  comment   String?
+  
+  createdAt DateTime       @default(now())
+
+  @@index([jarId])
+  @@index([studentId])
+}
+
+model Payment {
+  id          String         @id @default(uuid())
+  studentId   String
+  student     StudentProfile @relation(fields: [studentId], references: [id])
+  
+  amount      Float
+  status      PaymentStatus  @default(PENDING)
+  dueDate     DateTime
+  paidAt      DateTime?
+  
+  description String?
+  
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([studentId])
+  @@index([status])
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  studentId String
+  student   StudentProfile   @relation(fields: [studentId], references: [id])
+  
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  type      NotificationType @default(INFO)
+  
+  createdAt DateTime         @default(now())
+
+  @@index([studentId])
+  @@index([isRead])
 }

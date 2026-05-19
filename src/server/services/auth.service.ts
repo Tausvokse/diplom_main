@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { config } from '../config';
@@ -66,7 +66,7 @@ export class AuthService {
     }
   }
 
-  static async createAdmin(email: string, password: string, firstName: string, lastName: string, role: string = 'ADMIN', dormitoryId?: string) {
+  static async createAdmin(email: string, password: string, firstName: string, lastName: string, role: string, dormitoryId?: string) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new Error('Користувач з таким email вже існує');
@@ -78,7 +78,7 @@ export class AuthService {
       data: {
         email,
         password: hashedPassword,
-        role,
+        role: role as Role,
         firstName,
         lastName,
         dormitoryId: role === 'ADMIN_COMMANDANT' ? dormitoryId : null

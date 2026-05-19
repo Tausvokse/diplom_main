@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileText, CheckCircle, XCircle, Eye, AlertTriangle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Application } from '../../types';
+import { api } from '../../services/api';
 
 export const ApplicationsReview: React.FC = () => {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -18,39 +19,8 @@ export const ApplicationsReview: React.FC = () => {
 
   const fetchApplications = async () => {
     try {
-      // Mock data representing backend response
-      const mockApps: Application[] = [
-        {
-          id: 'app_1',
-          studentId: 'st_1',
-          status: 'SUBMITTED',
-          scanDocumentsUrl: ['https://example.com/scan1.pdf'],
-          rejectionReason: null,
-          submittedAt: new Date().toISOString(),
-          reviewedAt: null,
-          student: {
-            id: 'st_1', userId: 'u_1', studentIdNumber: 'KB-123456', course: 1, faculty: 'FI',
-            privilegeCategoryId: 'id_orphans', clusteringVector: null, priorityScore: 90, groupId: null,
-            user: { id: 'u_1', email: 'ivan@univ.edu', role: 'STUDENT', firstName: 'Іван', lastName: 'Шевченко', createdAt: '', updatedAt: '' },
-            privilege: { id: 'id_orphans', name: 'Діти-сироти', multiplier: 1.5, description: '' }
-          }
-        },
-        {
-          id: 'app_2',
-          studentId: 'st_2',
-          status: 'UNDER_REVIEW',
-          scanDocumentsUrl: [],
-          rejectionReason: null,
-          submittedAt: new Date().toISOString(),
-          reviewedAt: null,
-          student: {
-            id: 'st_2', userId: 'u_2', studentIdNumber: 'KB-654321', course: 2, faculty: 'FEM',
-            privilegeCategoryId: null, clusteringVector: null, priorityScore: 45, groupId: null,
-            user: { id: 'u_2', email: 'olena@univ.edu', role: 'STUDENT', firstName: 'Олена', lastName: 'Коваленко', createdAt: '', updatedAt: '' }
-          }
-        }
-      ];
-      setApplications(mockApps);
+      const res = await api.get('/admin/applications');
+      setApplications(res.data);
     } catch (error) {
       toast.error('Помилка завантаження заяв');
     } finally {
@@ -61,7 +31,7 @@ export const ApplicationsReview: React.FC = () => {
   const handleApprove = async (id: string) => {
     setIsProcessing(true);
     try {
-      // await api.post(`/admin/applications/${id}/approve`);
+      await api.post(`/admin/applications/${id}/approve`);
       setApplications(prev => prev.map(app => app.id === id ? { ...app, status: 'APPROVED' } : app));
       toast.success('Заяву схвалено та додано до пулу розподілу');
     } catch (error) {
@@ -85,7 +55,7 @@ export const ApplicationsReview: React.FC = () => {
     
     setIsProcessing(true);
     try {
-      // await api.post(`/admin/applications/${selectedApp?.id}/reject`, { reason: rejectionReason });
+      await api.post(`/admin/applications/${selectedApp?.id}/reject`, { reason: rejectionReason });
       setApplications(prev => prev.map(app => 
         app.id === selectedApp?.id ? { ...app, status: 'REJECTED', rejectionReason } : app
       ));

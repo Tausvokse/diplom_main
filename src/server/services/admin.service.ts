@@ -54,11 +54,8 @@ export class AdminService {
     return prisma.user.findMany({
       where: {
         role: {
-          in: ['ADMIN', 'ADMIN_CAMPUS', 'ADMIN_COMMANDANT']
+          in: ['ADMIN_CAMPUS', 'ADMIN_COMMANDANT']
         }
-      },
-      include: {
-        dormitory: true
       },
       select: {
         id: true,
@@ -71,5 +68,59 @@ export class AdminService {
         createdAt: true
       }
     });
+  }
+
+  static async getAllStudents() {
+    return prisma.studentProfile.findMany({
+      include: {
+        dormitory: { select: { name: true } },
+        room: { select: { roomNumber: true } }
+      },
+      orderBy: { fullName: 'asc' }
+    });
+  }
+
+  static async getAnalytics() {
+    const dormData = await prisma.dormitory.findMany({
+      include: {
+        floors: {
+          include: { rooms: true }
+        }
+      }
+    });
+
+    const occupancyStats = dormData.map(d => {
+      let currentOccupancy = 0;
+      d.floors.forEach(f => {
+        f.rooms.forEach(r => { currentOccupancy += r.currentOccupancy; });
+      });
+      return {
+        name: d.name,
+        totalCapacity: d.totalCapacity,
+        currentOccupancy
+      };
+    });
+
+    const clusterStats = await prisma.studentProfile.groupBy({
+      by: ['clusterId'],
+      _count: { clusterId: true },
+      where: { clusterId: { not: null } }
+    });
+
+    const complaintsStats = await prisma.complaint.groupBy({
+      by: ['status'],
+      _count: { status: true }
+    });
+
+    const ratingAgg = await prisma.studentProfile.aggregate({
+      _avg: { rating: true }
+    });
+
+    return {
+      occupancy: occupancyStats,
+      clusters: clusterStats.map(c => ({ clusterId: c.clusterId, count: c._count.clusterId })),
+      complaints: complaintsStats.map(c => ({ status: c.status, count: c._count.status })),
+      averageRating: ratingAgg._avg.rating || 5.0
+    };
   }
 }
