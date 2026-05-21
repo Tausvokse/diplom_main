@@ -17,7 +17,9 @@ const __dirname = path.dirname(__filename);
 app.set('trust proxy', 1);
 
 // 1. Безпекові HTTP-заголовки (Helmet)
-app.use(helmet());
+app.use(helmet({
+  contentSecurityPolicy: false, // Відключаємо суворий CSP, щоб не блокувати скрипти Cloudflare
+}));
 
 // 2. CORS (Динамічний захист)
 app.use(cors({
@@ -72,12 +74,19 @@ app.use('/api', routes);
 // Serve client build in production
 if (config.environment === 'production') {
   const clientDist = path.join(__dirname, '../../dist');
-  app.use(express.static(clientDist));
+  app.use(express.static(clientDist, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+      }
+    }
+  }));
   app.get('*', (req, res) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
       res.status(404).json({ message: 'Not found' });
       return;
     }
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
     res.sendFile(path.join(clientDist, 'index.html'));
   });
 }
