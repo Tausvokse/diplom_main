@@ -13,6 +13,9 @@ const app: Application = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Trust Heroku's proxy (required for rate limiting behind a reverse proxy)
+app.set('trust proxy', 1);
+
 // 1. Безпекові HTTP-заголовки (Helmet)
 app.use(helmet());
 
