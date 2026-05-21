@@ -5,7 +5,11 @@ export const registerSchema = z.object({
     email: z.string().email(),
     password: z.string().min(1),
     firstName: z.string().min(1),
-    lastName: z.string().min(1)
+    lastName: z.string().min(1),
+    phone: z.string().min(1),
+    studentIdNumber: z.string().min(1),
+    course: z.number().min(1).max(6),
+    faculty: z.string().min(1)
   })
 });
 
