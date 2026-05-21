@@ -5,6 +5,11 @@ export class AuthController {
   static async register(req: Request, res: Response, next: NextFunction) {
     try {
       const { email, password, firstName, lastName, phone, studentIdNumber, course, faculty } = req.body;
+      
+      if (!email || !password || !firstName || !lastName || !phone || !studentIdNumber || !course || !faculty) {
+        return res.status(400).json({ error: 'Будь ласка, оновіть сторінку (Ctrl+F5). Форма реєстрації була оновлена, але ваш браузер використовує стару версію.' });
+      }
+
       const result = await AuthService.register(email, password, firstName, lastName, phone, studentIdNumber, course, faculty);
       res.json(result);
     } catch (error) {
