@@ -41,6 +41,7 @@ export const DormitoryManager: React.FC = () => {
 
   const fetchDormitories = async () => {
     try {
+      const res = await api.get('/admin/dormitories');
       const sortedDormitories = res.data.sort((a: Dormitory, b: Dormitory) => 
         a.name.localeCompare(b.name, 'uk', { numeric: true })
       );
