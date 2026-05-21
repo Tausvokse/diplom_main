@@ -19,10 +19,16 @@ app.use(helmet());
 // 2. CORS (Динамічний захист)
 app.use(cors({
   origin: (origin, callback) => {
-    // Дозволяємо запити без origin (наприклад, сервер-сервер або мобільні додатки)
-    if (!origin || config.corsOrigins.includes(origin)) {
+    if (!origin) {
+      return callback(null, true);
+    }
+    const cleanOrigin = origin.replace(/\/$/, '');
+    const allowedOrigins = config.corsOrigins.map(o => o.replace(/\/$/, ''));
+    
+    if (allowedOrigins.includes(cleanOrigin)) {
       callback(null, true);
     } else {
+      console.error(`CORS Blocked: Origin ${origin} not in allowed list: ${allowedOrigins.join(', ')}`);
       callback(new Error('Не дозволено CORS політикою'));
     }
   },
