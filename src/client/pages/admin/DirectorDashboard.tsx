@@ -117,7 +117,7 @@ const DirectorDashboard: React.FC = () => {
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   onClick={() => handleSort('course')}
                 >
-                  <div className="flex items-center">Факультет / Курс <SortIcon field="course" /></div>
+                  <div className="flex items-center">Факультет / Курс <SortIcon field="course" sortField={sortField} sortDirection={sortDirection} /></div>
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Поселення
@@ -127,7 +127,7 @@ const DirectorDashboard: React.FC = () => {
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                   onClick={() => handleSort('rating')}
                 >
-                  <div className="flex items-center">Рейтинг <SortIcon field="rating" /></div>
+                  <div className="flex items-center">Рейтинг <SortIcon field="rating" sortField={sortField} sortDirection={sortDirection} /></div>
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Дії

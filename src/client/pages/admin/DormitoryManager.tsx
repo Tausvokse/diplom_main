@@ -83,6 +83,18 @@ export const DormitoryManager: React.FC = () => {
     });
   };
 
+  const handleDeleteRoom = async (e: React.MouseEvent, roomId: string) => {
+    e.stopPropagation();
+    if (!window.confirm('Ви впевнені, що хочете видалити цю кімнату?')) return;
+    try {
+      await api.delete(`/admin/rooms/${roomId}`);
+      toast.success('Кімнату видалено');
+      await fetchDormitories();
+    } catch {
+      toast.error('Помилка при видаленні кімнати');
+    }
+  };
+
   const startEditingRoom = (e: React.MouseEvent, room: Room) => {
     e.stopPropagation();
     setEditingRoomId(room.id);

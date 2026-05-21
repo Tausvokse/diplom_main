@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { X, User, Home, FileText, File, AlertTriangle, CreditCard, ExternalLink } from 'lucide-react';
+import { X, User, Home, FileText, File, AlertTriangle, CreditCard } from 'lucide-react';
 import { api } from '../services/api';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
@@ -203,7 +203,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ studentI
                   {app.scanDocumentsUrl && app.scanDocumentsUrl.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                       {app.scanDocumentsUrl.split(',').map((doc: string, idx: number) => {
-                        const fullUrl = `http://localhost:3000${doc}`; // in prod we'd use environment variable
+                        const fullUrl = import.meta.env.PROD ? doc : `http://localhost:3000${doc}`;
                         const fileName = doc.split('/').pop() || `Документ ${idx + 1}`;
                         
                         return (

@@ -6,7 +6,6 @@ const requiredSecrets = [
   'JWT_SECRET',
   'JWT_REFRESH_SECRET',
   'DATABASE_URL',
-  'DIIA_WEBHOOK_SECRET'
 ];
 
 if (process.env.NODE_ENV === 'production') {

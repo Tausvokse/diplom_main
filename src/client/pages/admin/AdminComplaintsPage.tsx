@@ -53,7 +53,7 @@ const statusOptions: ComplaintStatus[] = ['PENDING', 'INVESTIGATING', 'RESOLVED'
 
 const getFileUrl = (url: string) => {
   if (/^https?:\/\//.test(url)) return url;
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+  const apiBase = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? '/api' : 'http://localhost:4000/api');
   const origin = apiBase.replace(/\/api\/?$/, '');
   return `${origin}${url.startsWith('/') ? url : `/${url}`}`;
 };

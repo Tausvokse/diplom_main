@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
-import { BarChart3, Users, Home, TrendingUp, AlertCircle, Briefcase, CreditCard, DoorOpen } from 'lucide-react';
+import { BarChart3, Users, Home, TrendingUp, AlertCircle } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { useTheme } from '../../components/ThemeProvider';
