@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { AuthResponse } from '../../types';
+import InputMask from 'react-input-mask';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -11,6 +12,7 @@ const Register: React.FC = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
+    phone: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -55,87 +57,99 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
-      <div className="p-8 bg-white shadow-lg rounded-xl w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Реєстрація</h1>
-          <p className="text-gray-500">Створіть кабінет студента</p>
+    <div className="flex items-center justify-center min-h-screen ui-shell px-6">
+      <div className="ui-card p-6 w-full max-w-md">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-semibold text-[rgb(var(--text))] mb-2">Реєстрація</h1>
+          <p className="text-sm ui-muted">Створіть кабінет студента</p>
         </div>
         
-        <form onSubmit={handleRegister} className="space-y-5">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleRegister} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Ім'я</label>
+              <label className="block text-sm font-medium ui-muted mb-1">Ім'я</label>
               <input 
                 type="text" 
                 name="firstName"
                 value={formData.firstName}
                 onChange={handleChange}
                 placeholder="Іван"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="ui-input"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Прізвище</label>
+              <label className="block text-sm font-medium ui-muted mb-1">Прізвище</label>
               <input 
                 type="text" 
                 name="lastName"
                 value={formData.lastName}
                 onChange={handleChange}
                 placeholder="Студент"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="ui-input"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium ui-muted mb-1">Телефон</label>
+            <InputMask
+              mask="+380 (99) 999-99-99"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              placeholder="+380 (__) ___-__-__"
+              className="ui-input"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium ui-muted mb-1">Email</label>
             <input 
               type="email" 
               name="email"
               value={formData.email}
               onChange={handleChange}
               placeholder="student@uni.edu"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="ui-input"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
+            <label className="block text-sm font-medium ui-muted mb-1">Пароль</label>
             <input 
               type="password" 
               name="password"
               value={formData.password}
               onChange={handleChange}
               placeholder="••••••••"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="ui-input"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Підтвердіть пароль</label>
+            <label className="block text-sm font-medium ui-muted mb-1">Підтвердіть пароль</label>
             <input 
               type="password" 
               name="confirmPassword"
               value={formData.confirmPassword}
               onChange={handleChange}
               placeholder="••••••••"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="ui-input"
             />
           </div>
 
           <button 
             type="submit"
             disabled={isLoading}
-            className="w-full px-4 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors font-medium flex justify-center items-center disabled:opacity-50"
+            className="w-full ui-button ui-button-primary mt-2 disabled:opacity-50"
           >
             {isLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Створити акаунт'}
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-6 text-center text-sm ui-muted">
           Вже маєте акаунт?{' '}
-          <Link to="/login" className="text-blue-600 hover:text-blue-700 font-medium hover:underline">
+          <Link to="/login" className="text-[rgb(var(--accent))] hover:text-[rgb(var(--accent-strong))] font-medium hover:underline">
             Увійти
           </Link>
         </div>

@@ -89,83 +89,89 @@ export const AdminUsers: React.FC = () => {
       case 'ADMIN_CAMPUS': return 'Директор Студмістечка';
       case 'ADMIN_COMMANDANT': return 'Комендант';
       case 'ADMIN': return 'Адміністратор';
+      case 'MASTER_SLESAR': return 'Слюсар';
+      case 'MASTER_SANTEKHNIK': return 'Сантехнік';
+      case 'MASTER_ELECTRIC': return 'Електрик';
       default: return role;
     }
   };
 
   return (
-    <div className="max-w-6xl mx-auto p-6 space-y-6">
+    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       <header className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Управління доступом</h1>
-        <p className="text-gray-500">Створення нових облікових записів та перегляд існуючих адміністраторів</p>
+        <h1 className="text-2xl font-semibold text-[rgb(var(--text))]">Управління доступом</h1>
+        <p className="ui-muted">Створення нових облікових записів та перегляд існуючих співробітників</p>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 h-fit">
-          <div className="flex items-center mb-6 text-red-600 bg-red-50 p-4 rounded-lg border border-red-100">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <div className="ui-card p-6 md:p-8 h-fit transition-colors">
+          <div className="flex items-center mb-6 text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-4 rounded-lg border border-red-100 dark:border-red-800/50 transition-colors">
             <ShieldAlert className="w-6 h-6 mr-3 flex-shrink-0" />
             <p className="text-sm">
-              <strong>Увага:</strong> Створення нового адміністратора надає йому відповідний рівень доступу до системи.
+              <strong>Увага:</strong> Створення нового акаунту надає йому відповідний рівень доступу до системи.
             </p>
           </div>
 
           <form onSubmit={handleCreateAdmin} className="space-y-6">
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ім'я</label>
+                <label className="block text-sm font-medium ui-muted mb-1">Ім'я</label>
                 <input 
                   type="text" 
                   name="firstName"
                   value={formData.firstName}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="ui-input"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Прізвище</label>
+                <label className="block text-sm font-medium ui-muted mb-1">Прізвище</label>
                 <input 
                   type="text" 
                   name="lastName"
                   value={formData.lastName}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="ui-input"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Робочий Email</label>
+              <label className="block text-sm font-medium ui-muted mb-1">Робочий Email</label>
               <input 
                 type="email" 
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="ui-input"
               />
             </div>
             
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Роль</label>
+                <label className="block text-sm font-medium ui-muted mb-1">Роль</label>
                 <select 
                   name="role"
                   value={formData.role}
                   onChange={handleChange}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                  className="ui-input"
                 >
                   <option value="ADMIN_COMMANDANT">Комендант</option>
                   <option value="ADMIN_CAMPUS">Директор Студмістечка</option>
+                  <option value="MASTER_SLESAR">Слюсар</option>
+                  <option value="MASTER_SANTEKHNIK">Сантехнік</option>
+                  <option value="MASTER_ELECTRIC">Електрик</option>
                 </select>
               </div>
               
               {formData.role === 'ADMIN_COMMANDANT' && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Гуртожиток</label>
+                  <label className="block text-sm font-medium ui-muted mb-1">Гуртожиток</label>
                   <select 
                     name="dormitoryId"
                     value={formData.dormitoryId}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                    className="ui-input"
                   >
                     {dormitories.map(dorm => (
                       <option key={dorm.id} value={dorm.id}>{dorm.name}</option>
@@ -176,21 +182,21 @@ export const AdminUsers: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Первинний пароль</label>
+              <label className="block text-sm font-medium ui-muted mb-1">Первинний пароль</label>
               <input 
                 type="password" 
                 name="password"
                 value={formData.password}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
+                className="ui-input"
               />
-              <p className="text-xs text-gray-500 mt-1">Новий користувач зможе змінити його після входу.</p>
+              <p className="text-xs ui-muted mt-1">Новий користувач зможе змінити його після входу.</p>
             </div>
 
             <button 
               type="submit"
               disabled={isLoading}
-              className="px-6 py-3 text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-colors font-medium flex items-center disabled:opacity-50"
+              className="ui-button ui-button-primary px-6 disabled:opacity-50"
             >
               {isLoading ? (
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
@@ -202,24 +208,24 @@ export const AdminUsers: React.FC = () => {
           </form>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center bg-gray-50">
-            <Users className="w-5 h-5 text-gray-500 mr-2" />
-            <h2 className="font-semibold text-gray-900">Існуючі адміністратори</h2>
+        <div className="ui-card overflow-hidden transition-colors">
+          <div className="px-6 py-4 border-b border-[rgb(var(--border))] flex items-center bg-[rgb(var(--surface-2))]">
+            <Users className="w-5 h-5 text-[rgb(var(--muted))] mr-2" />
+            <h2 className="font-semibold text-[rgb(var(--text))]">Існуючі адміністратори</h2>
           </div>
-          <div className="divide-y divide-gray-100 max-h-[600px] overflow-y-auto">
+          <div className="divide-y divide-[rgb(var(--border))] max-h-[600px] overflow-y-auto">
             {admins.map(admin => (
-              <div key={admin.id} className="p-6 hover:bg-gray-50 transition-colors">
+              <div key={admin.id} className="p-6 hover:bg-[rgb(var(--surface-2))] transition-colors">
                 <div className="flex justify-between items-start">
                   <div>
-                    <h3 className="font-medium text-gray-900">{admin.firstName} {admin.lastName}</h3>
-                    <p className="text-sm text-gray-500">{admin.email}</p>
+                    <h3 className="font-medium text-gray-900 dark:text-white">{admin.lastName} {admin.firstName}</h3>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">{admin.email}</p>
                     <div className="mt-2 flex flex-wrap gap-2">
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
                         {getRoleLabel(admin.role)}
                       </span>
                       {admin.dormitory && (
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                           {admin.dormitory.name}
                         </span>
                       )}
@@ -229,7 +235,7 @@ export const AdminUsers: React.FC = () => {
               </div>
             ))}
             {admins.length === 0 && (
-              <div className="p-8 text-center text-gray-500">
+              <div className="p-8 text-center text-gray-500 dark:text-gray-400">
                 Не знайдено жодного адміністратора
               </div>
             )}

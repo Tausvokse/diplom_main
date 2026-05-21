@@ -70,15 +70,50 @@ export class KMeansAlgorithm {
         clusters[closestClusterIdx].students.push(student);
       }
 
-      // Handle co-living constraints (GroupReferrals) - simplified: move group members to the same cluster
-      // In a real heavy-duty algo, we treat groups as a single entity with an averaged vector.
+      // 2.5 Enforce co-living constraints (GroupReferrals)
       const groups = new Map<string, KmeansStudent[]>();
-      clusters.forEach(c => c.students.forEach(s => {
+      students.forEach(s => {
         if (s.groupId) {
           if (!groups.has(s.groupId)) groups.set(s.groupId, []);
           groups.get(s.groupId)!.push(s);
         }
-      }));
+      });
+
+      // For each group, find the cluster that has the majority of its members, or the first member's cluster, and move all there
+      groups.forEach((members, groupId) => {
+        // Find which clusters contain these members
+        const clusterCounts = new Map<number, number>();
+        members.forEach(m => {
+          const clusterIdx = clusters.findIndex(c => c.students.some(s => s.id === m.id));
+          if (clusterIdx !== -1) {
+            clusterCounts.set(clusterIdx, (clusterCounts.get(clusterIdx) || 0) + 1);
+          }
+        });
+
+        // Find the majority cluster
+        let maxCount = -1;
+        let targetClusterIdx = -1;
+        clusterCounts.forEach((count, idx) => {
+          if (count > maxCount) {
+            maxCount = count;
+            targetClusterIdx = idx;
+          }
+        });
+
+        // Move all members to the target cluster
+        if (targetClusterIdx !== -1) {
+          clusters.forEach((c, idx) => {
+            if (idx !== targetClusterIdx) {
+              c.students = c.students.filter(s => s.groupId !== groupId);
+            }
+          });
+          members.forEach(m => {
+            if (!clusters[targetClusterIdx].students.some(s => s.id === m.id)) {
+              clusters[targetClusterIdx].students.push(m);
+            }
+          });
+        }
+      });
 
       // 3. Recalculate centroids
       const newCentroids = clusters.map(cluster => {

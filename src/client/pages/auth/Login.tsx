@@ -29,6 +29,8 @@ const Login: React.FC = () => {
       
       if (['ADMIN', 'ADMIN_CAMPUS', 'ADMIN_COMMANDANT'].includes(user.role)) {
         navigate('/admin/dormitories');
+      } else if (['MASTER_SLESAR', 'MASTER_SANTEKHNIK', 'MASTER_ELECTRIC'].includes(user.role)) {
+        navigate('/master/repairs');
       } else {
         navigate('/student/dashboard');
       }
@@ -41,48 +43,48 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
-      <div className="p-8 bg-white shadow-lg rounded-xl w-full max-w-md">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Вхід до системи</h1>
-          <p className="text-gray-500">Авторизуйтеся для доступу до кабінету</p>
+    <div className="flex items-center justify-center min-h-screen ui-shell px-6">
+      <div className="ui-card p-6 w-full max-w-md">
+        <div className="text-center mb-6">
+          <h1 className="text-2xl font-semibold text-[rgb(var(--text))] mb-2">Вхід до системи</h1>
+          <p className="text-sm ui-muted">Авторизуйтеся для доступу до кабінету</p>
         </div>
         
-        <form onSubmit={handleLogin} className="space-y-5">
+        <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label className="block text-sm font-medium ui-muted mb-1">Email</label>
             <input 
               type="email" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="student@uni.edu"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+              className="ui-input"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Пароль</label>
+            <label className="block text-sm font-medium ui-muted mb-1">Пароль</label>
             <input 
               type="password" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-colors"
+              className="ui-input"
             />
           </div>
 
           <button 
             type="submit"
             disabled={isLoading}
-            className="w-full px-4 py-3 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors font-medium flex justify-center items-center disabled:opacity-50"
+            className="w-full ui-button ui-button-primary mt-2 disabled:opacity-50"
           >
             {isLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Увійти'}
           </button>
         </form>
 
-        <div className="mt-6 text-center text-sm text-gray-500">
+        <div className="mt-6 text-center text-sm ui-muted">
           Ще не маєте акаунту?{' '}
-          <Link to="/register" className="text-blue-600 hover:text-blue-700 font-medium hover:underline">
+          <Link to="/register" className="text-[rgb(var(--accent))] hover:text-[rgb(var(--accent-strong))] font-medium hover:underline">
             Зареєструватися
           </Link>
         </div>

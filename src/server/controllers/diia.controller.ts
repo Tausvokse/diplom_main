@@ -1,22 +1,23 @@
 import { Request, Response, NextFunction } from 'express';
+import crypto from 'crypto';
 import { getIO } from '../socket';
-import { PrismaClient } from '@prisma/client';
 import { AuthRequest } from '../middlewares/auth.middleware';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
+import { config } from '../config';
+import { AppError } from '../utils/AppError';
 
 export class DiiaController {
   // 1. Клієнт просить згенерувати сесію та QR-дані для Дії
   static async requestVerification(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const sessionId = Math.random().toString(36).substring(2, 15);
+      const sessionId = crypto.randomUUID();
       
       // Дані для формування Deeplink/QR в Дії
       const diiaData = {
         action: 'share',
         sessionId: sessionId,
         requestParams: ['passport', 'student_id'],
-        webhookUrl: `${process.env.VITE_API_URL || 'http://localhost:4000/api'}/diia/webhook`
+        webhookUrl: `${config.apiUrl}/diia/webhook`
       };
 
       res.json({ sessionId, diiaData });
@@ -29,6 +30,16 @@ export class DiiaController {
   static async handleWebhook(req: Request, res: Response, next: NextFunction) {
     try {
       const { sessionId, status, userId } = req.body;
+      const headerSecret = req.headers['x-diia-secret'];
+      const providedSecret = Array.isArray(headerSecret) ? headerSecret[0] : headerSecret;
+
+      if (!providedSecret || providedSecret !== config.diiaWebhookSecret) {
+        throw new AppError('Недійсний підпис вебхуку', 401);
+      }
+
+      if (!sessionId || !status) {
+        throw new AppError('Некоректний вебхук', 400);
+      }
 
       if (status === 'success' && userId) {
         // Оновлюємо статус студента в БД (для реального кейсу шукаємо по ІПН/userId)

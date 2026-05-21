@@ -12,6 +12,7 @@ datasource db {
 
 enum Role {
   STUDENT
+  ADMIN
   ADMIN_COMMANDANT
   ADMIN_CAMPUS
   MASTER_SLESAR
@@ -58,6 +59,8 @@ enum NotificationType {
   PAYMENT_REMINDER
   COMPLAINT_ALERT
   REPAIR_UPDATE
+  APPLICATION_UPDATE
+  ALLOCATION_RESULT
 }
 
 // --- MODELS ---
@@ -89,6 +92,7 @@ model User {
   sentMessages     Message[]       @relation("SentMessages")
   receivedMessages Message[]       @relation("ReceivedMessages")
   assignedRepairs  RepairRequest[] @relation("MasterRepairs")
+  auditLogs        AuditLog[]      @relation("AdminAuditLogs")
 
   @@index([email])
   @@index([role])
@@ -101,6 +105,7 @@ model Message {
   receiverId String
   receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
   content    String
+  isRead     Boolean  @default(false)
   createdAt  DateTime @default(now())
 
   @@index([senderId])
@@ -362,4 +367,18 @@ model Notification {
 
   @@index([studentId])
   @@index([isRead])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  adminId   String
+  admin     User     @relation("AdminAuditLogs", fields: [adminId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  details   Json?
+  createdAt DateTime @default(now())
+
+  @@index([adminId])
+  @@index([action])
 }

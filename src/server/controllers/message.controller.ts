@@ -1,10 +1,10 @@
-import { Request, Response, NextFunction } from 'express';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { Response, NextFunction } from 'express';
+import { Role } from '@prisma/client';
+import { prisma } from '../lib/prisma';
+import { AuthRequest } from '../middlewares/auth.middleware';
 
 export class MessageController {
-  static async getMessages(req: Request, res: Response, next: NextFunction) {
+  static async getMessages(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const userId = req.user!.id;
       
@@ -28,15 +28,10 @@ export class MessageController {
     }
   }
 
-  static async sendMessage(req: Request, res: Response, next: NextFunction) {
+  static async sendMessage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const senderId = req.user!.id;
       const { receiverId, content } = req.body;
-
-      if (!receiverId || !content) {
-        res.status(400).json({ message: 'Отримувач та текст повідомлення обов\'язкові' });
-        return;
-      }
 
       const message = await prisma.message.create({
         data: {
@@ -56,10 +51,10 @@ export class MessageController {
     }
   }
 
-  static async getAdmins(req: Request, res: Response, next: NextFunction) {
+  static async getAdmins(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const admins = await prisma.user.findMany({
-        where: { role: { in: ['ADMIN_CAMPUS', 'ADMIN_COMMANDANT'] } },
+        where: { role: { in: [Role.ADMIN, Role.ADMIN_CAMPUS, Role.ADMIN_COMMANDANT] } },
         select: { id: true, firstName: true, lastName: true, role: true, email: true }
       });
       res.json(admins);
@@ -68,7 +63,7 @@ export class MessageController {
     }
   }
 
-  static async getStudents(req: Request, res: Response, next: NextFunction) {
+  static async getStudents(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       // Admins fetching students they have talked to or all students
       const students = await prisma.user.findMany({
@@ -76,6 +71,90 @@ export class MessageController {
         select: { id: true, firstName: true, lastName: true, email: true }
       });
       res.json(students);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async getConversations(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.id;
+      
+      const messages = await prisma.message.findMany({
+        where: {
+          OR: [
+            { senderId: userId },
+            { receiverId: userId }
+          ]
+        },
+        include: {
+          sender: { select: { id: true, firstName: true, lastName: true, role: true, email: true } },
+          receiver: { select: { id: true, firstName: true, lastName: true, role: true, email: true } }
+        },
+        orderBy: { createdAt: 'asc' }
+      });
+
+      const conversationMap = new Map<string, {
+        contact: any;
+        lastMessage: typeof messages[0];
+        firstMessageAt: Date;
+        unreadCount: number;
+      }>();
+
+      for (const msg of messages) {
+        const otherUser = msg.senderId === userId ? msg.receiver : msg.sender;
+        const existing = conversationMap.get(otherUser.id);
+        
+        const isUnread = msg.receiverId === userId && !msg.isRead;
+        
+        if (!existing) {
+          conversationMap.set(otherUser.id, {
+            contact: otherUser,
+            lastMessage: msg,
+            firstMessageAt: new Date(msg.createdAt),
+            unreadCount: isUnread ? 1 : 0
+          });
+        } else {
+          existing.lastMessage = msg;
+          if (isUnread) existing.unreadCount++;
+        }
+      }
+
+      const conversations = Array.from(conversationMap.values())
+        .sort((a, b) => a.firstMessageAt.getTime() - b.firstMessageAt.getTime());
+
+      res.json(conversations);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async markMessageRead(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      await prisma.message.update({
+        where: { id },
+        data: { isRead: true }
+      });
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async markConversationRead(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const userId = req.user!.id;
+      const { contactId } = req.params;
+      await prisma.message.updateMany({
+        where: {
+          senderId: contactId,
+          receiverId: userId,
+          isRead: false
+        },
+        data: { isRead: true }
+      });
+      res.json({ success: true });
     } catch (error) {
       next(error);
     }

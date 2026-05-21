@@ -4,6 +4,8 @@ export type RoomStatus = 'AVAILABLE' | 'FULL' | 'MAINTENANCE';
 
 export type ApplicationStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
 
+export type ApplicationType = 'CHECK_IN' | 'TRANSFER' | 'CHECK_OUT';
+
 export interface User {
   id: string;
   email: string;
@@ -70,6 +72,7 @@ export interface Room {
 export interface Application {
   id: string;
   studentId: string;
+  type: ApplicationType;
   status: ApplicationStatus;
   scanDocumentsUrl: string[];
   rejectionReason: string | null;
@@ -99,4 +102,14 @@ export interface ApiError {
   message: string;
   statusCode: number;
   errors?: Record<string, string[]>;
+}
+
+export interface Notification {
+  id: string;
+  studentId: string;
+  title: string;
+  message: string;
+  isRead: boolean;
+  type: string;
+  createdAt: string;
 }

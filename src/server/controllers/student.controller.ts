@@ -21,13 +21,8 @@ export class StudentController {
 
   static async submitApplication(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { course, faculty, privilegeCategoryId, clusteringVector } = req.body;
+      const { course, faculty, privilegeCategoryId, clusteringVector, type } = req.body;
       const files = req.files as Express.Multer.File[] || [];
-
-      if (!course || !faculty || !clusteringVector) {
-        res.status(400).json({ message: 'Заповніть всі обов\'язкові поля' });
-        return;
-      }
 
       const app = await StudentService.submitApplication(
         req.user!.id, 
@@ -35,7 +30,8 @@ export class StudentController {
         faculty, 
         privilegeCategoryId, 
         clusteringVector, 
-        files
+        files,
+        type || 'CHECK_IN'
       );
       
       res.json(app);
@@ -48,22 +44,18 @@ export class StudentController {
     try {
       const group = await StudentService.createGroup(req.user!.id);
       res.json(group);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+    } catch (error) {
+      next(error);
     }
   }
 
   static async joinGroup(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { code } = req.body;
-      if (!code) {
-        res.status(400).json({ message: 'Код групи обов\'язковий' });
-        return;
-      }
       const group = await StudentService.joinGroup(req.user!.id, code);
       res.json(group);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+    } catch (error) {
+      next(error);
     }
   }
 
@@ -91,14 +83,9 @@ export class StudentController {
       const file = req.file;
       const evidenceUrl = file ? `/uploads/${file.filename}` : undefined;
 
-      if (!accusedId || !content) {
-        res.status(400).json({ message: 'Вкажіть порушника та зміст скарги' });
-        return;
-      }
-
       const complaint = await StudentService.submitComplaint(req.user!.id, accusedId, content, evidenceUrl);
       res.json(complaint);
-    } catch (error: any) {
+    } catch (error) {
       next(error);
     }
   }
@@ -114,14 +101,10 @@ export class StudentController {
 
   static async submitRepairRequest(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { description } = req.body;
-      if (!description) {
-        res.status(400).json({ message: 'Опишіть проблему' });
-        return;
-      }
-      const request = await StudentService.submitRepairRequest(req.user!.id, description);
+      const { description, masterId } = req.body;
+      const request = await StudentService.submitRepairRequest(req.user!.id, description, masterId || undefined);
       res.json(request);
-    } catch (error: any) {
+    } catch (error) {
       next(error);
     }
   }
@@ -130,6 +113,17 @@ export class StudentController {
     try {
       const requests = await StudentService.getRepairRequests(req.user!.id);
       res.json(requests);
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
+  static async updateRepairStatus(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const request = await StudentService.updateRepairStatus(req.user!.id, id, status);
+      res.json(request);
     } catch (error: any) {
       next(error);
     }
@@ -147,14 +141,10 @@ export class StudentController {
   static async donateToJar(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { jarId, amount, comment } = req.body;
-      if (!jarId || !amount) {
-        res.status(400).json({ message: 'Оберіть банку та вкажіть суму' });
-        return;
-      }
       const result = await StudentService.donateToJar(req.user!.id, jarId, Number(amount), comment);
       res.json(result);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+    } catch (error) {
+      next(error);
     }
   }
 
@@ -191,6 +181,15 @@ export class StudentController {
       const { id } = req.params;
       const notification = await StudentService.markNotificationRead(req.user!.id, id);
       res.json(notification);
+    } catch (error: any) {
+      next(error);
+    }
+  }
+
+  static async markAllNotificationsRead(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      await StudentService.markAllNotificationsRead(req.user!.id);
+      res.json({ success: true });
     } catch (error: any) {
       next(error);
     }

@@ -1,11 +1,16 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/client/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['Manrope', 'system-ui', 'sans-serif'],
+        display: ['Fraunces', 'Manrope', 'sans-serif'],
+      },
       animation: {
         fadeIn: 'fadeIn 0.5s ease-out forwards',
         slideUp: 'slideUp 0.4s ease-out forwards',

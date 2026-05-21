@@ -6,9 +6,10 @@ import toast from 'react-hot-toast';
 interface DiiaSocketListenerProps {
   onSuccess: () => void;
   sessionId: string;
+  diiaData: Record<string, unknown>;
 }
 
-export const DiiaSocketListener: React.FC<DiiaSocketListenerProps> = ({ onSuccess, sessionId }) => {
+export const DiiaSocketListener: React.FC<DiiaSocketListenerProps> = ({ onSuccess, sessionId, diiaData }) => {
   useEffect(() => {
     // Ensure socket connection is active
     socketService.connect();
@@ -44,13 +45,6 @@ export const DiiaSocketListener: React.FC<DiiaSocketListenerProps> = ({ onSucces
     };
   }, [sessionId, onSuccess]);
 
-  // Generate a mock Deeplink or QR data for Diia App
-  const diiaData = JSON.stringify({
-    action: 'share',
-    sessionId: sessionId,
-    requestParams: ['passport', 'student_id'],
-  });
-
   return (
     <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl">
       <div className="bg-blue-50 p-4 rounded-full mb-6">
@@ -73,7 +67,7 @@ export const DiiaSocketListener: React.FC<DiiaSocketListenerProps> = ({ onSucces
 
       <div className="p-4 bg-white border-2 border-gray-100 rounded-2xl shadow-sm mb-8">
         <QRCode 
-          value={diiaData} 
+          value={JSON.stringify(diiaData)} 
           size={200}
           level="H"
           className="rounded-lg"

@@ -1,22 +1,18 @@
-import { PrismaClient } from '@prisma/client';
 import { AhpAlgorithm, AhpStudent, DEFAULT_CRITERIA_MATRIX } from '../utils/algorithms/ahp.util';
 import { KMeansAlgorithm, KmeansStudent, Cluster } from '../utils/algorithms/kmeans.util';
-
-const prisma = new PrismaClient();
+import type { Dormitory, Room } from '@prisma/client';
+import { prisma } from '../lib/prisma';
+import { AppError } from '../utils/AppError';
+import { getOccupancyStatus } from '../utils/occupancy';
 
 export class AllocationService {
-  /**
-   * Головний метод, який запускає весь пайплайн:
-   * 1. Відбір затверджених заяв.
-   * 2. AHP для формування рейтингу (priorityScore).
-   * 3. Відбір Топ-N студентів відповідно до кількості вільних місць.
-   * 4. K-means кластеризація Топ-N студентів за психометричним вектором.
-   * 5. Збереження результатів у БД (RoomAllocation).
-   */
   static async runAllocationPipeline() {
-    // 1. Отримуємо всі затверджені заяви та профілі
     const applications = await prisma.application.findMany({
-      where: { status: 'APPROVED' },
+      where: {
+        status: 'APPROVED',
+        type: { in: ['CHECK_IN', 'TRANSFER'] },
+        student: { roomId: null }
+      },
       include: {
         student: {
           include: { privilege: true }
@@ -25,21 +21,18 @@ export class AllocationService {
     });
 
     if (applications.length === 0) {
-      throw new Error('Немає затверджених заяв для розподілу');
+      throw new AppError('Немає схвалених заяв для розподілу', 400);
     }
 
-    // 2. Підготовка даних для AHP
     const ahpInput: AhpStudent[] = applications.map(app => ({
       id: app.student.id,
       course: app.student.course,
       privilegeMultiplier: app.student.privilege?.multiplier || 1.0,
-      baseScore: 100 // Спрощено, в реалі можна брати бал ЗНО/НМТ чи рейтинг
+      baseScore: 100
     }));
 
-    // Розрахунок AHP
     const ahpResults = AhpAlgorithm.calculatePriorityScores(ahpInput, DEFAULT_CRITERIA_MATRIX);
 
-    // Зберігаємо розрахований priorityScore в БД
     for (const res of ahpResults) {
       await prisma.studentProfile.update({
         where: { id: res.id },
@@ -47,19 +40,18 @@ export class AllocationService {
       });
     }
 
-    // 3. Відбір Топ-N за кількістю вільних місць
     const availableRooms = await prisma.room.findMany({
-      where: { status: 'AVAILABLE', currentOccupancy: { lt: prisma.room.fields.capacity } }
+      where: { status: 'AVAILABLE', currentOccupancy: { lt: prisma.room.fields.capacity } },
+      include: { floor: { select: { dormitoryId: true } } },
+      orderBy: [{ floor: { floorNumber: 'asc' } }, { roomNumber: 'asc' }]
     });
 
-    let totalAvailableBeds = availableRooms.reduce((sum, r) => sum + (r.capacity - r.currentOccupancy), 0);
-    
-    // Сортуємо студентів за спаданням AHP Score
-    const sortedStudentIds = ahpResults.map(r => r.id);
+    const totalAvailableBeds = availableRooms.reduce((sum, room) => sum + (room.capacity - room.currentOccupancy), 0);
+    const sortedStudentIds = ahpResults.map(result => result.id);
     const topStudentIds = sortedStudentIds.slice(0, totalAvailableBeds);
 
     if (topStudentIds.length === 0) {
-      throw new Error('Немає вільних місць у гуртожитках');
+      throw new AppError('Немає вільних місць у гуртожитках', 400);
     }
 
     const studentsForKmeans = await prisma.studentProfile.findMany({
@@ -67,59 +59,52 @@ export class AllocationService {
       include: { user: true }
     });
 
-    // 4. Підготовка даних для K-means
-    const kmeansInput: KmeansStudent[] = studentsForKmeans.map(s => {
+    const kmeansInput: KmeansStudent[] = studentsForKmeans.map(student => {
       let vector = { chronotype: 5, sociability: 5, noiseTolerance: 5, cleanliness: 5 };
-      if (s.clusteringVector) {
+      if (student.clusteringVector) {
         try {
-          vector = JSON.parse(s.clusteringVector);
-        } catch (e) { console.error('Parse error for vector'); }
+          vector = JSON.parse(student.clusteringVector);
+        } catch {
+          console.error(`Parse error for clustering vector: ${student.id}`);
+        }
       }
       return {
-        id: s.id,
+        id: student.id,
         vector,
-        groupId: s.groupId
+        groupId: student.groupId
       };
     });
 
-    // Кількість кластерів (K) дорівнює кількості доступних кімнат
-    const K = availableRooms.length;
-    const clusters: Cluster[] = KMeansAlgorithm.clusterize(kmeansInput, K);
-
-    // 5. Розподіл по кімнатах та запис у БД
+    const clusters: Cluster[] = KMeansAlgorithm.clusterize(kmeansInput, availableRooms.length);
     const results: any[] = [];
-    
-    // Транзакція для безпечного збереження наказу на поселення
+
     await prisma.$transaction(async (tx) => {
       for (let i = 0; i < clusters.length; i++) {
         const cluster = clusters[i];
         if (cluster.students.length === 0) continue;
 
-        const targetRoom = availableRooms[i]; // Спрощено мапимо кластер на кімнату
+        const targetRoom = availableRooms[i];
         if (!targetRoom) break;
 
-        // Лімітуємо кількість студентів з кластера місткістю кімнати
         const availableSpace = targetRoom.capacity - targetRoom.currentOccupancy;
         const studentsToAllocate = cluster.students.slice(0, availableSpace);
+        if (studentsToAllocate.length === 0) continue;
 
-        for (const st of studentsToAllocate) {
-          // Створюємо алокацію
+        for (const student of studentsToAllocate) {
           await tx.roomAllocation.create({
             data: {
               roomId: targetRoom.id,
-              studentId: st.id,
+              studentId: student.id,
               status: 'ACTIVE'
             }
           });
 
-          // Оновлюємо гуртожиток і кімнату в профілі студента
           await tx.studentProfile.update({
-            where: { id: st.id },
-            data: { roomId: targetRoom.id, dormitoryId: targetRoom.dormitoryId }
+            where: { id: student.id },
+            data: { roomId: targetRoom.id, dormitoryId: targetRoom.floor.dormitoryId }
           });
         }
 
-        // Оновлюємо заповненість кімнати
         const newOccupancy = targetRoom.currentOccupancy + studentsToAllocate.length;
         await tx.room.update({
           where: { id: targetRoom.id },
@@ -129,36 +114,268 @@ export class AllocationService {
           }
         });
 
-        // Збираємо результат для клієнта
-        const fullStudents = studentsForKmeans.filter(s => studentsToAllocate.some(sa => sa.id === s.id));
+        const dormitory = await tx.dormitory.findUnique({
+          where: { id: targetRoom.floor.dormitoryId },
+          select: { currentOccupancy: true, totalCapacity: true }
+        });
+
+        if (dormitory) {
+          const updatedDormOccupancy = dormitory.currentOccupancy + studentsToAllocate.length;
+          await tx.dormitory.update({
+            where: { id: targetRoom.floor.dormitoryId },
+            data: {
+              currentOccupancy: updatedDormOccupancy,
+              occupancyStatus: getOccupancyStatus(updatedDormOccupancy, dormitory.totalCapacity)
+            }
+          });
+        }
+
+        const fullStudents = studentsForKmeans.filter(student =>
+          studentsToAllocate.some(allocatedStudent => allocatedStudent.id === student.id)
+        );
+
         results.push({
           roomId: targetRoom.id,
           roomNumber: targetRoom.roomNumber,
           capacity: targetRoom.capacity,
-          compatibilityScore: 80 + Math.floor(Math.random() * 20), // Спрощена метрика сумісності
+          compatibilityScore: 80 + Math.floor(Math.random() * 20),
           students: fullStudents
         });
       }
     });
 
+    const { NotificationService } = await import('./notification.service');
+    for (const result of results) {
+      const room = await prisma.room.findUnique({
+        where: { id: result.roomId },
+        include: { floor: { include: { dormitory: true } } }
+      });
+      if (!room) continue;
+
+      for (const student of result.students) {
+        await NotificationService.createAllocationNotification(
+          student.id,
+          room.floor.dormitory.name,
+          room.roomNumber
+        );
+      }
+    }
+
     return results;
   }
 
-  // Отримання поточного пулу для дашборду без запуску алокації
   static async getPool() {
     return prisma.studentProfile.findMany({
-      where: { applications: { some: { status: 'APPROVED' } } },
+      where: {
+        applications: {
+          some: {
+            status: 'APPROVED',
+            type: { in: ['CHECK_IN', 'TRANSFER'] }
+          }
+        },
+        roomId: null
+      },
       include: { user: true, privilege: true },
-      orderBy: { priorityScore: 'desc' }
+      orderBy: [{ priorityScore: 'desc' }, { fullName: 'asc' }]
     });
+  }
+
+  static async previewAllocationPipeline() {
+    const applications = await prisma.application.findMany({
+      where: {
+        status: 'APPROVED',
+        type: { in: ['CHECK_IN', 'TRANSFER'] },
+        student: { roomId: null }
+      },
+      include: {
+        student: {
+          include: { privilege: true }
+        }
+      }
+    });
+
+    if (applications.length === 0) {
+      throw new AppError('Немає схвалених заяв для розподілу', 400);
+    }
+
+    const ahpInput: AhpStudent[] = applications.map(app => ({
+      id: app.student.id,
+      course: app.student.course,
+      privilegeMultiplier: app.student.privilege?.multiplier || 1.0,
+      baseScore: 100
+    }));
+    const ahpResults = AhpAlgorithm.calculatePriorityScores(ahpInput, DEFAULT_CRITERIA_MATRIX);
+
+    for (const result of ahpResults) {
+      await prisma.studentProfile.update({
+        where: { id: result.id },
+        data: { priorityScore: result.priorityScore }
+      });
+    }
+
+    const availableRooms = await prisma.room.findMany({
+      where: { status: 'AVAILABLE', currentOccupancy: { lt: prisma.room.fields.capacity } },
+      include: { floor: { select: { dormitoryId: true } } },
+      orderBy: [{ floor: { floorNumber: 'asc' } }, { roomNumber: 'asc' }]
+    });
+    const totalAvailableBeds = availableRooms.reduce((sum, room) => sum + (room.capacity - room.currentOccupancy), 0);
+    const topStudentIds = ahpResults.map(result => result.id).slice(0, totalAvailableBeds);
+
+    if (topStudentIds.length === 0) {
+      throw new AppError('Немає вільних місць у гуртожитках', 400);
+    }
+
+    const studentsForKmeans = await prisma.studentProfile.findMany({
+      where: { id: { in: topStudentIds } },
+      include: { user: true }
+    });
+
+    const kmeansInput: KmeansStudent[] = studentsForKmeans.map(student => {
+      let vector = { chronotype: 5, sociability: 5, noiseTolerance: 5, cleanliness: 5 };
+      if (student.clusteringVector) {
+        try {
+          vector = JSON.parse(student.clusteringVector);
+        } catch {
+          console.error(`Parse error for clustering vector: ${student.id}`);
+        }
+      }
+      return { id: student.id, vector, groupId: student.groupId };
+    });
+
+    const clusters: Cluster[] = KMeansAlgorithm.clusterize(kmeansInput, availableRooms.length);
+    const results: any[] = [];
+
+    for (let i = 0; i < clusters.length; i++) {
+      const cluster = clusters[i];
+      const targetRoom = availableRooms[i];
+      if (!targetRoom || cluster.students.length === 0) continue;
+
+      const availableSpace = targetRoom.capacity - targetRoom.currentOccupancy;
+      const studentsToAllocate = cluster.students.slice(0, availableSpace);
+      if (studentsToAllocate.length === 0) continue;
+
+      results.push({
+        roomId: targetRoom.id,
+        roomNumber: targetRoom.roomNumber,
+        capacity: targetRoom.capacity,
+        currentOccupancy: targetRoom.currentOccupancy,
+        compatibilityScore: 80 + Math.floor(Math.random() * 20),
+        students: studentsForKmeans.filter(student => studentsToAllocate.some(allocated => allocated.id === student.id))
+      });
+    }
+
+    return results;
+  }
+
+  static async confirmAllocationPlan(plan: Array<{ roomId: string; students: Array<{ id: string }> }>) {
+    if (!plan.length) {
+      throw new AppError('План поселення порожній', 400);
+    }
+
+    const allocatedStudents: Array<{ studentId: string; dormitoryName: string; roomNumber: string }> = [];
+
+    await prisma.$transaction(async (tx) => {
+      for (const roomPlan of plan) {
+        const room = await tx.room.findUnique({
+          where: { id: roomPlan.roomId },
+          include: { floor: { include: { dormitory: true } } }
+        });
+        if (!room) {
+          throw new AppError('Кімнату з плану не знайдено', 404);
+        }
+        if (room.status === 'MAINTENANCE') {
+          throw new AppError(`Кімната ${room.roomNumber} перебуває на ремонті`, 400);
+        }
+
+        const activeOccupancy = await tx.roomAllocation.count({
+          where: { roomId: room.id, status: 'ACTIVE' }
+        });
+        const freeBeds = room.capacity - activeOccupancy;
+        if (roomPlan.students.length > freeBeds) {
+          throw new AppError(`У кімнаті ${room.roomNumber} недостатньо вільних місць`, 400);
+        }
+
+        for (const studentRef of roomPlan.students) {
+          const profile = await tx.studentProfile.findUnique({ where: { id: studentRef.id } });
+          if (!profile) {
+            throw new AppError('Студента з плану не знайдено', 404);
+          }
+          if (profile.roomId) {
+            throw new AppError(`Студент ${profile.fullName} вже поселений`, 400);
+          }
+
+          const approvedApplication = await tx.application.findFirst({
+            where: {
+              studentId: profile.id,
+              status: 'APPROVED',
+              type: { in: ['CHECK_IN', 'TRANSFER'] }
+            }
+          });
+          if (!approvedApplication) {
+            throw new AppError(`У студента ${profile.fullName} немає схваленої заяви`, 400);
+          }
+
+          await tx.roomAllocation.create({
+            data: {
+              roomId: room.id,
+              studentId: profile.id,
+              status: 'ACTIVE'
+            }
+          });
+          await tx.studentProfile.update({
+            where: { id: profile.id },
+            data: { roomId: room.id, dormitoryId: room.floor.dormitoryId }
+          });
+
+          allocatedStudents.push({
+            studentId: profile.id,
+            dormitoryName: room.floor.dormitory.name,
+            roomNumber: room.roomNumber
+          });
+        }
+
+        const newOccupancy = activeOccupancy + roomPlan.students.length;
+        await tx.room.update({
+          where: { id: room.id },
+          data: {
+            currentOccupancy: newOccupancy,
+            status: newOccupancy >= room.capacity ? 'FULL' : 'AVAILABLE'
+          }
+        });
+
+        const dormOccupancy = await tx.studentProfile.count({
+          where: { dormitoryId: room.floor.dormitoryId, roomId: { not: null } }
+        });
+        await tx.dormitory.update({
+          where: { id: room.floor.dormitoryId },
+          data: {
+            currentOccupancy: dormOccupancy,
+            occupancyStatus: getOccupancyStatus(dormOccupancy, room.floor.dormitory.totalCapacity)
+          }
+        });
+      }
+    });
+
+    const { NotificationService } = await import('./notification.service');
+    await Promise.all(allocatedStudents.map(student =>
+      NotificationService.createAllocationNotification(student.studentId, student.dormitoryName, student.roomNumber)
+    ));
+
+    return { success: true, allocatedCount: allocatedStudents.length };
   }
 
   static async evictStudent(studentId: string, adminUserId?: string) {
     const admin = adminUserId ? await prisma.user.findUnique({ where: { id: adminUserId } }) : null;
     const profile = await prisma.studentProfile.findUnique({ where: { id: studentId } });
 
-    if (admin?.role === 'ADMIN_COMMANDANT' && admin.dormitoryId !== profile?.dormitoryId) {
-      throw new Error('Ви не маєте прав виселяти студентів з іншого гуртожитку');
+    if (!profile) {
+      throw new AppError('Профіль студента не знайдено', 404);
+    }
+    if (adminUserId && !admin) {
+      throw new AppError('Адміністратора не знайдено', 404);
+    }
+    if (admin?.role === 'ADMIN_COMMANDANT' && admin.dormitoryId !== profile.dormitoryId) {
+      throw new AppError('Ви не маєте прав виселяти студентів з іншого гуртожитку', 403);
     }
 
     const allocation = await prisma.roomAllocation.findFirst({
@@ -166,34 +383,167 @@ export class AllocationService {
     });
 
     if (!allocation) {
-      throw new Error('Студент не проживає в гуртожитку');
+      throw new AppError('Студент не проживає в гуртожитку', 400);
     }
 
+    const dormitoryId = profile.dormitoryId;
+    let updatedRoom: Room | null = null;
+    let updatedDormitory: Dormitory | null = null;
+
     await prisma.$transaction(async (tx) => {
-      // Deactivate allocation
       await tx.roomAllocation.update({
         where: { id: allocation.id },
         data: { status: 'EVICTED' }
       });
 
-      // Update room occupancy
       const room = await tx.room.findUnique({ where: { id: allocation.roomId } });
       if (room) {
         const newOccupancy = Math.max(0, room.currentOccupancy - 1);
-        await tx.room.update({
+        updatedRoom = await tx.room.update({
           where: { id: room.id },
-          data: { 
+          data: {
             currentOccupancy: newOccupancy,
             status: newOccupancy < room.capacity ? 'AVAILABLE' : 'FULL'
           }
         });
       }
 
-      // Remove room from profile
       await tx.studentProfile.update({
         where: { id: studentId },
         data: { roomId: null, dormitoryId: null }
       });
+
+      if (dormitoryId) {
+        const dormitory = await tx.dormitory.findUnique({
+          where: { id: dormitoryId },
+          select: { currentOccupancy: true, totalCapacity: true }
+        });
+
+        if (dormitory) {
+          const updatedDormOccupancy = Math.max(0, dormitory.currentOccupancy - 1);
+          updatedDormitory = await tx.dormitory.update({
+            where: { id: dormitoryId },
+            data: {
+              currentOccupancy: updatedDormOccupancy,
+              occupancyStatus: getOccupancyStatus(updatedDormOccupancy, dormitory.totalCapacity)
+            }
+          });
+        }
+      }
     });
+
+    const { NotificationService } = await import('./notification.service');
+    await NotificationService.createEvictionNotification(profile.id);
+
+    return { success: true, room: updatedRoom, dormitory: updatedDormitory };
+  }
+
+  static async allocateStudentToRoom(studentId: string, roomId: string, adminUserId?: string) {
+    const admin = adminUserId ? await prisma.user.findUnique({ where: { id: adminUserId } }) : null;
+    if (adminUserId && !admin) {
+      throw new AppError('Адміністратора не знайдено', 404);
+    }
+
+    const profile = await prisma.studentProfile.findUnique({
+      where: { id: studentId },
+      include: { user: true }
+    });
+    if (!profile) {
+      throw new AppError('Профіль студента не знайдено', 404);
+    }
+    if (profile.roomId) {
+      throw new AppError('Студент вже поселений', 400);
+    }
+
+    const approvedApplication = await prisma.application.findFirst({
+      where: {
+        studentId,
+        status: 'APPROVED',
+        type: { in: ['CHECK_IN', 'TRANSFER'] }
+      },
+      orderBy: { reviewedAt: 'desc' }
+    });
+    if (!approvedApplication) {
+      throw new AppError('Немає схваленої заяви на поселення або переселення', 400);
+    }
+
+    const room = await prisma.room.findUnique({
+      where: { id: roomId },
+      include: { floor: { select: { dormitoryId: true } } }
+    });
+    if (!room) {
+      throw new AppError('Кімнату не знайдено', 404);
+    }
+    if (room.status === 'MAINTENANCE') {
+      throw new AppError('Кімната на ремонті', 400);
+    }
+    if (room.currentOccupancy >= room.capacity) {
+      throw new AppError('Кімната заповнена', 400);
+    }
+
+    if (admin?.role === 'ADMIN_COMMANDANT' && admin.dormitoryId !== room.floor.dormitoryId) {
+      throw new AppError('Ви не маєте прав заселяти в інший гуртожиток', 403);
+    }
+
+    const dormitory = await prisma.dormitory.findUnique({
+      where: { id: room.floor.dormitoryId },
+      select: { id: true, name: true, currentOccupancy: true, totalCapacity: true }
+    });
+    if (!dormitory) {
+      throw new AppError('Гуртожиток не знайдено', 404);
+    }
+
+    let updatedRoom: Room | null = null;
+    let updatedDormitory: Dormitory | null = null;
+
+    await prisma.$transaction(async (tx) => {
+      const activeAllocation = await tx.roomAllocation.findFirst({
+        where: { studentId: profile.id, status: 'ACTIVE' }
+      });
+      if (activeAllocation) {
+        throw new AppError('Студент вже має активне поселення', 400);
+      }
+
+      await tx.roomAllocation.create({
+        data: {
+          roomId: room.id,
+          studentId: profile.id,
+          status: 'ACTIVE'
+        }
+      });
+
+      await tx.studentProfile.update({
+        where: { id: profile.id },
+        data: { roomId: room.id, dormitoryId: dormitory.id }
+      });
+
+      const newOccupancy = room.currentOccupancy + 1;
+      updatedRoom = await tx.room.update({
+        where: { id: room.id },
+        data: {
+          currentOccupancy: newOccupancy,
+          status: newOccupancy >= room.capacity ? 'FULL' : 'AVAILABLE'
+        }
+      });
+
+      const updatedDormOccupancy = dormitory.currentOccupancy + 1;
+      updatedDormitory = await tx.dormitory.update({
+        where: { id: dormitory.id },
+        data: {
+          currentOccupancy: updatedDormOccupancy,
+          occupancyStatus: getOccupancyStatus(updatedDormOccupancy, dormitory.totalCapacity)
+        }
+      });
+    });
+
+    const { NotificationService } = await import('./notification.service');
+    await NotificationService.createAllocationNotification(profile.id, dormitory.name, room.roomNumber);
+
+    return {
+      success: true,
+      student: profile,
+      room: updatedRoom,
+      dormitory: updatedDormitory
+    };
   }
 }

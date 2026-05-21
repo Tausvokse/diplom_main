@@ -1,5 +1,6 @@
 import { Server as SocketIOServer } from 'socket.io';
 import { Server } from 'http';
+import jwt from 'jsonwebtoken';
 import { config } from './config';
 
 let io: SocketIOServer;
@@ -7,8 +8,22 @@ let io: SocketIOServer;
 export const initSocket = (server: Server) => {
   io = new SocketIOServer(server, {
     cors: {
-      origin: config.frontendUrl,
+      origin: config.corsOrigins,
       methods: ['GET', 'POST']
+    }
+  });
+
+  io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+    if (!token) {
+      return next(new Error('Unauthorized'));
+    }
+    try {
+      const decoded = jwt.verify(token, config.jwtSecret) as { id: string; email: string; role: string };
+      socket.data.user = decoded;
+      return next();
+    } catch {
+      return next(new Error('Unauthorized'));
     }
   });
 

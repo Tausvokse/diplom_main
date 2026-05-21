@@ -43,6 +43,14 @@ api.interceptors.request.use(
   }
 );
 
+type ApiRequestConfig = InternalAxiosRequestConfig & {
+  _retry?: boolean;
+  _retry429?: boolean;
+  _silent?: boolean;
+};
+
+let lastRateLimitToastAt = 0;
+
 api.interceptors.response.use(
   (response: AxiosResponse) => {
     // Optional: show success toasts for specific methods
@@ -53,9 +61,12 @@ api.interceptors.response.use(
     return response;
   },
   async (error: AxiosError<ApiError>) => {
-    const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
+    const originalRequest = error.config as ApiRequestConfig;
+    const isSilent = Boolean(originalRequest?._silent);
 
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    const isAuthEndpoint = originalRequest.url?.includes('/auth/login') || originalRequest.url?.includes('/auth/register');
+
+    if (error.response?.status === 401 && !originalRequest._retry && !isAuthEndpoint) {
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -106,8 +117,28 @@ api.interceptors.response.use(
       }
     }
 
-    const errorMessage = error.response?.data?.message || 'Сталася невідома помилка сервера';
-    toast.error(errorMessage);
+    if (error.response?.status === 429 && originalRequest && !originalRequest._retry429) {
+      originalRequest._retry429 = true;
+      const retryAfterHeader = error.response.headers['retry-after'] || error.response.headers['ratelimit-reset'];
+      const retryAfterSeconds = Number(retryAfterHeader);
+      const delayMs = Number.isFinite(retryAfterSeconds) ? Math.min(5000, Math.max(1000, retryAfterSeconds * 1000)) : 1500;
+
+      await new Promise((resolve) => setTimeout(resolve, delayMs));
+      return api(originalRequest);
+    }
+
+    if (!isSilent) {
+      const errorMessage = error.response?.data?.message || 'Сталася невідома помилка сервера';
+      if (error.response?.status === 429) {
+        const now = Date.now();
+        if (now - lastRateLimitToastAt > 3000) {
+          lastRateLimitToastAt = now;
+          toast.error('Забагато запитів. Спробуйте ще раз трохи пізніше.');
+        }
+      } else {
+        toast.error(errorMessage);
+      }
+    }
     return Promise.reject(error);
   }
 );

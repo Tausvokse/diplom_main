@@ -1,28 +1,31 @@
 import { Request, Response, NextFunction } from 'express';
-import { AnyZodObject, ZodError } from 'zod';
+import { ZodError, ZodTypeAny } from 'zod';
 
-export const validate = (schema: AnyZodObject) => {
+export const validate = (schema: ZodTypeAny) => {
   return async (req: Request, res: Response, next: NextFunction) => {
     try {
-      await schema.parseAsync({
+      const parsed = await schema.parseAsync({
         body: req.body,
         query: req.query,
         params: req.params,
-      });
+      }) as { body?: unknown; query?: unknown; params?: unknown };
+      if (parsed?.body) req.body = parsed.body as typeof req.body;
+      if (parsed?.query) req.query = parsed.query as typeof req.query;
+      if (parsed?.params) req.params = parsed.params as typeof req.params;
       return next();
     } catch (error) {
       if (error instanceof ZodError) {
         return res.status(400).json({
           message: 'Помилка валідації',
-          errors: error.errors.reduce((acc, curr) => {
-            const key = curr.path.join('.');
+          errors: error.issues.reduce<Record<string, string[]>>((acc, issue) => {
+            const key = issue.path.join('.');
             if (!acc[key]) acc[key] = [];
-            acc[key].push(curr.message);
+            acc[key].push(issue.message);
             return acc;
-          }, {} as Record<string, string[]>)
+          }, {})
         });
       }
-      return res.status(400).json({ message: 'Помилка валідації' });
+      return next(error);
     }
   };
 };

@@ -7,8 +7,27 @@ export class AllocationController {
     try {
       const results = await AllocationService.runAllocationPipeline();
       res.json(results);
-    } catch (error: any) {
-      res.status(400).json({ message: error.message });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async previewAlgorithm(req: Request, res: Response, next: NextFunction) {
+    try {
+      const results = await AllocationService.previewAllocationPipeline();
+      res.json(results);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async confirmAllocationPlan(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { plan } = req.body;
+      const result = await AllocationService.confirmAllocationPlan(plan);
+      res.json(result);
+    } catch (error) {
+      next(error);
     }
   }
 
@@ -29,13 +48,20 @@ export class AllocationController {
   static async evictStudent(req: AuthRequest, res: Response, next: NextFunction) {
     try {
       const { studentId } = req.body;
-      if (!studentId) {
-        res.status(400).json({ message: 'studentId is required' });
-        return;
-      }
       await AllocationService.evictStudent(studentId, req.user?.id);
       res.json({ success: true });
-    } catch (error: any) {
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async allocateStudentToRoom(req: AuthRequest, res: Response, next: NextFunction) {
+    try {
+      const { roomId } = req.params;
+      const { studentId } = req.body;
+      const result = await AllocationService.allocateStudentToRoom(studentId, roomId, req.user?.id);
+      res.json(result);
+    } catch (error) {
       next(error);
     }
   }
