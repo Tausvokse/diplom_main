@@ -545,7 +545,6 @@ export const ApplicationForm: React.FC = () => {
               Продовжити
             </button>
           ) : (
-            import.meta.env.MODE === 'development' && (
               <button
                 onClick={submitApplication}
                 disabled={isSubmitting}
@@ -557,10 +556,9 @@ export const ApplicationForm: React.FC = () => {
                     Обробка...
                   </>
                 ) : (
-                  'Подати заяву (Без Дії)' // Fallback for testing
+                  'Подати заяву (Обхід Дії)'
                 )}
               </button>
-            )
           )}
         </div>
       </div>

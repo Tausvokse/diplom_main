@@ -15,7 +15,10 @@ const Register: React.FC = () => {
     phone: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
+    studentIdNumber: '',
+    course: '1',
+    faculty: ''
   });
   const [isLoading, setIsLoading] = useState(false);
 
@@ -26,8 +29,8 @@ const Register: React.FC = () => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      toast.error('Заповніть всі поля');
+    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password || !formData.phone || !formData.studentIdNumber || !formData.faculty) {
+      toast.error('Заповніть всі обов\'язкові поля');
       return;
     }
 
@@ -42,7 +45,11 @@ const Register: React.FC = () => {
         email: formData.email,
         password: formData.password,
         firstName: formData.firstName,
-        lastName: formData.lastName
+        lastName: formData.lastName,
+        phone: formData.phone,
+        studentIdNumber: formData.studentIdNumber,
+        course: parseInt(formData.course, 10),
+        faculty: formData.faculty
       });
       
       const { user, accessToken, refreshToken } = response.data;
@@ -100,6 +107,44 @@ const Register: React.FC = () => {
               placeholder="+380 (__) ___-__-__"
               className="ui-input"
             />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium ui-muted mb-1">Номер студентського/залікової</label>
+              <input 
+                type="text" 
+                name="studentIdNumber"
+                value={formData.studentIdNumber}
+                onChange={handleChange}
+                placeholder="КВ12345678"
+                className="ui-input"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium ui-muted mb-1">Курс</label>
+                <select 
+                  name="course"
+                  value={formData.course}
+                  onChange={(e: any) => handleChange(e)}
+                  className="ui-input"
+                >
+                  {[1,2,3,4,5,6].map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium ui-muted mb-1">Факультет</label>
+                <input 
+                  type="text" 
+                  name="faculty"
+                  value={formData.faculty}
+                  onChange={handleChange}
+                  placeholder="ФІОТ"
+                  className="ui-input"
+                />
+              </div>
+            </div>
           </div>
 
           <div>

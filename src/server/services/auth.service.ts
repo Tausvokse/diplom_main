@@ -6,7 +6,7 @@ import { prisma } from '../lib/prisma';
 import { AppError } from '../utils/AppError';
 
 export class AuthService {
-  static async register(email: string, password: string, firstName: string, lastName: string) {
+  static async register(email: string, password: string, firstName: string, lastName: string, phone: string, studentIdNumber: string, course: number, faculty: string) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new AppError('Користувач з таким email вже існує', 409);
@@ -14,14 +14,32 @@ export class AuthService {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        role: 'STUDENT',
-        firstName,
-        lastName
-      }
+    // Create User and StudentProfile in a transaction
+    const user = await prisma.$transaction(async (tx) => {
+      const newUser = await tx.user.create({
+        data: {
+          email,
+          password: hashedPassword,
+          role: 'STUDENT',
+          firstName,
+          lastName
+        }
+      });
+
+      await tx.studentProfile.create({
+        data: {
+          userId: newUser.id,
+          fullName: `${lastName} ${firstName}`,
+          email,
+          phone,
+          studentIdNumber,
+          course,
+          faculty,
+          isVerifiedByDiia: false
+        }
+      });
+
+      return newUser;
     });
 
     const { password: _password, ...safeUser } = user;
