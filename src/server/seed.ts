@@ -56,6 +56,7 @@ async function clearDatabase() {
   await prisma.jar.deleteMany();
   await prisma.payment.deleteMany();
   await prisma.notification.deleteMany();
+  await prisma.auditLog.deleteMany();
   await prisma.complaint.deleteMany();
   await prisma.repairRequest.deleteMany();
   await prisma.message.deleteMany();
