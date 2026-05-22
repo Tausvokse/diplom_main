@@ -5,9 +5,17 @@ const prisma = new PrismaClient();
 async function main() {
   console.log('--- Starting Production-Grade Seeding ---');
 
-  // 1. Clean up
+  // 1. Clean up (Order matters due to Foreign Keys)
+  console.log('Cleaning up database...');
+  await prisma.notification.deleteMany();
+  await prisma.payment.deleteMany();
+  await prisma.complaint.deleteMany();
+  await prisma.repairRequest.deleteMany();
+  await prisma.jarTransaction.deleteMany();
+  await prisma.jar.deleteMany();
   await prisma.roomAllocation.deleteMany();
   await prisma.application.deleteMany();
+  await prisma.auditLog.deleteMany();
   await prisma.studentProfile.deleteMany();
   await prisma.user.deleteMany();
   await prisma.room.deleteMany();
@@ -15,6 +23,7 @@ async function main() {
   await prisma.dormitory.deleteMany();
   await prisma.university.deleteMany();
   await prisma.privilegeCategory.deleteMany();
+  await prisma.groupReferral.deleteMany();
 
   // 2. Create University & Dormitories
   const uni = await prisma.university.create({
