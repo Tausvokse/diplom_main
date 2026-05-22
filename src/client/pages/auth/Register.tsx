@@ -23,6 +23,10 @@ const Register: React.FC = () => {
     faculty: ''
   });
 
+  const [verificationCode, setVerificationCode] = useState('');
+  const [step, setStep] = useState<1 | 2>(1); // 1 = form, 2 = code verification
+  const [isLoading, setIsLoading] = useState(false);
+
   React.useEffect(() => {
     if (_hasHydrated && isAuthenticated && user) {
       if (['ADMIN', 'ADMIN_CAMPUS', 'ADMIN_COMMANDANT'].includes(user.role)) {
