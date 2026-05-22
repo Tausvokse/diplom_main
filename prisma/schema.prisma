@@ -86,6 +86,7 @@ model User {
   email            String          @unique
   password         String          // Hash
   role             Role            @default(STUDENT)
+  gender           Gender          @default(OTHER)
   firstName        String
   lastName         String
   dormitoryId      String?         // For ADMIN_COMMANDANT
