@@ -5,7 +5,6 @@ import { api } from '../../services/api';
 import { StudentProfile } from '../../types';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
-import { useTheme } from '../../components/ThemeProvider';
 
 interface AllocationResult {
   roomId: string;
@@ -17,12 +16,10 @@ interface AllocationResult {
 }
 
 export const AllocationDashboard: React.FC = () => {
-  const { theme } = useTheme();
   const [students, setStudents] = useState<StudentProfile[]>([]);
   const [results, setResults] = useState<AllocationResult[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Progress state
   const [isRunningAlgorithm, setIsRunningAlgorithm] = useState(false);
   const [isConfirming, setIsConfirming] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -74,7 +71,7 @@ export const AllocationDashboard: React.FC = () => {
           setIsRunningAlgorithm(false);
         }
       }
-    }, 1500); // Simulate heavy computation
+    }, 1500);
   };
 
   const confirmAllocation = async () => {
@@ -97,14 +94,11 @@ export const AllocationDashboard: React.FC = () => {
     }
   };
 
-  const baseColor = theme === 'dark' ? '#1f2937' : '#e5e7eb';
-  const highlightColor = theme === 'dark' ? '#374151' : '#f3f4f6';
-
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
-        <Skeleton height={28} width={280} baseColor={baseColor} highlightColor={highlightColor} />
-        <Skeleton height={220} baseColor={baseColor} highlightColor={highlightColor} />
+        <Skeleton height={28} width={280} />
+        <Skeleton height={220} />
       </div>
     );
   }
@@ -113,98 +107,100 @@ export const AllocationDashboard: React.FC = () => {
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
       <header className="mb-8 flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Дашборд розподілу (AHP + K-means)</h1>
-          <p className="text-gray-500 dark:text-gray-400">Автоматизований підбір ідеальних сусідів на основі психометрики</p>
+          <h1 className="text-3xl font-bold text-[rgb(var(--text))] tracking-tight mb-2">Дашборд розподілу (AHP + K-means)</h1>
+          <p className="ui-muted text-sm">Автоматизований підбір ідеальних сусідів на основі психометрики</p>
         </div>
         {!results && !isRunningAlgorithm && (
           <button 
             onClick={runAlgorithm}
-            className="flex items-center px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 dark:bg-indigo-500 dark:hover:bg-indigo-400 transition-colors font-bold shadow-lg shadow-indigo-200/60 dark:shadow-indigo-900/30"
+            className="flex items-center px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-2xl font-bold shadow-[0_4px_20px_rgba(99,102,241,0.3)] hover:-translate-y-0.5 transition-all"
           >
-            <Play className="w-5 h-5 mr-2" />
-            Запустити кластеризацію
+            <Play className="w-5 h-5 mr-3" />
+            ЗАПУСТИТИ АЛГОРИТМ
           </button>
         )}
       </header>
 
       {/* Progress Bar Overlay / Section */}
       {isRunningAlgorithm && (
-        <div className="bg-white dark:bg-gray-800 p-6 md:p-8 rounded-lg shadow-sm border border-indigo-100 dark:border-indigo-900/40 mb-6 animate-pulse transition-colors">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-indigo-900 dark:text-indigo-200 flex items-center">
-              <Loader2 className="w-5 h-5 mr-3 animate-spin text-indigo-600 dark:text-indigo-400" />
+        <div className="ui-card p-8 md:p-10 mb-8 border-2 border-indigo-500/30 shadow-[0_0_30px_rgba(99,102,241,0.1)]">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-xl font-bold text-[rgb(var(--text))] flex items-center">
+              <Loader2 className="w-6 h-6 mr-3 animate-spin text-indigo-500" />
               Робота AI алгоритму
             </h3>
-            <span className="text-indigo-600 dark:text-indigo-300 font-mono font-bold">{progress}%</span>
+            <span className="text-indigo-500 font-mono font-bold text-2xl">{progress}%</span>
           </div>
-          <div className="h-3 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden mb-2">
+          <div className="h-4 w-full bg-[rgb(var(--surface-2))] nm-inset rounded-full overflow-hidden mb-4">
             <div 
-              className="h-full bg-indigo-600 dark:bg-indigo-500 transition-all duration-500 ease-out relative"
+              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 ease-out relative shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)]"
               style={{ width: `${progress}%` }}
             >
               <div className="absolute inset-0 bg-white/20 animate-[shimmer_1s_infinite]"></div>
             </div>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400 text-center">{progressStatus}</p>
+          <p className="text-sm font-bold uppercase tracking-wider text-[rgb(var(--muted))] text-center">{progressStatus}</p>
         </div>
       )}
 
       {/* Results View */}
       {results && (
-        <div className="space-y-6 animate-fadeIn">
-          <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-4 bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-800/50 transition-colors">
+        <div className="space-y-8 animate-fadeIn">
+          <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 ui-card p-6 md:p-8 border-l-4 border-green-500">
             <div className="flex items-center">
-              <CheckCircle2 className="w-8 h-8 text-green-600 dark:text-green-400 mr-4" />
+              <div className="w-16 h-16 rounded-2xl nm-raised bg-[rgb(var(--surface))] flex items-center justify-center mr-6 flex-shrink-0 text-green-500">
+                <CheckCircle2 className="w-8 h-8" />
+              </div>
               <div>
-                <h3 className="text-lg font-bold text-green-900 dark:text-green-200">Розподіл завершено</h3>
-                <p className="text-sm text-green-700 dark:text-green-300">Згенеровано попередній план поселення. Перевірте результати.</p>
+                <h3 className="text-2xl font-bold text-[rgb(var(--text))] mb-1">Розподіл завершено</h3>
+                <p className="text-sm font-medium ui-muted">Згенеровано попередній план поселення. Перевірте результати.</p>
               </div>
             </div>
             <button 
               onClick={confirmAllocation}
               disabled={isConfirming}
-              className="flex items-center px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400 transition-colors font-bold shadow-sm disabled:opacity-60"
+              className="flex items-center justify-center px-8 py-4 bg-green-500 text-white rounded-2xl font-bold shadow-[0_4px_20px_rgba(34,197,94,0.3)] hover:-translate-y-0.5 transition-all disabled:opacity-50"
             >
-              <FileCheck className="w-5 h-5 mr-2" />
-              {isConfirming ? 'Затвердження...' : 'Затвердити наказ'}
+              <FileCheck className="w-5 h-5 mr-3" />
+              {isConfirming ? 'ЗАТВЕРДЖЕННЯ...' : 'ЗАТВЕРДИТИ НАКАЗ'}
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             {results.map(result => (
-              <div key={result.roomId} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-5 hover:shadow-md transition-shadow">
-                <div className="flex justify-between items-start mb-4 border-b border-gray-100 dark:border-gray-700 pb-4">
+              <div key={result.roomId} className="ui-card p-6 md:p-8 flex flex-col">
+                <div className="flex justify-between items-start mb-6 border-b border-[rgb(var(--border)/0.2)] pb-6">
                   <div>
-                    <h4 className="font-bold text-xl text-gray-900 dark:text-white">Кімната {result.roomNumber}</h4>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Місткість: {result.capacity} місця</p>
+                    <h4 className="font-black text-2xl text-[rgb(var(--text))]">Кімната {result.roomNumber}</h4>
+                    <p className="text-xs font-bold uppercase tracking-wider ui-muted mt-2">Місткість: {result.capacity} місця</p>
                   </div>
-                  <div className="text-right">
-                    <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800/40">
-                      <TrendingUp className="w-3 h-3 mr-1" />
-                      Сумісність: {result.compatibilityScore}%
+                  <div className="text-right flex-shrink-0">
+                    <div className="flex items-center px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-500/10 text-indigo-500 nm-inset-sm">
+                      <TrendingUp className="w-4 h-4 mr-1.5" />
+                      {result.compatibilityScore}%
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-3">
+                <div className="space-y-4 flex-1">
                   {result.students.map((st, idx) => (
-                    <div key={st.id} className="flex items-center bg-gray-50 dark:bg-gray-700/60 p-3 rounded-lg border border-gray-100 dark:border-gray-700">
-                      <div className="w-8 h-8 rounded-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 flex items-center justify-center text-xs font-bold text-gray-700 dark:text-gray-200 mr-3">
+                    <div key={st.id} className="flex items-center bg-[rgb(var(--surface))] nm-flat p-4 rounded-2xl hover:nm-raised-sm transition-all">
+                      <div className="w-10 h-10 rounded-xl nm-inset-sm bg-[rgb(var(--surface-2))] flex items-center justify-center text-sm font-black text-[rgb(var(--accent))] mr-4 flex-shrink-0">
                         {idx + 1}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-gray-900 dark:text-white">{st.user?.lastName} {st.user?.firstName}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center mt-0.5">
-                          AHP Score: <span className="font-mono text-indigo-600 dark:text-indigo-300 ml-1">{st.priorityScore.toFixed(1)}</span>
+                        <p className="text-sm font-bold text-[rgb(var(--text))]">{st.user?.lastName} {st.user?.firstName}</p>
+                        <p className="text-xs font-medium text-[rgb(var(--muted))] flex items-center mt-1">
+                          AHP Score: <span className="font-mono font-bold text-indigo-500 ml-1.5 bg-indigo-500/10 px-1.5 py-0.5 rounded">{st.priorityScore.toFixed(1)}</span>
                         </p>
                       </div>
                     </div>
                   ))}
                   {/* Empty beds placeholders */}
                   {Array.from({ length: Math.max(0, result.capacity - (result.currentOccupancy || 0) - result.students.length) }).map((_, i) => (
-                    <div key={`empty-${i}`} className="flex items-center border-2 border-dashed border-gray-200 dark:border-gray-700 bg-transparent p-3 rounded-lg opacity-50">
-                      <div className="w-8 h-8 rounded-full border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center mr-3"></div>
-                      <span className="text-sm text-gray-400 dark:text-gray-500 font-medium">Вільне місце</span>
+                    <div key={`empty-${i}`} className="flex items-center border-2 border-dashed border-[rgb(var(--border)/0.3)] bg-[rgb(var(--surface-2))] nm-inset-sm p-4 rounded-2xl opacity-60">
+                      <div className="w-10 h-10 rounded-xl border-2 border-dashed border-[rgb(var(--border)/0.5)] flex items-center justify-center mr-4 flex-shrink-0"></div>
+                      <span className="text-sm font-bold text-[rgb(var(--muted))]">Вільне місце</span>
                     </div>
                   ))}
                 </div>
@@ -216,47 +212,47 @@ export const AllocationDashboard: React.FC = () => {
 
       {/* Pre-run Data Table */}
       {!results && !isRunningAlgorithm && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
-          <div className="p-5 border-b border-gray-100 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/50 flex items-center">
-            <Users className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-2" />
-            <h3 className="font-bold text-gray-700 dark:text-gray-200">Пул студентів, готових до розподілу (Сортування за AHP пріоритетом)</h3>
+        <div className="ui-card overflow-hidden transition-colors p-1">
+          <div className="p-6 border-b border-[rgb(var(--border)/0.2)] bg-[rgb(var(--surface-2))] flex items-center rounded-t-[31px]">
+            <Users className="w-6 h-6 text-[rgb(var(--accent))] mr-3" />
+            <h3 className="font-bold text-lg text-[rgb(var(--text))]">Пул студентів, готових до розподілу (Сортування за AHP пріоритетом)</h3>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto bg-[rgb(var(--surface-2))] nm-inset-sm rounded-b-[31px] m-1 mt-0">
             <table className="w-full text-left border-collapse min-w-[900px]">
               <thead>
-                <tr className="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Рейтинг</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Студент</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">AHP Score (Пріоритет)</th>
-                  <th className="px-6 py-4 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">AI Вектор (Психометрика)</th>
+                <tr className="border-b border-[rgb(var(--border)/0.2)]">
+                  <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">Рейтинг</th>
+                  <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">Студент</th>
+                  <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">AHP Score (Пріоритет)</th>
+                  <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">AI Вектор (Психометрика)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100 dark:divide-gray-700">
+              <tbody className="divide-y divide-[rgb(var(--border)/0.1)]">
                 {students.map((student, index) => (
-                  <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/40">
+                  <tr key={student.id} className="hover:bg-[rgb(var(--surface))] transition-colors">
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold text-sm">
+                      <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl nm-raised bg-[rgb(var(--surface))] text-[rgb(var(--text))] font-black text-sm">
                         #{index + 1}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-bold text-gray-900 dark:text-white">{student.user?.lastName} {student.user?.firstName}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{student.studentIdNumber} • {student.faculty}</p>
+                      <p className="text-sm font-bold text-[rgb(var(--text))]">{student.user?.lastName} {student.user?.firstName}</p>
+                      <p className="text-xs font-medium text-[rgb(var(--muted))] mt-1">{student.studentIdNumber} • {student.faculty}</p>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center">
-                        <div className="w-full max-w-[100px] bg-gray-200 dark:bg-gray-700 rounded-full h-2 mr-2">
-                          <div className="bg-indigo-600 dark:bg-indigo-500 h-2 rounded-full" style={{ width: `${student.priorityScore}%` }}></div>
+                      <div className="flex items-center w-full max-w-[200px]">
+                        <div className="w-full bg-[rgb(var(--surface))] nm-inset-sm rounded-full h-2.5 mr-3">
+                          <div className="bg-indigo-500 h-2.5 rounded-full shadow-[inset_0_1px_2px_rgba(255,255,255,0.3)]" style={{ width: `${student.priorityScore}%` }}></div>
                         </div>
-                        <span className="text-sm font-mono font-bold text-indigo-700 dark:text-indigo-300">{student.priorityScore.toFixed(1)}</span>
+                        <span className="text-sm font-mono font-bold text-indigo-500">{student.priorityScore.toFixed(1)}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex space-x-1">
-                        <div title={`Хронотип: ${student.clusteringVector?.chronotype}`} className="w-6 h-6 rounded bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300 flex items-center justify-center text-xs font-bold">{student.clusteringVector?.chronotype}</div>
-                        <div title={`Соціалізація: ${student.clusteringVector?.sociability}`} className="w-6 h-6 rounded bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 flex items-center justify-center text-xs font-bold">{student.clusteringVector?.sociability}</div>
-                        <div title={`Шум: ${student.clusteringVector?.noiseTolerance}`} className="w-6 h-6 rounded bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 flex items-center justify-center text-xs font-bold">{student.clusteringVector?.noiseTolerance}</div>
-                        <div title={`Чистота: ${student.clusteringVector?.cleanliness}`} className="w-6 h-6 rounded bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-300 flex items-center justify-center text-xs font-bold">{student.clusteringVector?.cleanliness}</div>
+                      <div className="flex space-x-2">
+                        <div title={`Хронотип: ${student.clusteringVector?.chronotype}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-blue-500 flex items-center justify-center text-xs font-bold border border-blue-500/20">{student.clusteringVector?.chronotype}</div>
+                        <div title={`Соціалізація: ${student.clusteringVector?.sociability}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-purple-500 flex items-center justify-center text-xs font-bold border border-purple-500/20">{student.clusteringVector?.sociability}</div>
+                        <div title={`Шум: ${student.clusteringVector?.noiseTolerance}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-orange-500 flex items-center justify-center text-xs font-bold border border-orange-500/20">{student.clusteringVector?.noiseTolerance}</div>
+                        <div title={`Чистота: ${student.clusteringVector?.cleanliness}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-teal-500 flex items-center justify-center text-xs font-bold border border-teal-500/20">{student.clusteringVector?.cleanliness}</div>
                       </div>
                     </td>
                   </tr>

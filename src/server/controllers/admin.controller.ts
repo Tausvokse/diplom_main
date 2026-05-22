@@ -140,12 +140,7 @@ export class AdminController {
   static async getApplications(req: Request, res: Response, next: NextFunction) {
     try {
       const apps = await AdminService.getApplications();
-      // Parsing string arrays for client
-      const formattedApps = apps.map(app => ({
-        ...app,
-        scanDocumentsUrl: app.scanDocumentsUrl.split(',').filter(Boolean)
-      }));
-      res.json(formattedApps);
+      res.json(apps);
     } catch (error) {
       next(error);
     }
@@ -273,8 +268,8 @@ export class AdminController {
 
   static async createJar(req: Request, res: Response, next: NextFunction) {
     try {
-      const { title, goalAmount, description, dormitoryId } = req.body;
-      const jar = await AdminService.createJar(title, goalAmount, description, dormitoryId);
+      const { title, goalAmount, description, dormitoryId, monobankUrl } = req.body;
+      const jar = await AdminService.createJar(title, goalAmount, description, dormitoryId, monobankUrl);
       res.json(jar);
     } catch (error) {
       next(error);

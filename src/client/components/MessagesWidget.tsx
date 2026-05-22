@@ -123,7 +123,7 @@ export const MessagesWidget: React.FC = () => {
       {/* Floating Action Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed bottom-6 right-6 ui-button ui-button-primary rounded-full p-4 shadow-lg hover:scale-105 z-40"
+        className="fixed bottom-6 right-6 w-14 h-14 bg-[rgb(var(--accent))] text-white rounded-full flex items-center justify-center nm-raised transition-transform hover:scale-105 z-40"
       >
         <MessageCircle className="w-6 h-6" />
       </button>
@@ -131,12 +131,12 @@ export const MessagesWidget: React.FC = () => {
       {/* Chat Modal */}
       {isOpen && (
         <div className="fixed inset-0 z-50 flex justify-end items-end p-6 pointer-events-none">
-          <div className="bg-[rgb(var(--surface))] w-full max-w-sm md:max-w-md h-[70vh] sm:h-[600px] rounded-2xl shadow-2xl border border-[rgb(var(--border))] flex flex-col pointer-events-auto overflow-hidden animate-slideUp transition-colors">
+          <div className="bg-[rgb(var(--surface))] w-full max-w-sm md:max-w-md h-[70vh] sm:h-[600px] nm-modal-content flex flex-col pointer-events-auto overflow-hidden animate-slideUp">
             
             {/* Header */}
-            <div className="bg-gradient-to-r from-[rgb(var(--accent))] to-[rgb(var(--accent-strong))] text-white px-4 py-3 flex justify-between items-center transition-colors">
-              <h3 className="font-semibold flex items-center">
-                <MessageCircle className="w-5 h-5 mr-2" /> 
+            <div className="bg-gradient-to-r from-[rgb(var(--accent))] to-[rgb(var(--accent-strong))] text-white px-4 py-3 flex justify-between items-center transition-colors shadow-sm z-10">
+              <h3 className="font-semibold flex items-center text-[15px]">
+                <MessageCircle className="w-4 h-4 mr-2" /> 
                 {user?.role === 'STUDENT' ? 'Зв\'язок з Адміністрацією' : 'Повідомлення від студентів'}
               </h3>
               <button onClick={() => setIsOpen(false)} className="text-white/80 hover:text-white transition-colors">
@@ -144,17 +144,19 @@ export const MessagesWidget: React.FC = () => {
               </button>
             </div>
 
-            <div className="flex flex-1 overflow-hidden">
+            <div className="flex flex-1 overflow-hidden bg-[rgb(var(--surface-2))]">
               {/* Sidebar (Contacts) */}
-              <div className={`w-1/3 bg-[rgb(var(--surface-2))] border-r border-[rgb(var(--border))] overflow-y-auto ${selectedContact ? 'hidden md:block' : 'block w-full'}`}>
+              <div className={`w-1/3 bg-[rgb(var(--surface))] overflow-y-auto ${selectedContact ? 'hidden md:block' : 'block w-full'}`} style={{ boxShadow: 'var(--nm-raised-sm)' }}>
                 {contacts.map(contact => (
                   <div 
                     key={contact.id}
                     onClick={() => setSelectedContact(contact)}
-                    className={`p-3 cursor-pointer border-b border-[rgb(var(--border))] hover:bg-[rgb(var(--surface-3))] transition-colors ${selectedContact?.id === contact.id ? 'bg-[rgb(var(--accent-soft))] border-[rgb(var(--accent))]' : ''}`}
+                    className={`p-3 cursor-pointer transition-colors ${selectedContact?.id === contact.id ? 'nm-inset-sm bg-[rgb(var(--surface))]' : 'hover:bg-[rgb(var(--surface-2))] border-b border-[rgb(var(--border)/0.2)]'}`}
                   >
-                    <div className="font-semibold text-sm text-[rgb(var(--text))] truncate">{contact.firstName} {contact.lastName}</div>
-                    <div className="text-xs text-[rgb(var(--muted))] mt-1">{getRoleLabel(contact.role)}</div>
+                    <div className={`font-semibold text-sm truncate ${selectedContact?.id === contact.id ? 'text-[rgb(var(--accent))]' : 'text-[rgb(var(--text))]'}`}>
+                      {contact.firstName} {contact.lastName}
+                    </div>
+                    <div className="text-[11px] text-[rgb(var(--muted))] mt-1">{getRoleLabel(contact.role)}</div>
                   </div>
                 ))}
                 {contacts.length === 0 && (
@@ -163,10 +165,10 @@ export const MessagesWidget: React.FC = () => {
               </div>
 
               {/* Chat Area */}
-              <div className={`flex-1 flex flex-col bg-[rgb(var(--surface-2))] ${!selectedContact ? 'hidden md:flex' : 'flex'}`}>
+              <div className={`flex-1 flex flex-col nm-inset ${!selectedContact ? 'hidden md:flex' : 'flex'}`}>
                 {selectedContact ? (
                   <>
-                    <div className="bg-[rgb(var(--surface))] border-b border-[rgb(var(--border))] px-4 py-2 flex items-center md:hidden">
+                    <div className="bg-[rgb(var(--surface))] nm-raised-xs px-4 py-3 flex items-center md:hidden z-10">
                       <button onClick={() => setSelectedContact(null)} className="text-[rgb(var(--accent))] text-sm font-semibold mr-2">Назад</button>
                       <div className="font-semibold text-sm truncate text-[rgb(var(--text))]">{selectedContact.firstName}</div>
                     </div>
@@ -176,8 +178,8 @@ export const MessagesWidget: React.FC = () => {
                         const isMine = msg.senderId === user?.id;
                         return (
                           <div key={msg.id} className={`flex ${isMine ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-[80%] p-3 rounded-xl ${isMine ? 'bg-[rgb(var(--accent))] text-white rounded-br-none' : 'bg-[rgb(var(--surface))] border border-[rgb(var(--border))] text-[rgb(var(--text))] rounded-bl-none shadow-sm'}`}>
-                              <p className="text-sm">{msg.content}</p>
+                            <div className={`max-w-[80%] px-4 py-2 text-sm nm-raised-xs ${isMine ? 'bg-[rgb(var(--accent))] text-white rounded-2xl rounded-br-sm' : 'bg-[rgb(var(--surface))] text-[rgb(var(--text))] rounded-2xl rounded-bl-sm'}`}>
+                              <p className="leading-relaxed">{msg.content}</p>
                               <p className={`text-[10px] mt-1 text-right ${isMine ? 'text-white/70' : 'text-[rgb(var(--muted))]'}`}>
                                 {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </p>
@@ -193,20 +195,20 @@ export const MessagesWidget: React.FC = () => {
                       <div ref={messagesEndRef} />
                     </div>
 
-                    <form onSubmit={handleSendMessage} className="p-3 bg-[rgb(var(--surface))] border-t border-[rgb(var(--border))] flex items-center">
+                    <form onSubmit={handleSendMessage} className="p-3 bg-[rgb(var(--surface-2))] nm-inset-sm flex items-center mx-2 mb-2 rounded-2xl">
                       <input 
                         type="text"
                         value={newMessage}
                         onChange={(e) => setNewMessage(e.target.value)}
                         placeholder="Напишіть повідомлення..."
-                        className="flex-1 ui-input text-sm"
+                        className="flex-1 bg-transparent border-none outline-none text-sm px-2 text-[rgb(var(--text))] placeholder-[rgb(var(--muted)/0.6)]"
                       />
                       <button 
                         type="submit"
                         disabled={isLoading || !newMessage.trim()}
-                        className="ml-2 ui-button ui-button-primary rounded-full px-3 py-2 disabled:opacity-50"
+                        className="ml-2 w-8 h-8 flex items-center justify-center bg-[rgb(var(--accent))] text-white rounded-full nm-raised-sm disabled:opacity-50 transition-all hover:scale-105 active:scale-95"
                       >
-                        <Send className="w-4 h-4" />
+                        <Send className="w-3.5 h-3.5" />
                       </button>
                     </form>
                   </>

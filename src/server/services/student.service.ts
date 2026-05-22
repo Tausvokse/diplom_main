@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import { RepairStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../utils/AppError';
+import { MonobankService } from './monobank.service';
 
 export class StudentService {
   static async getApplication(userId: string) {
@@ -25,21 +26,21 @@ export class StudentService {
   }
 
   static async submitApplication(
-    userId: string, 
-    course: number, 
-    faculty: string, 
+    userId: string,
+    course: number,
+    faculty: string,
     privilegeCategoryId: string | null,
-    clusteringVectorRaw: any, 
-    files: Express.Multer.File[],
+    clusteringVectorRaw: any,
+    filesInput: { [fieldname: string]: Express.Multer.File[] } | Express.Multer.File[] | undefined,
     type: string = 'CHECK_IN'
   ) {
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new AppError('Користувача не знайдено', 404);
 
     let profile = await prisma.studentProfile.findUnique({ where: { userId }, include: { room: true } });
-    
-    const clusteringVectorString = typeof clusteringVectorRaw === 'string' 
-      ? clusteringVectorRaw 
+
+    const clusteringVectorString = typeof clusteringVectorRaw === 'string'
+      ? clusteringVectorRaw
       : JSON.stringify(clusteringVectorRaw);
 
     const parsedPrivilegeId = (privilegeCategoryId === 'null' || privilegeCategoryId === 'undefined' || !privilegeCategoryId) ? null : privilegeCategoryId;
@@ -52,7 +53,7 @@ export class StudentService {
           studentIdNumber,
           fullName: `${user.lastName} ${user.firstName}`,
           email: user.email,
-          phone: '+380000000000', // Still mocked, should come from registration in a real app
+          phone: '+380000000000',
           course: Number(course),
           faculty,
           privilegeCategoryId: parsedPrivilegeId,
@@ -74,28 +75,39 @@ export class StudentService {
       });
     }
 
-    // Validation for TRANSFER and CHECK_OUT
     if (type === 'TRANSFER' || type === 'CHECK_OUT') {
       if (!profile.roomId) {
         throw new AppError('Ви повинні бути поселені для подачі заяви на переселення або виселення', 400);
       }
     }
 
-    const fileUrls = files.map((file, index) => {
+    let allFiles: { file: Express.Multer.File, category: string }[] = [];
+    if (filesInput) {
+      if (Array.isArray(filesInput)) {
+        allFiles = filesInput.map(f => ({ file: f, category: 'documents' }));
+      } else {
+        Object.entries(filesInput).forEach(([category, fileArray]) => {
+          fileArray.forEach(file => {
+            allFiles.push({ file, category });
+          });
+        });
+      }
+    }
+
+    const fileUrls = allFiles.map(({ file, category }, index) => {
       const ext = path.extname(file.originalname) || '.png';
-      const docName = file.originalname.split('.')[0].substring(0, 20).replace(/[^a-zA-Z0-9А-Яа-яІіЇїЄєҐґ-]/g, '_');
       const fullName = profile!.fullName.replace(/\s+/g, '_');
-      const roomNum = profile!.room?.roomNumber || 'новий';
-      const newFilename = `${fullName}-${roomNum}-${docName}${ext}`;
+      const studentId = profile!.studentIdNumber;
+
+      const newFilename = `${category}_${fullName}_${studentId}${index > 0 ? `_${index}` : ''}${ext}`;
       const oldPath = file.path;
       const newPath = path.join(path.dirname(file.path), newFilename);
-      
-      // If a file with the same name already exists, append a timestamp
+
       let finalPath = newPath;
       let finalUrl = newFilename;
       if (fs.existsSync(newPath)) {
         const timestamp = Date.now();
-        finalUrl = `${fullName}-${roomNum}-${docName}_${timestamp}${ext}`;
+        finalUrl = `${category}_${fullName}_${studentId}_${timestamp}${ext}`;
         finalPath = path.join(path.dirname(file.path), finalUrl);
       }
 
@@ -125,9 +137,9 @@ export class StudentService {
     if (!profile) throw new AppError('Профіль студента не знайдено', 404);
     if (profile.groupId) throw new AppError('Ви вже є учасником групи', 409);
 
-    const code = crypto.randomBytes(3).toString('hex').toUpperCase(); // 6 chars
+    const code = crypto.randomBytes(3).toString('hex').toUpperCase();
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7); // Діє 7 днів
+    expiresAt.setDate(expiresAt.getDate() + 7);
 
     const group = await prisma.groupReferral.create({
       data: {
@@ -322,19 +334,60 @@ export class StudentService {
 
   static async getJars(userId: string) {
     const profile = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!profile || !profile.dormitoryId) return [];
+    if (!profile) return [];
 
-    return prisma.jar.findMany({
-      where: { dormitoryId: profile.dormitoryId },
+    // Show jars that are either:
+    // 1. Global (dormitoryId is null)
+    // 2. Specific to the student's dormitory
+    // If student is not yet settled (dormitoryId is null), they see all jars.
+    let jars = await prisma.jar.findMany({
+      where: profile.dormitoryId 
+        ? { OR: [{ dormitoryId: profile.dormitoryId }, { dormitoryId: null }] } 
+        : {}, // If not settled, show all as before, or we could limit to only global
       include: {
         transactions: {
           include: { student: { select: { fullName: true } } },
-          orderBy: { amount: 'desc' },
-          take: 5
+          orderBy: { createdAt: 'desc' },
+          take: 10
         }
       },
       orderBy: { createdAt: 'desc' }
     });
+
+    for (let jar of jars) {
+      if (jar.monobankUrl) {
+        try {
+          const monoJar = await MonobankService.getJarDetails(jar.monobankUrl);
+          if (monoJar) {
+            const updatedCurrent = monoJar.balance / 100;
+            const updatedGoal = monoJar.goal / 100;
+            
+            await prisma.jar.update({
+              where: { id: jar.id },
+              data: { currentAmount: updatedCurrent, goalAmount: updatedGoal }
+            });
+            
+            jar.currentAmount = updatedCurrent;
+            jar.goalAmount = updatedGoal;
+            
+            const statement = await MonobankService.getJarStatement(monoJar.id);
+            const monoTransactions = statement.map(item => ({
+              id: item.id,
+              amount: Math.abs(item.amount) / 100,
+              comment: item.comment || item.description,
+              createdAt: new Date(item.time * 1000).toISOString(),
+              student: { fullName: item.counterName || 'Зовнішній донат' }
+            }));
+            
+            (jar as any).transactions = [...monoTransactions, ...jar.transactions];
+          }
+        } catch (e) {
+          console.error(`Monobank sync failed for jar ${jar.id}:`, e);
+        }
+      }
+    }
+
+    return jars;
   }
 
   static async donateToJar(userId: string, jarId: string, amount: number, comment?: string) {
@@ -367,7 +420,6 @@ export class StudentService {
     const profile = await prisma.studentProfile.findUnique({ where: { userId } });
     if (!profile) return [];
 
-    // Auto-update OVERDUE status
     await prisma.payment.updateMany({
       where: { 
         studentId: profile.id, 

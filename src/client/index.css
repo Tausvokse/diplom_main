@@ -6,35 +6,65 @@
 
 @layer base {
   :root {
-    --bg: 248 245 240;
-    --surface: 255 255 255;
-    --surface-2: 245 241 234;
-    --surface-3: 238 233 225;
-    --text: 24 22 20;
-    --muted: 102 98 92;
-    --border: 226 217 204;
+    /* ─── Neumorphic Light Theme ─── */
+    --bg: 214 225 237;
+    --surface: 224 232 240;
+    --surface-2: 216 224 234;
+    --surface-3: 208 216 228;
+    --text: 30 36 50;
+    --muted: 100 112 132;
+    --border: 200 210 226;
     --accent: 72 89 255;
     --accent-strong: 56 72 230;
-    --accent-soft: 221 227 255;
-    --shadow-soft: 0 1px 0 rgba(15, 23, 42, 0.04), 0 16px 40px rgba(15, 23, 42, 0.12);
-    --shadow-lift: 0 12px 34px rgba(15, 23, 42, 0.18), 0 1px 0 rgba(15, 23, 42, 0.05);
+    --accent-soft: 210 218 255;
+
+    /* Neumorphic dual-layered shadows */
+    --nm-light: rgba(255, 255, 255, 0.72);
+    --nm-dark: rgba(163, 177, 198, 0.55);
+    --nm-raised: 6px 6px 14px var(--nm-dark), -6px -6px 14px var(--nm-light);
+    --nm-raised-hover: 8px 8px 18px var(--nm-dark), -8px -8px 18px var(--nm-light);
+    --nm-raised-sm: 3px 3px 7px var(--nm-dark), -3px -3px 7px var(--nm-light);
+    --nm-raised-xs: 2px 2px 5px var(--nm-dark), -2px -2px 5px var(--nm-light);
+    --nm-inset: inset 3px 3px 7px var(--nm-dark), inset -3px -3px 7px var(--nm-light);
+    --nm-inset-sm: inset 2px 2px 5px var(--nm-dark), inset -2px -2px 5px var(--nm-light);
+    --nm-button: 4px 4px 10px var(--nm-dark), -4px -4px 10px var(--nm-light);
+    --nm-button-active: inset 3px 3px 6px var(--nm-dark), inset -3px -3px 6px var(--nm-light);
+    --nm-flat: 0 0 0 transparent;
+
+    /* Legacy compat */
+    --shadow-soft: var(--nm-raised);
+    --shadow-lift: var(--nm-raised-hover);
     --radius-lg: 16px;
     --radius-xl: 20px;
   }
 
   .dark {
-    --bg: 12 14 20;
-    --surface: 19 24 34;
-    --surface-2: 24 30 42;
-    --surface-3: 31 38 52;
-    --text: 230 233 239;
-    --muted: 155 162 175;
-    --border: 46 54 72;
+    /* ─── Neumorphic Dark Theme ─── */
+    --bg: 20 24 40;
+    --surface: 30 36 54;
+    --surface-2: 26 32 48;
+    --surface-3: 36 42 62;
+    --text: 218 224 238;
+    --muted: 135 146 172;
+    --border: 46 54 76;
     --accent: 120 143 255;
-    --accent-strong: 92 116 255;
-    --accent-soft: 33 44 80;
-    --shadow-soft: 0 1px 0 rgba(0, 0, 0, 0.25), 0 22px 56px rgba(0, 0, 0, 0.5);
-    --shadow-lift: 0 24px 70px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(0, 0, 0, 0.4);
+    --accent-strong: 100 124 255;
+    --accent-soft: 38 48 88;
+
+    --nm-light: rgba(50, 58, 82, 0.5);
+    --nm-dark: rgba(8, 10, 18, 0.65);
+    --nm-raised: 6px 6px 14px var(--nm-dark), -6px -6px 14px var(--nm-light);
+    --nm-raised-hover: 8px 8px 18px var(--nm-dark), -8px -8px 18px var(--nm-light);
+    --nm-raised-sm: 3px 3px 7px var(--nm-dark), -3px -3px 7px var(--nm-light);
+    --nm-raised-xs: 2px 2px 5px var(--nm-dark), -2px -2px 5px var(--nm-light);
+    --nm-inset: inset 3px 3px 7px var(--nm-dark), inset -3px -3px 7px var(--nm-light);
+    --nm-inset-sm: inset 2px 2px 5px var(--nm-dark), inset -2px -2px 5px var(--nm-light);
+    --nm-button: 4px 4px 10px var(--nm-dark), -4px -4px 10px var(--nm-light);
+    --nm-button-active: inset 3px 3px 6px var(--nm-dark), inset -3px -3px 6px var(--nm-light);
+    --nm-flat: 0 0 0 transparent;
+
+    --shadow-soft: var(--nm-raised);
+    --shadow-lift: var(--nm-raised-hover);
   }
 
   html {
@@ -44,21 +74,23 @@
 
   body {
     font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
-    background-color: rgb(var(--bg));
+    background: linear-gradient(135deg,
+      hsl(210 40% 88%) 0%,
+      hsl(260 32% 90%) 50%,
+      hsl(230 35% 89%) 100%
+    );
     color: rgb(var(--text));
     min-height: 100vh;
-    background-image:
-      radial-gradient(1000px 600px at 10% -10%, rgb(72 89 255 / 0.12), transparent 65%),
-      radial-gradient(900px 500px at 90% -15%, rgb(255 166 115 / 0.18), transparent 60%),
-      linear-gradient(180deg, rgb(255 255 255 / 0.6), rgb(255 255 255 / 0));
     background-attachment: fixed;
+    transition: background 0.4s ease;
   }
 
   .dark body {
-    background-image:
-      radial-gradient(900px 520px at 15% -10%, rgb(120 143 255 / 0.18), transparent 60%),
-      radial-gradient(700px 420px at 80% -20%, rgb(34 197 94 / 0.08), transparent 60%),
-      linear-gradient(180deg, rgb(18 24 38 / 0.9), rgb(18 24 38 / 0));
+    background: linear-gradient(135deg,
+      hsl(230 35% 12%) 0%,
+      hsl(240 30% 14%) 50%,
+      hsl(250 28% 13%) 100%
+    );
   }
 
   h1, h2 {
@@ -71,130 +103,259 @@
   }
 
   :focus-visible {
-    outline: 2px solid rgb(var(--accent) / 0.6);
+    outline: 2px solid rgb(var(--accent) / 0.5);
     outline-offset: 2px;
   }
 }
 
 @layer components {
+  /* ─── Shell ─── */
   .ui-shell {
     background: rgb(var(--bg));
   }
 
+  /* ─── Neumorphic Card (raised) ─── */
   .ui-card {
     background: rgb(var(--surface));
-    border: 1px solid rgb(var(--border) / 0.85);
+    border: none;
     border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-soft);
-    transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+    box-shadow: var(--nm-raised);
+    transition: box-shadow 280ms ease, transform 280ms ease;
   }
 
   .ui-card:hover {
     transform: translateY(-1px);
-    box-shadow: var(--shadow-lift);
+    box-shadow: var(--nm-raised-hover);
   }
 
+  /* ─── Neumorphic Panel (inset/recessed) ─── */
   .ui-panel {
     background: rgb(var(--surface-2));
-    border: 1px solid rgb(var(--border) / 0.7);
+    border: none;
     border-radius: var(--radius-lg);
+    box-shadow: var(--nm-inset);
   }
 
+  /* ─── Neumorphic Input (inset) ─── */
   .ui-input {
     width: 100%;
-    padding: 0.6rem 0.85rem;
-    border-radius: 12px;
-    border: 1px solid rgb(var(--border) / 0.9);
+    padding: 0.65rem 0.9rem;
+    border-radius: 14px;
+    border: 1px solid rgb(var(--border) / 0.15);
     background: rgb(var(--surface));
     color: rgb(var(--text));
-    transition: border-color 180ms ease, box-shadow 180ms ease, background-color 180ms ease;
+    box-shadow: var(--nm-inset-sm);
+    transition: box-shadow 200ms ease, border-color 200ms ease;
+  }
+
+  .ui-input::placeholder {
+    color: rgb(var(--muted) / 0.6);
   }
 
   .ui-input:focus {
-    border-color: rgb(var(--accent));
-    box-shadow: 0 0 0 3px rgb(var(--accent) / 0.18);
+    border-color: rgb(var(--accent) / 0.5);
+    box-shadow: var(--nm-inset-sm), 0 0 0 3px rgb(var(--accent) / 0.12);
     outline: none;
   }
 
+  /* ─── Neumorphic Buttons ─── */
   .ui-button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 0.45rem;
-    padding: 0.6rem 1rem;
-    border-radius: 12px;
+    padding: 0.6rem 1.1rem;
+    border-radius: 14px;
     font-weight: 600;
-    transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, color 180ms ease, border-color 180ms ease;
+    cursor: pointer;
+    border: none;
+    transition: box-shadow 200ms ease, transform 200ms ease, background-color 200ms ease, color 200ms ease;
   }
 
   .ui-button-primary {
     background: rgb(var(--accent));
     color: #fff;
-    box-shadow: 0 10px 26px rgb(var(--accent) / 0.28);
+    box-shadow: var(--nm-button);
   }
 
   .ui-button-primary:hover {
     background: rgb(var(--accent-strong));
     transform: translateY(-1px);
+    box-shadow: var(--nm-raised);
+  }
+
+  .ui-button-primary:active {
+    transform: translateY(0);
+    box-shadow: var(--nm-button-active);
   }
 
   .ui-button:disabled {
-    opacity: 0.6;
+    opacity: 0.5;
     cursor: not-allowed;
-    transform: none;
-    box-shadow: none;
+    transform: none !important;
+    box-shadow: var(--nm-flat) !important;
   }
 
   .ui-button-outline {
-    background: transparent;
+    background: rgb(var(--surface));
     color: rgb(var(--text));
-    border: 1px solid rgb(var(--border) / 0.9);
+    border: 1px solid rgb(var(--border) / 0.3);
+    box-shadow: var(--nm-raised-sm);
+  }
+
+  .ui-button-outline:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--nm-raised);
+  }
+
+  .ui-button-outline:active {
+    transform: translateY(0);
+    box-shadow: var(--nm-button-active);
   }
 
   .ui-button-ghost {
-    background: rgb(var(--accent) / 0.12);
+    background: rgb(var(--accent) / 0.1);
     color: rgb(var(--accent));
+    box-shadow: none;
   }
 
+  .ui-button-ghost:hover {
+    background: rgb(var(--accent) / 0.18);
+    box-shadow: var(--nm-raised-xs);
+  }
+
+  /* ─── Neumorphic Pill ─── */
   .ui-pill {
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
-    padding: 0.2rem 0.6rem;
+    padding: 0.2rem 0.65rem;
     border-radius: 999px;
     font-size: 0.75rem;
     font-weight: 600;
+    box-shadow: var(--nm-raised-xs);
   }
 
+  /* ─── Tabs ─── */
   .ui-tab {
     position: relative;
     padding: 0.75rem 1rem;
     font-size: 0.875rem;
     font-weight: 600;
     color: rgb(var(--muted));
+    border-radius: 12px;
+    transition: all 200ms ease;
+  }
+
+  .ui-tab:hover {
+    color: rgb(var(--text));
+    background: rgb(var(--surface) / 0.5);
   }
 
   .ui-tab-active {
     color: rgb(var(--text));
+    background: rgb(var(--surface));
+    box-shadow: var(--nm-raised-sm);
   }
 
   .ui-tab-active::after {
     content: '';
     position: absolute;
-    left: 0.75rem;
-    right: 0.75rem;
-    bottom: -2px;
-    height: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: 4px;
+    width: 24px;
+    height: 3px;
     border-radius: 999px;
     background: rgb(var(--accent));
   }
 
+  /* ─── Muted text ─── */
   .ui-muted {
     color: rgb(var(--muted));
   }
 
+  /* ─── Divider ─── */
   .ui-divider {
-    border-color: rgb(var(--border) / 0.8);
+    border-color: rgb(var(--border) / 0.35);
+  }
+
+  /* ─── Neumorphic Utility Classes ─── */
+  .nm-raised {
+    box-shadow: var(--nm-raised);
+  }
+
+  .nm-raised-sm {
+    box-shadow: var(--nm-raised-sm);
+  }
+
+  .nm-inset {
+    box-shadow: var(--nm-inset);
+  }
+
+  .nm-inset-sm {
+    box-shadow: var(--nm-inset-sm);
+  }
+
+  .nm-flat {
+    box-shadow: none;
+  }
+
+  /* ─── Neumorphic Table Styles ─── */
+  .nm-table-head {
+    background: rgb(var(--surface-2));
+    box-shadow: var(--nm-inset-sm);
+  }
+
+  .nm-table-row {
+    transition: background 180ms ease, box-shadow 180ms ease;
+    border-bottom: 1px solid rgb(var(--border) / 0.2);
+  }
+
+  .nm-table-row:hover {
+    background: rgb(var(--surface-2) / 0.5);
+  }
+
+  /* ─── Neumorphic Modal ─── */
+  .nm-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(8px);
+  }
+
+  .dark .nm-modal-backdrop {
+    background: rgba(0, 0, 0, 0.5);
+  }
+
+  .nm-modal-content {
+    background: rgb(var(--surface));
+    border-radius: 24px;
+    box-shadow: var(--nm-raised);
+    border: none;
+  }
+
+  /* ─── Neumorphic Progress Bar ─── */
+  .nm-progress-track {
+    background: rgb(var(--surface-2));
+    border-radius: 999px;
+    box-shadow: var(--nm-inset-sm);
+    overflow: hidden;
+  }
+
+  .nm-progress-fill {
+    border-radius: 999px;
+    transition: width 500ms ease;
+  }
+
+  /* ─── Skeleton Loading Fix ─── */
+  .react-loading-skeleton {
+    --base-color: rgb(var(--surface-3)) !important;
+    --highlight-color: rgb(var(--surface-2)) !important;
   }
 }
 
@@ -207,6 +368,7 @@
 }
 
 @layer utilities {
+  /* ─── Background overrides (catch raw Tailwind) ─── */
   .bg-white {
     background-color: rgb(var(--surface)) !important;
   }
@@ -227,6 +389,7 @@
     background-color: rgb(var(--bg)) !important;
   }
 
+  /* ─── Text overrides ─── */
   .text-gray-900,
   .text-gray-800,
   .text-gray-700 {
@@ -239,26 +402,102 @@
     color: rgb(var(--muted)) !important;
   }
 
+  /* ─── Border overrides ─── */
   .border-gray-200,
   .border-gray-100,
   .border-gray-300,
-  .border-gray-700 {
-    border-color: rgb(var(--border)) !important;
+  .border-gray-700,
+  .border-gray-800,
+  .border-gray-600 {
+    border-color: rgb(var(--border) / 0.3) !important;
+  }
+
+  /* ─── Shadow overrides (Tailwind → Neumorphic) ─── */
+  .shadow-sm {
+    box-shadow: var(--nm-raised-sm) !important;
+  }
+
+  .shadow,
+  .shadow-md {
+    box-shadow: var(--nm-raised) !important;
+  }
+
+  .shadow-lg {
+    box-shadow: var(--nm-raised) !important;
+  }
+
+  .shadow-xl {
+    box-shadow: var(--nm-raised) !important;
+  }
+
+  .shadow-2xl {
+    box-shadow: var(--nm-raised-hover) !important;
+  }
+
+  /* ─── Rounded overrides (rounder for neumorphic) ─── */
+  .rounded-lg {
+    border-radius: 16px !important;
+  }
+
+  .rounded-xl {
+    border-radius: 20px !important;
+  }
+
+  .rounded-2xl {
+    border-radius: 24px !important;
+  }
+
+  /* ─── Divide overrides ─── */
+  .divide-gray-200 > :not([hidden]) ~ :not([hidden]),
+  .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+  .divide-gray-700 > :not([hidden]) ~ :not([hidden]) {
+    border-color: rgb(var(--border) / 0.25) !important;
   }
 }
 
-/* Custom Scrollbar */
+/* ─── Custom Scrollbar (Neumorphic) ─── */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: rgb(var(--border) / 0.3);
+  background: rgb(var(--surface-2));
+  border-radius: 10px;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgb(var(--muted) / 0.5);
-  border-radius: 6px;
+  background: rgb(var(--muted) / 0.35);
+  border-radius: 10px;
+  box-shadow: inset 1px 1px 2px rgba(0,0,0,0.1);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgb(var(--muted) / 0.7);
+  background: rgb(var(--muted) / 0.5);
+}
+
+/* ─── Auth Background Animations ─── */
+@keyframes nm-float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  33% { transform: translateY(-8px) rotate(1deg); }
+  66% { transform: translateY(4px) rotate(-0.5deg); }
+}
+
+@keyframes nm-float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-12px) rotate(1.5deg); }
+}
+
+@keyframes nm-pulse-soft {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 0.9; }
+}
+
+.nm-float {
+  animation: nm-float 8s ease-in-out infinite;
+}
+
+.nm-float-slow {
+  animation: nm-float-slow 12s ease-in-out infinite;
+}
+
+.nm-pulse-soft {
+  animation: nm-pulse-soft 6s ease-in-out infinite;
 }
