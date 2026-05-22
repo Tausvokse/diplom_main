@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { api } from '../../services/api';
+import { Megaphone, PiggyBank, Send } from 'lucide-react';
 
 export default function AdminAnnouncementsPage() {
   const [notificationTitle, setNotificationTitle] = useState('');
@@ -8,7 +9,21 @@ export default function AdminAnnouncementsPage() {
   const [jarTitle, setJarTitle] = useState('');
   const [jarGoal, setJarGoal] = useState('');
   const [jarDesc, setJarDesc] = useState('');
+  const [monobankUrl, setMonobankUrl] = useState('');
   const [dormitoryId, setDormitoryId] = useState('');
+  const [dormitories, setDormitories] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchDormitories = async () => {
+      try {
+        const res = await api.get('/admin/dormitories');
+        setDormitories(res.data);
+      } catch (err) {
+        console.error('Error fetching dormitories:', err);
+      }
+    };
+    fetchDormitories();
+  }, []);
 
   const handleSendMassNotification = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,114 +40,153 @@ export default function AdminAnnouncementsPage() {
   const handleCreateJar = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await api.post('/admin/jars', { 
-        title: jarTitle, 
-        goalAmount: Number(jarGoal), 
+      await api.post('/admin/jars', {
+        title: jarTitle,
+        goalAmount: Number(jarGoal),
         description: jarDesc,
-        dormitoryId 
+        dormitoryId,
+        monobankUrl
       });
       toast.success('Банку створено успішно');
       setJarTitle('');
       setJarGoal('');
       setJarDesc('');
+      setMonobankUrl('');
       setDormitoryId('');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Помилка при створенні банки');
     }
   };
-
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Оголошення та збори</h1>
+    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-8">
+      <header className="mb-8">
+        <h1 className="text-3xl font-bold text-[rgb(var(--text))] tracking-tight mb-2">Оголошення та збори</h1>
+        <p className="ui-muted text-sm">Керування масовими розсилками та благодійними зборами</p>
+      </header>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Масове повідомлення</h2>
-        <form onSubmit={handleSendMassNotification} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Заголовок</label>
-            <input
-              type="text"
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-              value={notificationTitle}
-              onChange={(e) => setNotificationTitle(e.target.value)}
-              placeholder="Увага, студенти..."
-            />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+        <div className="ui-card p-6 md:p-8 flex flex-col h-full">
+          <div className="flex items-center mb-8">
+            <div className="w-12 h-12 rounded-2xl nm-raised flex items-center justify-center mr-4 bg-[rgb(var(--surface))] text-blue-500">
+              <Megaphone className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold text-[rgb(var(--text))]">Масове повідомлення</h2>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Текст повідомлення</label>
-            <textarea
-              required
-              rows={4}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-              value={notificationMsg}
-              onChange={(e) => setNotificationMsg(e.target.value)}
-              placeholder="Введіть текст повідомлення для всіх студентів..."
-            />
-          </div>
-          <button
-            type="submit"
-            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-          >
-            Надіслати всім
-          </button>
-        </form>
-      </div>
+          
+          <form onSubmit={handleSendMassNotification} className="space-y-6 flex-1 flex flex-col">
+            <div className="nm-inset-sm bg-[rgb(var(--surface-2))] p-6 rounded-3xl space-y-5 flex-1">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider ui-muted mb-2">Заголовок</label>
+                <input
+                  type="text"
+                  required
+                  className="ui-input w-full bg-[rgb(var(--surface))]"
+                  value={notificationTitle}
+                  onChange={(e) => setNotificationTitle(e.target.value)}
+                  placeholder="Увага, студенти..."
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider ui-muted mb-2">Текст повідомлення</label>
+                <textarea
+                  required
+                  rows={6}
+                  className="ui-input w-full bg-[rgb(var(--surface))] resize-none"
+                  value={notificationMsg}
+                  onChange={(e) => setNotificationMsg(e.target.value)}
+                  placeholder="Введіть текст повідомлення для всіх студентів..."
+                />
+              </div>
+            </div>
+            <button
+              type="submit"
+              className="ui-button ui-button-primary w-full h-14 mt-4"
+            >
+              <Send className="w-5 h-5 mr-3" />
+              НАДІСЛАТИ ВСІМ
+            </button>
+          </form>
+        </div>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Створити банку (Збір)</h2>
-        <form onSubmit={handleCreateJar} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Назва збору</label>
-            <input
-              type="text"
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-              value={jarTitle}
-              onChange={(e) => setJarTitle(e.target.value)}
-              placeholder="На дрони..."
-            />
+        <div className="ui-card p-6 md:p-8 flex flex-col h-full">
+          <div className="flex items-center mb-8">
+            <div className="w-12 h-12 rounded-2xl nm-raised flex items-center justify-center mr-4 bg-[rgb(var(--surface))] text-pink-500">
+              <PiggyBank className="w-6 h-6" />
+            </div>
+            <h2 className="text-xl font-bold text-[rgb(var(--text))]">Створити банку (Збір)</h2>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Цільова сума</label>
-            <input
-              type="number"
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-              value={jarGoal}
-              onChange={(e) => setJarGoal(e.target.value)}
-              placeholder="10000"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Опис збору</label>
-            <textarea
-              required
-              rows={3}
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-              value={jarDesc}
-              onChange={(e) => setJarDesc(e.target.value)}
-              placeholder="Опис цілей..."
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">ID Гуртожитку (UUID)</label>
-            <input
-              type="text"
-              required
-              className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm p-2 border"
-              value={dormitoryId}
-              onChange={(e) => setDormitoryId(e.target.value)}
-              placeholder="00000000-0000-0000-0000-000000000000"
-            />
-          </div>
-          <button
-            type="submit"
-            className="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-          >
-            Опублікувати збір
-          </button>
-        </form>
+          
+          <form onSubmit={handleCreateJar} className="space-y-6 flex-1 flex flex-col">
+            <div className="nm-inset-sm bg-[rgb(var(--surface-2))] p-6 rounded-3xl space-y-5 flex-1">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider ui-muted mb-2">Назва збору</label>
+                <input
+                  type="text"
+                  required
+                  className="ui-input w-full bg-[rgb(var(--surface))]"
+                  value={jarTitle}
+                  onChange={(e) => setJarTitle(e.target.value)}
+                  placeholder="На дрони..."
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider ui-muted mb-2">Цільова сума (₴)</label>
+                <input
+                  type="number"
+                  required
+                  className="ui-input w-full bg-[rgb(var(--surface))]"
+                  value={jarGoal}
+                  onChange={(e) => setJarGoal(e.target.value)}
+                  placeholder="10000"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider ui-muted mb-2">Опис збору</label>
+                <textarea
+                  required
+                  rows={3}
+                  className="ui-input w-full bg-[rgb(var(--surface))] resize-none"
+                  value={jarDesc}
+                  onChange={(e) => setJarDesc(e.target.value)}
+                  placeholder="Опишіть мету збору..."
+                ></textarea>
+                </div>
+                <div>
+                <label className="block text-xs font-bold uppercase tracking-wider ui-muted mb-2">Посилання на Monobank (необов'язково)</label>
+                <input
+                  type="text"
+                  className="ui-input w-full bg-[rgb(var(--surface))]"
+                  value={monobankUrl}
+                  onChange={(e) => setMonobankUrl(e.target.value)}
+                  placeholder="https://send.monobank.ua/jar/..."
+                />
+                <p className="text-[10px] ui-muted mt-2">Якщо вказано, сума та транзакції будуть синхронізуватися автоматично</p>
+                </div>
+                <div>
+                <label className="block text-xs font-bold uppercase tracking-wider ui-muted mb-2">Для кого цей збір?</label>
+                <select
+                  required
+                  className="ui-input w-full bg-[rgb(var(--surface))]"
+                  value={dormitoryId}
+                  onChange={(e) => setDormitoryId(e.target.value)}
+                >
+                  <option value="">Глобальний збір (всім гуртожиткам)</option>
+                  {dormitories.map((dorm: any) => (
+                    <option key={dorm.id} value={dorm.id}>
+                      Гуртожиток: {dorm.name}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] ui-muted mt-2">Глобальні збори бачать всі студенти системи</p>
+                </div>            </div>
+            <button
+              type="submit"
+              className="w-full h-14 mt-4 bg-gradient-to-r from-pink-500 to-orange-400 text-white rounded-2xl font-bold text-lg tracking-wide hover:opacity-90 transition-all shadow-[0_4px_20px_rgba(236,72,153,0.3)] flex items-center justify-center transform hover:-translate-y-0.5 active:translate-y-0"
+            >
+              ОПУБЛІКУВАТИ ЗБІР
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );

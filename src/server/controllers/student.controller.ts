@@ -21,8 +21,8 @@ export class StudentController {
 
   static async submitApplication(req: AuthRequest, res: Response, next: NextFunction) {
     try {
-      const { course, faculty, privilegeCategoryId, clusteringVector, type } = req.body;
-      const files = req.files as Express.Multer.File[] || [];
+      const { course, faculty, privilegeCategoryId, clusteringVector, type, previousRoom, checkoutReason } = req.body;
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | Express.Multer.File[] | undefined;
 
       const app = await StudentService.submitApplication(
         req.user!.id, 
@@ -31,7 +31,9 @@ export class StudentController {
         privilegeCategoryId, 
         clusteringVector, 
         files,
-        type || 'CHECK_IN'
+        type || 'CHECK_IN',
+        previousRoom,
+        checkoutReason
       );
       
       res.json(app);

@@ -128,7 +128,7 @@ api.interceptors.response.use(
     }
 
     if (!isSilent) {
-      const errorMessage = error.response?.data?.message || 'Сталася невідома помилка сервера';
+      const errorMessage = error.response?.data?.message || error.response?.data?.error || 'Сталася невідома помилка сервера';
       if (error.response?.status === 429) {
         const now = Date.now();
         if (now - lastRateLimitToastAt > 3000) {

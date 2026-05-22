@@ -246,6 +246,8 @@ model Application {
   
   scanDocumentsUrl String            // Comma separated URLs
   rejectionReason  String?
+  checkoutReason   String?
+  previousRoom     String?
   
   submittedAt      DateTime          @default(now())
   reviewedAt       DateTime?
@@ -308,16 +310,16 @@ model Jar {
   description   String?
   goalAmount    Float
   currentAmount Float            @default(0)
-  
-  dormitoryId   String
-  dormitory     Dormitory        @relation(fields: [dormitoryId], references: [id])
-  
+  monobankUrl   String?
+
+  dormitoryId   String?
+  dormitory     Dormitory?       @relation(fields: [dormitoryId], references: [id])
+
   transactions  JarTransaction[]
-  
+
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 }
-
 model JarTransaction {
   id        String         @id @default(uuid())
   jarId     String

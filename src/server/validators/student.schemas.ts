@@ -6,7 +6,9 @@ export const submitApplicationSchema = z.object({
     faculty: z.string().min(1).optional(),
     privilegeCategoryId: z.string().optional().nullable(),
     clusteringVector: z.string().min(1).optional(),
-    type: z.enum(['CHECK_IN', 'TRANSFER', 'CHECK_OUT']).optional()
+    type: z.enum(['CHECK_IN', 'TRANSFER', 'CHECK_OUT']).optional(),
+    previousRoom: z.string().optional(),
+    checkoutReason: z.string().optional()
   })
 });
 
