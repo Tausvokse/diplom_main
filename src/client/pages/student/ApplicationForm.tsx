@@ -21,6 +21,7 @@ interface FormData {
   privilegeFiles: File[];
   checkoutFiles: File[];
   clusteringVector: ClusteringVector;
+  consent: boolean;
 }
 
 const STEPS = [

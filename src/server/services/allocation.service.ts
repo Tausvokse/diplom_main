@@ -71,7 +71,8 @@ export class AllocationService {
       return {
         id: student.id,
         vector,
-        groupId: student.groupId
+        groupId: student.groupId,
+        faculty: student.faculty
       };
     });
 
@@ -252,9 +253,9 @@ export class AllocationService {
     });
 
     const genderBlocks = {
-      MALE: students.filter(s => s.user.gender === 'MALE'),
-      FEMALE: students.filter(s => s.user.gender === 'FEMALE'),
-      OTHER: students.filter(s => s.user.gender === 'OTHER')
+      MALE: students.filter(s => (s.user as any).gender === 'MALE'),
+      FEMALE: students.filter(s => (s.user as any).gender === 'FEMALE'),
+      OTHER: students.filter(s => (s.user as any).gender === 'OTHER')
     };
 
     const results: any[] = [];

@@ -1,4 +1,4 @@
-import { PrismaClient, Role, Gender, ApplicationStatus, ApplicationType } from '@prisma/client';
+import { PrismaClient, Role, ApplicationStatus, ApplicationType } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -79,10 +79,10 @@ async function main() {
         email: `student${i}@kpi.ua`,
         password: 'password123', // In real life hash this
         role: Role.STUDENT,
-        gender: gender,
-        firstName: gender === Gender.MALE ? `Олександр${i}` : `Марія${i}`,
-        lastName: gender === Gender.MALE ? `Коваленко${i}` : `Шевченко${i}`,
-      }
+        gender: gender as any,
+        firstName: gender === 'MALE' ? `Олександр${i}` : `Марія${i}`,
+        lastName: gender === 'MALE' ? `Коваленко${i}` : `Шевченко${i}`,
+      } as any
     });
 
     const vector = {
@@ -127,10 +127,10 @@ async function main() {
       email: 'admin@dorm.kpi.ua',
       password: 'admin-password',
       role: Role.ADMIN,
-      gender: Gender.OTHER,
+      gender: 'OTHER' as any,
       firstName: 'Головний',
       lastName: 'Адміністратор'
-    }
+    } as any
   });
 
   console.log('--- Seeding Complete: 120 Students, 50 Rooms, 1 Admin ---');
