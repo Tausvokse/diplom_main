@@ -150,7 +150,7 @@ export const ApplicationsReview: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-xs font-bold text-[rgb(var(--text))] uppercase tracking-wider bg-[rgb(var(--surface))] nm-raised-xs px-3 py-1.5 rounded-lg">
-                      {{ CHECK_IN: 'Поселення', TRANSFER: 'Переселення', CHECK_OUT: 'Виселення' }[app.type as string] || app.type}
+                      {{ CHECK_IN: 'Поселення', CHECK_OUT: 'Виселення' }[app.type as string] || app.type}
                     </span>
                   </td>
                   <td className="px-6 py-4">

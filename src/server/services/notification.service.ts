@@ -32,7 +32,6 @@ export class NotificationService {
 
     const typeLabels: Record<string, string> = {
       CHECK_IN: 'на поселення',
-      TRANSFER: 'на переселення',
       CHECK_OUT: 'на виселення'
     };
     const appTypeLabel = typeLabels[app.type] || '';

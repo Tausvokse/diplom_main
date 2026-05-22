@@ -63,7 +63,7 @@ export const StudentDetailModal: React.FC<StudentDetailModalProps> = ({ studentI
   ];
 
   const getAppTypeLabel = (type: string) => {
-    const map: any = { CHECK_IN: 'Поселення', TRANSFER: 'Переселення', CHECK_OUT: 'Виселення' };
+    const map: any = { CHECK_IN: 'Поселення', CHECK_OUT: 'Виселення' };
     return map[type] || type;
   };
 

@@ -4,7 +4,7 @@ export type RoomStatus = 'AVAILABLE' | 'FULL' | 'MAINTENANCE';
 
 export type ApplicationStatus = 'DRAFT' | 'SUBMITTED' | 'UNDER_REVIEW' | 'APPROVED' | 'REJECTED';
 
-export type ApplicationType = 'CHECK_IN' | 'TRANSFER' | 'CHECK_OUT';
+export type ApplicationType = 'CHECK_IN' | 'CHECK_OUT';
 
 export interface User {
   id: string;

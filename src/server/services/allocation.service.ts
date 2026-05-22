@@ -7,11 +7,11 @@ import { getOccupancyStatus } from '../utils/occupancy';
 
 export class AllocationService {
   static async runAllocationPipeline() {
-    // We include students with roomId if they have an approved TRANSFER application
     const applications = await prisma.application.findMany({
       where: {
         status: 'APPROVED',
-        type: { in: ['CHECK_IN', 'TRANSFER'] }
+        type: 'CHECK_IN',
+        student: { roomId: null }
       },
       include: {
         student: {
@@ -20,20 +20,11 @@ export class AllocationService {
       }
     });
 
-    // Filter to only keep relevant students: 
-    // - CHECK_IN must have no roomId
-    // - TRANSFER should have a roomId (usually) but we want to reallocate them
-    const validApplications = applications.filter(app => {
-      if (app.type === 'CHECK_IN') return app.student.roomId === null;
-      if (app.type === 'TRANSFER') return true; // Transfers are always valid for re-allocation
-      return false;
-    });
-
-    if (validApplications.length === 0) {
+    if (applications.length === 0) {
       throw new AppError('Немає схвалених заяв для розподілу', 400);
     }
 
-    const ahpInput: AhpStudent[] = validApplications.map(app => ({
+    const ahpInput: AhpStudent[] = applications.map(app => ({
       id: app.student.id,
       course: app.student.course,
       privilegeMultiplier: app.student.privilege?.multiplier || 1.0,
@@ -84,7 +75,13 @@ export class AllocationService {
       };
     });
 
-    const clusters: Cluster[] = KMeansAlgorithm.clusterize(kmeansInput, availableRooms.length);
+    // Оптимізація: групуємо людей разом, щоб економити місце
+    // Розраховуємо кількість кластерів як кількість кімнат, необхідних для розселення всіх студентів
+    const avgCapacity = 3;
+    const optimalK = Math.ceil(topStudentIds.length / avgCapacity);
+    const k = Math.min(optimalK, availableRooms.length);
+
+    const clusters: Cluster[] = KMeansAlgorithm.clusterize(kmeansInput, k);
     const results: any[] = [];
 
     await prisma.$transaction(async (tx) => {
@@ -100,22 +97,6 @@ export class AllocationService {
         if (studentsToAllocate.length === 0) continue;
 
         for (const student of studentsToAllocate) {
-          // If student is TRANSFER, they might still have an old allocation. 
-          // We mark it as EVICTED or inactive.
-          const currentProfile = await tx.studentProfile.findUnique({ where: { id: student.id } });
-          if (currentProfile?.roomId) {
-             // Deactivate old allocation
-             await tx.roomAllocation.updateMany({
-               where: { studentId: student.id, status: 'ACTIVE' },
-               data: { status: 'EVICTED' }
-             });
-             // Decrease occupancy of old room
-             await tx.room.update({
-               where: { id: currentProfile.roomId },
-               data: { currentOccupancy: { decrement: 1 }, status: 'AVAILABLE' }
-             });
-          }
-
           await tx.roomAllocation.create({
             data: {
               roomId: targetRoom.id,
@@ -190,29 +171,18 @@ export class AllocationService {
   }
 
   static async getPool() {
-    const students = await prisma.studentProfile.findMany({
+    return prisma.studentProfile.findMany({
       where: {
         applications: {
           some: {
             status: 'APPROVED',
-            type: { in: ['CHECK_IN', 'TRANSFER'] }
+            type: 'CHECK_IN'
           }
-        }
+        },
+        roomId: null
       },
-      include: { user: true, privilege: true, applications: true },
+      include: { user: true, privilege: true },
       orderBy: [{ priorityScore: 'desc' }, { fullName: 'asc' }]
-    });
-
-    // Filter students: 
-    // If CHECK_IN, they must not have a room. 
-    // If TRANSFER, they are in the pool regardless.
-    return students.filter(student => {
-      const latestApp = student.applications.sort((a, b) => b.submittedAt.getTime() - a.submittedAt.getTime())[0];
-      if (!latestApp) return false;
-      if (latestApp.status !== 'APPROVED') return false;
-      if (latestApp.type === 'CHECK_IN') return student.roomId === null;
-      if (latestApp.type === 'TRANSFER') return true;
-      return false;
     });
   }
 
@@ -220,7 +190,8 @@ export class AllocationService {
     const applications = await prisma.application.findMany({
       where: {
         status: 'APPROVED',
-        type: { in: ['CHECK_IN', 'TRANSFER'] }
+        type: 'CHECK_IN',
+        student: { roomId: null }
       },
       include: {
         student: {
@@ -229,17 +200,11 @@ export class AllocationService {
       }
     });
 
-    const validApplications = applications.filter(app => {
-      if (app.type === 'CHECK_IN') return app.student.roomId === null;
-      if (app.type === 'TRANSFER') return true;
-      return false;
-    });
-
-    if (validApplications.length === 0) {
+    if (applications.length === 0) {
       throw new AppError('Немає схвалених заяв для розподілу', 400);
     }
 
-    const ahpInput: AhpStudent[] = validApplications.map(app => ({
+    const ahpInput: AhpStudent[] = applications.map(app => ({
       id: app.student.id,
       course: app.student.course,
       privilegeMultiplier: app.student.privilege?.multiplier || 1.0,
@@ -283,7 +248,11 @@ export class AllocationService {
       return { id: student.id, vector, groupId: student.groupId };
     });
 
-    const clusters: Cluster[] = KMeansAlgorithm.clusterize(kmeansInput, availableRooms.length);
+    const avgCapacity = 3;
+    const optimalK = Math.ceil(topStudentIds.length / avgCapacity);
+    const k = Math.min(optimalK, availableRooms.length);
+
+    const clusters: Cluster[] = KMeansAlgorithm.clusterize(kmeansInput, k);
     const results: any[] = [];
 
     for (let i = 0; i < clusters.length; i++) {
@@ -341,25 +310,15 @@ export class AllocationService {
           if (!profile) {
             throw new AppError('Студента з плану не знайдено', 404);
           }
-          
-          // If student is TRANSFER, we need to evict them first
           if (profile.roomId) {
-             await tx.roomAllocation.updateMany({
-               where: { studentId: profile.id, status: 'ACTIVE' },
-               data: { status: 'EVICTED' }
-             });
-             // Decrease occupancy of old room
-             await tx.room.update({
-               where: { id: profile.roomId },
-               data: { currentOccupancy: { decrement: 1 }, status: 'AVAILABLE' }
-             });
+            throw new AppError(`Студент ${profile.fullName} вже поселений`, 400);
           }
 
           const approvedApplication = await tx.application.findFirst({
             where: {
               studentId: profile.id,
               status: 'APPROVED',
-              type: { in: ['CHECK_IN', 'TRANSFER'] }
+              type: 'CHECK_IN'
             }
           });
           if (!approvedApplication) {

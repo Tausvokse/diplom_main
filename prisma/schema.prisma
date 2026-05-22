@@ -30,7 +30,6 @@ enum ApplicationStatus {
 
 enum ApplicationType {
   CHECK_IN
-  TRANSFER
   CHECK_OUT
 }
 

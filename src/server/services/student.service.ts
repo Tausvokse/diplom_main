@@ -77,9 +77,13 @@ export class StudentService {
       });
     }
 
-    if (type === 'TRANSFER' || type === 'CHECK_OUT') {
+    if (type === 'CHECK_OUT') {
       if (!profile.roomId) {
-        throw new AppError('Ви повинні бути поселені для подачі заяви на переселення або виселення', 400);
+        throw new AppError('Ви повинні бути поселені для подачі заяви на виселення', 400);
+      }
+    } else if (type === 'CHECK_IN') {
+      if (profile.roomId) {
+        throw new AppError('Ви вже поселені в гуртожиток. Подача нової заяви на поселення неможлива.', 400);
       }
     }
 

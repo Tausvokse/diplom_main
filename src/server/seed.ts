@@ -169,7 +169,7 @@ async function recalculatePriorityScores() {
     where: {
       applications: {
         some: {
-          type: { in: [ApplicationType.CHECK_IN, ApplicationType.TRANSFER] }
+          type: { in: [ApplicationType.CHECK_IN] }
         }
       }
     },
@@ -539,12 +539,11 @@ async function main() {
     createApplication(requireMapValue(students, 'alina'), ApplicationType.CHECK_IN, ApplicationStatus.APPROVED, 5),
     createApplication(requireMapValue(students, 'yevhen'), ApplicationType.CHECK_IN, ApplicationStatus.APPROVED, 5),
     createApplication(requireMapValue(students, 'tetiana'), ApplicationType.CHECK_IN, ApplicationStatus.APPROVED, 4),
-    createApplication(requireMapValue(students, 'dariia'), ApplicationType.TRANSFER, ApplicationStatus.APPROVED, 3),
+    createApplication(requireMapValue(students, 'dariia'), ApplicationType.CHECK_IN, ApplicationStatus.APPROVED, 3),
     createApplication(requireMapValue(students, 'roman'), ApplicationType.CHECK_IN, ApplicationStatus.SUBMITTED, 1),
     createApplication(requireMapValue(students, 'oksana'), ApplicationType.CHECK_IN, ApplicationStatus.UNDER_REVIEW, 2),
     createApplication(requireMapValue(students, 'denys'), ApplicationType.CHECK_IN, ApplicationStatus.REJECTED, 10, 'Неякісна скан-копія документа. Завантажте чіткіший файл.'),
     createApplication(requireMapValue(students, 'liliia'), ApplicationType.CHECK_IN, ApplicationStatus.DRAFT, 0),
-    createApplication(requireMapValue(students, 'bohdan'), ApplicationType.TRANSFER, ApplicationStatus.SUBMITTED, 1),
     createApplication(requireMapValue(students, 'nataliia'), ApplicationType.CHECK_OUT, ApplicationStatus.APPROVED, 15)
   ]);
 

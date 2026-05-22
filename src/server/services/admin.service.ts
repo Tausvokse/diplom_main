@@ -150,12 +150,6 @@ export class AdminService {
       await AllocationService.evictStudent(app.studentId);
     }
 
-    // Handle TRANSFER: evict from current room, student goes back to pool
-    if (app.type === 'TRANSFER' && app.student.roomId) {
-      const { AllocationService } = await import('./allocation.service');
-      await AllocationService.evictStudent(app.studentId);
-    }
-
     // Create notification
     const { NotificationService } = await import('./notification.service');
     await NotificationService.createApplicationStatusNotification(appId, 'APPROVED');

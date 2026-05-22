@@ -101,7 +101,6 @@ export const StudentDashboard: React.FC = () => {
 
     const appTypeLabel = {
       CHECK_IN: 'на поселення',
-      TRANSFER: 'на переселення',
       CHECK_OUT: 'на виселення'
     }[application.type as string] || '';
 
