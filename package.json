@@ -19,7 +19,11 @@
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:seed": "tsx src/server/seed.ts",
     "heroku-postbuild": "npm run build"
+  },
+  "prisma": {
+    "seed": "tsx src/server/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
