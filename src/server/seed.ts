@@ -447,8 +447,8 @@ async function main() {
       const firstName = firstNames[Math.floor(Math.random() * (isMale ? 15 : 14) + (isMale ? 0 : 15))];
       const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
       const faculty = faculties[Math.floor(Math.random() * faculties.length)];
-      const studentIdNumber = `KB-${Math.floor(100000 + Math.random() * 900000)}`;
-      const email = `s${studentIdNumber.toLowerCase().replace('-', '')}_${massGeneratedCount}@kai.edu.ua`;
+      const studentIdNumber = `KB-${(300000 + massGeneratedCount).toString().padStart(6, '0')}`;
+      const email = `s${studentIdNumber.toLowerCase().replace('-', '')}@kai.edu.ua`;
       const vector: ClusteringVector = {
         chronotype: Math.floor(Math.random() * 10) + 1,
         sociability: Math.floor(Math.random() * 10) + 1,
