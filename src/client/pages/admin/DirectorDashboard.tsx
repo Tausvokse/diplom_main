@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api } from '../../services/api';
-import { Search, UserCircle, Phone, Mail, Home, Settings, ChevronUp, ChevronDown } from 'lucide-react';
+import { Search, Phone, Mail, Home, Settings, ChevronUp, ChevronDown, Users } from 'lucide-react';
 import { StudentDetailModal } from '../../components/StudentDetailModal';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
@@ -40,8 +40,8 @@ const DirectorDashboard: React.FC = () => {
 
   const fetchStudents = async () => {
     try {
-      const res = await api.get('/admin/students?page=1&limit=500'); // Temp limit for now
-      setStudents(res.data.data ? res.data.data : res.data); // Support both old and new formats during transition
+      const res = await api.get('/admin/students?page=1&limit=500');
+      setStudents(res.data.data ? res.data.data : res.data);
     } catch (error) {
       console.error(error);
     } finally {
@@ -76,65 +76,69 @@ const DirectorDashboard: React.FC = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">База даних студентів</h1>
-      </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+      <header className="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-[rgb(var(--text))] tracking-tight mb-2">База даних студентів</h1>
+          <p className="ui-muted text-sm">Глобальний пошук та управління студентами кампусу</p>
+        </div>
+      </header>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden transition-colors">
-        <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex flex-col md:flex-row items-center gap-4">
+      <div className="ui-card overflow-hidden flex flex-col p-1">
+        <div className="p-5 border-b border-[rgb(var(--border)/0.2)] flex flex-col md:flex-row items-center justify-between gap-4 bg-[rgb(var(--surface-2))] nm-inset-sm m-1 rounded-t-3xl">
           <div className="relative flex-1 w-full max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-[rgb(var(--muted))]" />
             <input
               type="text"
-              placeholder="Пошук за ПІБ, email або номером квитка..."
-              className="pl-10 w-full rounded-md border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 shadow-sm focus:border-blue-500 focus:ring-blue-500 py-2 outline-none transition-colors"
+              placeholder="Пошук за ПІБ, email або квитком..."
+              className="pl-12 w-full ui-input bg-[rgb(var(--surface))]"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400 w-full md:w-auto text-right md:text-left">
-            Всього знайдено: <span className="font-medium text-gray-900 dark:text-white">{filtered.length}</span>
+          <div className="flex items-center text-sm font-bold uppercase tracking-wider text-[rgb(var(--muted))] bg-[rgb(var(--surface))] nm-raised-xs px-4 py-2 rounded-xl">
+            <Users className="w-4 h-4 mr-2" />
+            Всього: <span className="text-[rgb(var(--text))] ml-2">{filtered.length}</span>
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-            <thead className="bg-gray-50 dark:bg-gray-900/50">
+        <div className="overflow-x-auto bg-[rgb(var(--surface-2))] nm-inset-sm m-1 rounded-b-3xl mt-0">
+          <table className="min-w-full text-left border-collapse">
+            <thead className="border-b border-[rgb(var(--border)/0.2)]">
               <tr>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider cursor-pointer hover:bg-[rgb(var(--surface))] transition-colors"
                   onClick={() => handleSort('fullName')}
                 >
                   <div className="flex items-center">Студент <SortIcon field="fullName" sortField={sortField} sortDirection={sortDirection} /></div>
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">
                   Контакти
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider cursor-pointer hover:bg-[rgb(var(--surface))] transition-colors"
                   onClick={() => handleSort('course')}
                 >
                   <div className="flex items-center">Факультет / Курс <SortIcon field="course" sortField={sortField} sortDirection={sortDirection} /></div>
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">
                   Поселення
                 </th>
                 <th 
                   scope="col" 
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                  className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider cursor-pointer hover:bg-[rgb(var(--surface))] transition-colors"
                   onClick={() => handleSort('rating')}
                 >
                   <div className="flex items-center">Рейтинг <SortIcon field="rating" sortField={sortField} sortDirection={sortDirection} /></div>
                 </th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th scope="col" className="px-6 py-5 text-right text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">
                   Дії
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="divide-y divide-[rgb(var(--border)/0.1)]">
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   <tr key={i}>
@@ -148,46 +152,58 @@ const DirectorDashboard: React.FC = () => {
                 ))
               ) : filtered.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                  <td colSpan={6} className="px-6 py-16 text-center text-[rgb(var(--muted))] font-medium text-sm">
+                    <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
                     Студентів не знайдено
                   </td>
                 </tr>
               ) : (
                 filtered.map((student) => (
-                  <tr key={student.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                  <tr key={student.id} className="hover:bg-[rgb(var(--surface))] transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <UserCircle className="h-8 w-8 text-gray-400 dark:text-gray-500 mr-3" />
+                        <div className="w-10 h-10 rounded-xl nm-flat bg-[rgb(var(--surface))] flex items-center justify-center text-[rgb(var(--accent))] font-bold mr-4 flex-shrink-0">
+                          {student.fullName.charAt(0)}
+                        </div>
                         <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{student.fullName}</div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">№ {student.studentIdNumber}</div>
+                          <div className="text-sm font-bold text-[rgb(var(--text))]">{student.fullName}</div>
+                          <div className="text-xs font-medium text-[rgb(var(--muted))] mt-0.5">№ {student.studentIdNumber}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex flex-col text-sm text-gray-900 dark:text-gray-300">
-                        <div className="flex items-center gap-2"><Phone className="h-4 w-4 text-gray-400 dark:text-gray-500"/> {student.phone}</div>
-                        <div className="flex items-center gap-2 mt-1"><Mail className="h-4 w-4 text-gray-400 dark:text-gray-500"/> {student.email}</div>
+                      <div className="flex flex-col text-xs font-medium text-[rgb(var(--text))] space-y-1.5">
+                        <div className="flex items-center"><Phone className="h-3.5 w-3.5 text-[rgb(var(--muted))] mr-2"/> {student.phone}</div>
+                        <div className="flex items-center"><Mail className="h-3.5 w-3.5 text-[rgb(var(--muted))] mr-2"/> {student.email}</div>
                       </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                      {student.faculty}, {student.course} курс
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-900 dark:text-gray-300">
-                        <Home className="h-4 w-4 text-gray-400 dark:text-gray-500 mr-2" />
-                        {student.dormitory ? `${student.dormitory.name}, Кім. ${student.room?.roomNumber}` : <span className="text-gray-400 dark:text-gray-500">Не поселений</span>}
+                      <div className="text-sm font-bold text-[rgb(var(--text))]">{student.faculty}</div>
+                      <div className="text-xs font-medium text-[rgb(var(--muted))] mt-0.5">{student.course} курс</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="flex items-center text-sm font-bold text-[rgb(var(--text))]">
+                        <Home className="h-4 w-4 text-[rgb(var(--accent))] mr-2" />
+                        {student.dormitory ? (
+                          <span>{student.dormitory.name}, Кім. <span className="text-[rgb(var(--accent))]">{student.room?.roomNumber}</span></span>
+                        ) : (
+                          <span className="text-[rgb(var(--muted))] font-medium">Не поселений</span>
+                        )}
                       </div>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-gray-100">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${student.rating >= 4.0 ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : student.rating >= 3.0 ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400' : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'}`}>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span className={`px-3 py-1.5 inline-flex text-xs font-bold rounded-xl nm-inset-sm ${
+                        student.rating >= 4.0 ? 'bg-green-500/10 text-green-500' : 
+                        student.rating >= 3.0 ? 'bg-yellow-500/10 text-yellow-500' : 
+                        'bg-red-500/10 text-red-500'
+                      }`}>
                         {student.rating.toFixed(1)} / 5.0
                       </span>
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
                       <button 
                         onClick={() => setSelectedStudentId(student.id)}
-                        className="text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 transition-colors p-2 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg"
+                        className="w-10 h-10 inline-flex items-center justify-center text-[rgb(var(--accent))] nm-flat bg-[rgb(var(--surface))] hover:nm-inset-sm rounded-xl transition-all"
                         title="Управління студентом"
                       >
                         <Settings className="w-5 h-5" />

@@ -112,7 +112,8 @@ export const createJarSchema = z.object({
     title: z.string().min(1),
     goalAmount: z.coerce.number().positive(),
     description: z.string().optional(),
-    dormitoryId: z.string().uuid()
+    dormitoryId: z.string().uuid().optional().nullable(),
+    monobankUrl: z.string().url().or(z.string().length(0)).optional()
   })
 });
 

@@ -112,7 +112,7 @@ export class AdminService {
   }
 
   static async getApplications() {
-    return prisma.application.findMany({
+    const apps = await prisma.application.findMany({
       include: {
         student: {
           include: {
@@ -123,6 +123,11 @@ export class AdminService {
       },
       orderBy: { submittedAt: 'desc' }
     });
+    
+    return apps.map(app => ({
+      ...app,
+      scanDocumentsUrl: app.scanDocumentsUrl ? app.scanDocumentsUrl.split(',').filter(Boolean) : []
+    }));
   }
 
   static async approveApplication(appId: string) {
@@ -486,14 +491,15 @@ export class AdminService {
     }
   }
 
-  static async createJar(title: string, goalAmount: number, description: string | undefined, dormitoryId: string) {
+  static async createJar(title: string, goalAmount: number, description: string | undefined, dormitoryId: string | null | undefined, monobankUrl?: string) {
     return prisma.jar.create({
       data: {
         title,
         goalAmount,
         description,
-        dormitoryId,
-        currentAmount: 0
+        dormitoryId: dormitoryId || null,
+        currentAmount: 0,
+        monobankUrl
       }
     });
   }

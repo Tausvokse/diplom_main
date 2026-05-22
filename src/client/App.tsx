@@ -54,41 +54,42 @@ const MasterRepairsPage = React.lazy(() => import('./pages/master/MasterRepairsP
 
 const Unauthorized = () => (
   <div className="flex items-center justify-center min-h-screen ui-shell">
-    <h1 className="text-2xl font-semibold text-red-600 dark:text-red-400">Доступ заборонено (403)</h1>
+    <div className="ui-card p-8 text-center">
+      <h1 className="text-2xl font-semibold text-red-500">Доступ заборонено (403)</h1>
+    </div>
   </div>
 );
 
-const Loader = () => {
-  const { theme } = useTheme();
-  const baseColor = theme === 'dark' ? '#1f2937' : '#e5e7eb';
-  const highlightColor = theme === 'dark' ? '#374151' : '#f3f4f6';
-
-  return (
-    <div className="flex items-center justify-center min-h-screen ui-shell">
-      <div className="w-full max-w-4xl px-4 space-y-4">
-        <Skeleton height={28} width={220} baseColor={baseColor} highlightColor={highlightColor} />
-        <Skeleton height={16} width={320} baseColor={baseColor} highlightColor={highlightColor} />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-          <Skeleton height={160} baseColor={baseColor} highlightColor={highlightColor} />
-          <Skeleton height={160} baseColor={baseColor} highlightColor={highlightColor} />
-        </div>
-        <Skeleton height={220} baseColor={baseColor} highlightColor={highlightColor} />
-      </div>
+const PageLoader = () => (
+  <div className="w-full max-w-4xl space-y-4 animate-fadeIn">
+    <Skeleton height={28} width={220} borderRadius={14} />
+    <Skeleton height={16} width={320} borderRadius={14} />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+      <Skeleton height={160} borderRadius={20} />
+      <Skeleton height={160} borderRadius={20} />
     </div>
-  );
-};
+    <Skeleton height={220} borderRadius={20} />
+  </div>
+);
 
-// NavItem component
+const FullScreenLoader = () => (
+  <div className="flex items-center justify-center min-h-screen ui-shell p-4">
+    <PageLoader />
+  </div>
+);
+
+// NavItem component — Neumorphic active/hover states
 const NavItem = ({ to, icon: Icon, label, onClick, isActive }: { to: string, icon: any, label: string, onClick: () => void, isActive: boolean }) => {
   return (
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all ${
+      className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${
         isActive
-          ? 'bg-[rgb(var(--accent-soft))] text-[rgb(var(--accent))] shadow-sm'
-          : 'text-[rgb(var(--muted))] hover:bg-[rgb(var(--surface-2))] hover:text-[rgb(var(--text))]'
+          ? 'bg-[rgb(var(--surface))] text-[rgb(var(--accent))] nm-inset-sm'
+          : 'text-[rgb(var(--muted))] hover:text-[rgb(var(--text))] hover:bg-[rgb(var(--surface))] hover:shadow-[var(--nm-raised-xs)]'
       }`}
+      style={isActive ? { boxShadow: 'var(--nm-inset-sm)' } : {}}
     >
       <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-[rgb(var(--accent))]' : 'text-[rgb(var(--muted))]'}`} />
       {label}
@@ -96,7 +97,7 @@ const NavItem = ({ to, icon: Icon, label, onClick, isActive }: { to: string, ico
   );
 };
 
-// Sidebar Layout
+// Sidebar Layout — Neumorphic
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
@@ -130,25 +131,34 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const closeSidebar = () => setIsSidebarOpen(false);
 
   return (
-    <div className="flex h-screen ui-shell overflow-hidden transition-colors duration-200">
+    <div className="flex h-screen overflow-hidden transition-colors duration-300">
       {/* Mobile overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 z-20 bg-black/50 md:hidden"
+          className="fixed inset-0 z-20 bg-black/30 backdrop-blur-sm md:hidden"
           onClick={closeSidebar}
         />
       )}
 
-      {/* Sidebar */}
-      <aside className={`fixed md:static inset-y-0 left-0 z-30 w-64 flex-shrink-0 border-r border-[rgb(var(--border))] bg-[rgb(var(--surface))] flex flex-col transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-200 ease-in-out`}>
-        <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[rgb(var(--accent))] via-[rgb(var(--accent))] to-transparent opacity-70" />
-        <div className="h-16 flex items-center justify-between px-6 border-b border-[rgb(var(--border))]">
+      {/* Sidebar — Neumorphic raised panel */}
+      <aside className={`fixed md:static inset-y-0 left-0 z-30 w-64 flex-shrink-0 bg-[rgb(var(--surface))] flex flex-col transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-200 ease-in-out`}
+        style={{ boxShadow: '6px 0 16px rgba(var(--nm-dark), 0.15), -2px 0 8px rgba(var(--nm-light), 0.1)' }}
+      >
+        {/* Accent gradient strip */}
+        <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[rgb(var(--accent))] via-[rgb(var(--accent))] to-transparent opacity-60 rounded-r" />
+        
+        {/* Logo area */}
+        <div className="h-16 flex items-center justify-between px-6">
           <span className="text-xl font-semibold text-[rgb(var(--text))]">Dormitory SaaS</span>
-          <button className="md:hidden text-[rgb(var(--muted))]" onClick={closeSidebar}>
+          <button className="md:hidden text-[rgb(var(--muted))] p-1 rounded-lg hover:bg-[rgb(var(--surface-2))]" onClick={closeSidebar}>
             <X className="w-6 h-6" />
           </button>
         </div>
+
+        {/* Separator — neumorphic groove */}
+        <div className="mx-4 h-[1px] bg-[rgb(var(--border)/0.3)]" style={{ boxShadow: '0 1px 0 var(--nm-light)' }} />
         
+        {/* Navigation */}
         <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
           {isAdmin && (
             <>
@@ -178,47 +188,60 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           )}
         </div>
 
-        <div className="p-4 border-t border-[rgb(var(--border))] bg-[rgb(var(--surface-2))]">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full bg-[rgb(var(--accent-soft))] flex items-center justify-center text-[rgb(var(--accent))] font-bold">
-                {user?.firstName?.[0] || ''}{user?.lastName?.[0] || ''}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-[rgb(var(--text))] truncate" title={`${user?.lastName} ${user?.firstName}`}>
-                  {user?.lastName} {user?.firstName}
-                </p>
-                <div className="mt-0.5 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-[rgb(var(--accent-soft))] text-[rgb(var(--accent))]">
-                  {getRoleLabel(user?.role)}
+        {/* User section — Neumorphic inset panel */}
+        <div className="p-4">
+          <div className="rounded-2xl p-3 bg-[rgb(var(--surface-2))]" style={{ boxShadow: 'var(--nm-inset-sm)' }}>
+            <div className="flex items-center justify-between mb-3 gap-1">
+              <div className="flex items-center space-x-2 flex-1 min-w-0">
+                <div className="w-9 h-9 flex-shrink-0 rounded-full bg-[rgb(var(--accent-soft))] flex items-center justify-center text-[rgb(var(--accent))] font-bold text-sm" style={{ boxShadow: 'var(--nm-raised-xs)' }}>
+                  {user?.firstName?.[0] || ''}{user?.lastName?.[0] || ''}
+                </div>
+                <div className="flex-1 min-w-0 overflow-hidden">
+                  <p className="text-sm font-semibold text-[rgb(var(--text))] truncate block" title={`${user?.lastName} ${user?.firstName}`}>
+                    {user?.lastName} {user?.firstName}
+                  </p>
+                  <div className="mt-0.5 flex">
+                    <span className="inline-block truncate px-2 py-0.5 rounded-full text-[10px] font-medium bg-[rgb(var(--accent-soft))] text-[rgb(var(--accent))]">
+                      {getRoleLabel(user?.role)}
+                    </span>
+                  </div>
                 </div>
               </div>
+              
+              {/* Theme toggle — Neumorphic */}
+              <button
+                onClick={toggleTheme}
+                className="p-1.5 flex-shrink-0 rounded-xl text-[rgb(var(--muted))] hover:text-[rgb(var(--text))] transition-all duration-200"
+                style={{ boxShadow: theme === 'dark' ? 'var(--nm-inset-sm)' : 'var(--nm-raised-xs)' }}
+                title="Перемкнути тему"
+              >
+                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </button>
             </div>
+            
             <button
-              onClick={toggleTheme}
-              className="p-2 text-[rgb(var(--muted))] hover:bg-[rgb(var(--surface-3))] rounded-lg transition-colors"
-              title="Перемкнути тему"
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center px-4 py-2.5 text-sm font-semibold rounded-xl text-[rgb(var(--text))] bg-[rgb(var(--surface))] transition-all duration-200 hover:translate-y-[-1px]"
+              style={{ boxShadow: 'var(--nm-raised-sm)' }}
             >
-              {theme === 'light' ? <Moon className="w-5 h-5" /> : <Sun className="w-5 h-5" />}
+              <LogOut className="w-4 h-4 mr-2 text-[rgb(var(--muted))]" />
+              Вийти
             </button>
           </div>
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center justify-center px-4 py-2 border border-[rgb(var(--border))] text-sm font-semibold rounded-lg text-[rgb(var(--text))] bg-[rgb(var(--surface))] hover:bg-[rgb(var(--surface-2))] transition-colors"
-          >
-            <LogOut className="w-4 h-4 mr-2 text-[rgb(var(--muted))]" />
-            Вийти
-          </button>
         </div>
       </aside>
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* Top bar for notifications / mobile menu */}
-        <header className="h-16 bg-[rgb(var(--surface))] border-b border-[rgb(var(--border))] flex items-center justify-between px-4 md:px-6 flex-shrink-0 transition-colors duration-200">
+        {/* Top bar — Neumorphic raised strip */}
+        <header className="h-16 bg-[rgb(var(--surface))] flex items-center justify-between px-4 md:px-6 flex-shrink-0 transition-colors duration-200"
+          style={{ boxShadow: '0 4px 12px var(--nm-dark), 0 -2px 6px var(--nm-light)' }}
+        >
            <div className="flex items-center md:hidden">
              <button
                onClick={() => setIsSidebarOpen(true)}
-               className="p-2 -ml-2 mr-2 text-[rgb(var(--muted))] hover:bg-[rgb(var(--surface-2))] rounded-md"
+               className="p-2 -ml-2 mr-2 text-[rgb(var(--muted))] rounded-xl hover:text-[rgb(var(--text))]"
+               style={{ boxShadow: 'var(--nm-raised-xs)' }}
              >
                <Menu className="w-6 h-6" />
              </button>
@@ -228,8 +251,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
            {user?.role === 'STUDENT' && <NotificationBell />}
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          {children}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
+          <Suspense fallback={<PageLoader />}>
+            {children}
+          </Suspense>
         </main>
       </div>
 
@@ -251,8 +276,8 @@ const queryClient = new QueryClient({
 export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
-        <Suspense fallback={<Loader />}>
+      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+        <Suspense fallback={<FullScreenLoader />}>
           <Routes>
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />

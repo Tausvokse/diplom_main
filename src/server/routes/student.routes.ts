@@ -40,7 +40,13 @@ const studentOnly = Router();
 studentOnly.use(requireRole(['STUDENT'] as Role[]));
 
 studentOnly.get('/dashboard', StudentController.getDashboardData);
-studentOnly.post('/application', upload.array('documents'), validate(submitApplicationSchema), StudentController.submitApplication);
+studentOnly.post('/application', upload.fields([
+  { name: 'passport', maxCount: 5 },
+  { name: 'idCode', maxCount: 5 },
+  { name: 'medCard', maxCount: 5 },
+  { name: 'privilegeDocs', maxCount: 5 },
+  { name: 'documents', maxCount: 10 }
+]), validate(submitApplicationSchema), StudentController.submitApplication);
 studentOnly.post('/group/create', StudentController.createGroup);
 studentOnly.post('/group/join', validate(joinGroupSchema), StudentController.joinGroup);
 studentOnly.get('/neighbors', StudentController.getNeighbors);
