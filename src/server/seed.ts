@@ -16,6 +16,7 @@ async function main() {
   await prisma.roomAllocation.deleteMany();
   await prisma.application.deleteMany();
   await prisma.auditLog.deleteMany();
+  await prisma.message.deleteMany();
   await prisma.studentProfile.deleteMany();
   await prisma.user.deleteMany();
   await prisma.room.deleteMany();
