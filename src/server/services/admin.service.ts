@@ -150,9 +150,37 @@ export class AdminService {
       await AllocationService.evictStudent(app.studentId);
     }
 
+    // Handle CHECK_IN: ensure student is ready for allocation by clearing any previous roomId
+    if (app.type === 'CHECK_IN' && app.student.roomId) {
+      await prisma.studentProfile.update({
+        where: { id: app.studentId },
+        data: { roomId: null, dormitoryId: null }
+      });
+    }
+
     // Create notification
     const { NotificationService } = await import('./notification.service');
     await NotificationService.createApplicationStatusNotification(appId, 'APPROVED');
+
+    return updated;
+  }
+
+  static async updateApplicationStatus(appId: string, status: any) {
+    const app = await prisma.application.findUnique({ where: { id: appId } });
+    if (!app) {
+      throw new AppError('Заяву не знайдено', 404);
+    }
+
+    const updated = await prisma.application.update({
+      where: { id: appId },
+      data: { 
+        status, 
+        reviewedAt: (status === 'APPROVED' || status === 'REJECTED') ? new Date() : undefined 
+      }
+    });
+
+    const { NotificationService } = await import('./notification.service');
+    await NotificationService.createApplicationStatusNotification(appId, status);
 
     return updated;
   }

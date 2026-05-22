@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, CheckCircle, XCircle, Eye, AlertTriangle, X } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, Eye, AlertTriangle, X, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Application } from '../../types';
 import { api } from '../../services/api';
@@ -39,6 +39,19 @@ export const ApplicationsReview: React.FC = () => {
       toast.success('Заяву схвалено та додано до пулу розподілу');
     } catch (error) {
       toast.error('Помилка при схваленні заяви');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleSetUnderReview = async (id: string) => {
+    setIsProcessing(true);
+    try {
+      await api.patch(`/admin/applications/${id}/status`, { status: 'UNDER_REVIEW' });
+      setApplications(prev => prev.map(app => app.id === id ? { ...app, status: 'UNDER_REVIEW' } : app));
+      toast.success('Заяву переведено в статус "На розгляді"');
+    } catch (error) {
+      toast.error('Помилка при оновленні статусу');
     } finally {
       setIsProcessing(false);
     }
@@ -165,6 +178,16 @@ export const ApplicationsReview: React.FC = () => {
                       >
                         <Eye className="w-4 h-4" />
                       </button>
+                      {app.status === 'SUBMITTED' && (
+                        <button 
+                          onClick={() => handleSetUnderReview(app.id)}
+                          disabled={isProcessing}
+                          title="На розгляд"
+                          className="w-9 h-9 flex items-center justify-center text-yellow-500 nm-flat hover:nm-inset-sm bg-[rgb(var(--surface))] rounded-xl transition-all disabled:opacity-50"
+                        >
+                          <Clock className="w-4 h-4" />
+                        </button>
+                      )}
                       {(app.status === 'SUBMITTED' || app.status === 'UNDER_REVIEW') && (
                         <>
                           <button 

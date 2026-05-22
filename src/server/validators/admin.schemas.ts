@@ -126,3 +126,12 @@ export const updateComplaintStatusSchema = z.object({
   })
 });
 
+export const updateApplicationStatusSchema = z.object({
+  params: z.object({
+    id: z.string().uuid()
+  }),
+  body: z.object({
+    status: applicationStatuses
+  })
+});
+

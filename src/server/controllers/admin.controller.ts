@@ -156,6 +156,17 @@ export class AdminController {
     }
   }
 
+  static async updateApplicationStatus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      const { status } = req.body;
+      const app = await AdminService.updateApplicationStatus(id, status);
+      res.json(app);
+    } catch (error) {
+      next(error);
+    }
+  }
+
   static async rejectApplication(req: Request, res: Response, next: NextFunction) {
     try {
       const { id } = req.params;

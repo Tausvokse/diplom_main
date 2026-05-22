@@ -15,6 +15,7 @@ import {
   createMassNotificationSchema,
   createJarSchema,
   updateComplaintStatusSchema,
+  updateApplicationStatusSchema,
   createDormitorySchema,
   updateDormitorySchema,
   createFloorSchema,
@@ -56,6 +57,7 @@ router.post('/rooms/:roomId/allocate', validate(allocateStudentSchema), Allocati
 router.get('/applications', AdminController.getApplications);
 router.post('/applications/:id/approve', AdminController.approveApplication);
 router.post('/applications/:id/reject', validate(rejectApplicationSchema), AdminController.rejectApplication);
+router.patch('/applications/:id/status', validate(updateApplicationStatusSchema), AdminController.updateApplicationStatus);
 
 // Allocation (K-Means)
 router.get('/allocation/pool', AllocationController.getPool);
