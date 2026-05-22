@@ -24,10 +24,48 @@ export const AllocationDashboard: React.FC = () => {
   const [isConfirming, setIsConfirming] = useState(false);
   const [progress, setProgress] = useState(0);
   const [progressStatus, setProgressStatus] = useState('');
+  const [unassignedStudents, setUnassignedStudents] = useState<StudentProfile[]>([]);
 
   useEffect(() => {
     fetchAllocationPool();
   }, []);
+
+  const handleRemoveStudent = (roomId: string, studentId: string) => {
+    if (!results) return;
+    const student = results.find(r => r.roomId === roomId)?.students.find(s => s.id === studentId);
+    if (!student) return;
+
+    setResults(prev => prev ? prev.map(result => {
+      if (result.roomId === roomId) {
+        return { ...result, students: result.students.filter(s => s.id !== studentId) };
+      }
+      return result;
+    }) : null);
+
+    setUnassignedStudents(prev => [...prev, student]);
+    toast.success('Студента вилучено з кімнати');
+  };
+
+  const handleAddStudent = (roomId: string, studentId: string) => {
+    const student = unassignedStudents.find(s => s.id === studentId);
+    if (!student || !results) return;
+
+    const room = results.find(r => r.roomId === roomId);
+    if (room && room.students.length >= room.capacity) {
+      toast.error('У кімнаті немає вільних місць');
+      return;
+    }
+
+    setResults(prev => prev ? prev.map(result => {
+      if (result.roomId === roomId) {
+        return { ...result, students: [...result.students, student] };
+      }
+      return result;
+    }) : null);
+
+    setUnassignedStudents(prev => prev.filter(s => s.id !== studentId));
+    toast.success('Студента додано до кімнати');
+  };
 
   const fetchAllocationPool = async () => {
     try {
@@ -251,6 +289,23 @@ export const AllocationDashboard: React.FC = () => {
                       <div className="flex space-x-2">
                         <div title={`Хронотип: ${student.clusteringVector?.chronotype}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-blue-500 flex items-center justify-center text-xs font-bold border border-blue-500/20">{student.clusteringVector?.chronotype}</div>
                         <div title={`Соціалізація: ${student.clusteringVector?.sociability}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-purple-500 flex items-center justify-center text-xs font-bold border border-purple-500/20">{student.clusteringVector?.sociability}</div>
+                        <div title={`Шум: ${student.clusteringVector?.noiseTolerance}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-orange-500 flex items-center justify-center text-xs font-bold border border-orange-500/20">{student.clusteringVector?.noiseTolerance}</div>
+                        <div title={`Чистота: ${student.clusteringVector?.cleanliness}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-teal-500 flex items-center justify-center text-xs font-bold border border-teal-500/20">{student.clusteringVector?.cleanliness}</div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default AllocationDashboard;
+ssName="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-purple-500 flex items-center justify-center text-xs font-bold border border-purple-500/20">{student.clusteringVector?.sociability}</div>
                         <div title={`Шум: ${student.clusteringVector?.noiseTolerance}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-orange-500 flex items-center justify-center text-xs font-bold border border-orange-500/20">{student.clusteringVector?.noiseTolerance}</div>
                         <div title={`Чистота: ${student.clusteringVector?.cleanliness}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-teal-500 flex items-center justify-center text-xs font-bold border border-teal-500/20">{student.clusteringVector?.cleanliness}</div>
                       </div>

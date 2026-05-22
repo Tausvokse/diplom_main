@@ -12,36 +12,62 @@ export interface ClusteringVector {
 export interface KmeansStudent {
   id: string;
   vector: ClusteringVector;
-  groupId?: string | null; // For co-living constraint
+  groupId?: string | null;
+  faculty: string;
 }
 
 export interface Cluster {
   centroid: number[];
   students: KmeansStudent[];
+  score: number; // Real compatibility score 0-100
 }
 
 export class KMeansAlgorithm {
-  private static euclideanDistance(v1: number[], v2: number[]): number {
-    return Math.sqrt(v1.reduce((sum, val, i) => sum + Math.pow(val - v2[i], 2), 0));
+  private static readonly FACULTY_PENALTY = 2.0; // Weight of being in different faculties
+
+  private static euclideanDistance(v1: number[], v2: number[], s1?: KmeansStudent, s2?: KmeansStudent): number {
+    let dist = v1.reduce((sum, val, i) => sum + Math.pow(val - v2[i], 2), 0);
+    
+    // Categorical constraint: Penalty if faculties are different
+    if (s1 && s2 && s1.faculty !== s2.faculty) {
+      dist += this.FACULTY_PENALTY;
+    }
+    
+    return Math.sqrt(dist);
   }
 
   private static vectorToArray(v: ClusteringVector): number[] {
     return [v.chronotype, v.sociability, v.noiseTolerance, v.cleanliness];
   }
 
+  static calculateCompatibilityScore(cluster: Cluster): number {
+    if (cluster.students.length <= 1) return 100;
+    
+    let totalDist = 0;
+    let pairs = 0;
+    
+    for (let i = 0; i < cluster.students.length; i++) {
+      for (let j = i + 1; j < cluster.students.length; j++) {
+        const v1 = this.vectorToArray(cluster.students[i].vector);
+        const v2 = this.vectorToArray(cluster.students[j].vector);
+        totalDist += this.euclideanDistance(v1, v2, cluster.students[i], cluster.students[j]);
+        pairs++;
+      }
+    }
+    
+    const avgDist = totalDist / pairs;
+    // Normalized score: 100 - (avgDist / maxPossibleDist * 100)
+    // Max dist in 4D (1-10) is sqrt(4 * 9^2) = 18. Plus faculty penalty.
+    return Math.max(0, Math.min(100, Math.round(100 - (avgDist * 15)))); 
+  }
+
   static clusterize(students: KmeansStudent[], k: number, maxIterations = 100): Cluster[] {
     if (students.length === 0 || k <= 0) return [];
-    if (k >= students.length) {
-      return students.map(s => ({
-        centroid: this.vectorToArray(s.vector),
-        students: [s]
-      }));
-    }
-
-    // 1. Initialize centroids randomly
+    
+    // Initial clusters setup...
     let centroids: number[][] = [];
     const shuffled = [...students].sort(() => 0.5 - Math.random());
-    for (let i = 0; i < k; i++) {
+    for (let i = 0; i < Math.min(k, students.length); i++) {
       centroids.push(this.vectorToArray(shuffled[i].vector));
     }
 
@@ -51,26 +77,25 @@ export class KMeansAlgorithm {
 
     while (hasChanged && iterations < maxIterations) {
       hasChanged = false;
-      clusters = centroids.map(centroid => ({ centroid, students: [] }));
+      clusters = centroids.map(centroid => ({ centroid, students: [], score: 0 }));
 
-      // 2. Assign students to nearest centroid
+      // Assignment phase
       for (const student of students) {
         const studentVec = this.vectorToArray(student.vector);
         let minDistance = Infinity;
-        let closestClusterIdx = 0;
+        let closestIdx = 0;
 
-        for (let i = 0; i < k; i++) {
+        for (let i = 0; i < centroids.length; i++) {
           const dist = this.euclideanDistance(studentVec, centroids[i]);
           if (dist < minDistance) {
             minDistance = dist;
-            closestClusterIdx = i;
+            closestIdx = i;
           }
         }
-
-        clusters[closestClusterIdx].students.push(student);
+        clusters[closestIdx].students.push(student);
       }
 
-      // 2.5 Enforce co-living constraints (GroupReferrals)
+      // Group co-living logic remains same...
       const groups = new Map<string, KmeansStudent[]>();
       students.forEach(s => {
         if (s.groupId) {
@@ -79,9 +104,7 @@ export class KMeansAlgorithm {
         }
       });
 
-      // For each group, find the cluster that has the majority of its members, or the first member's cluster, and move all there
       groups.forEach((members, groupId) => {
-        // Find which clusters contain these members
         const clusterCounts = new Map<number, number>();
         members.forEach(m => {
           const clusterIdx = clusters.findIndex(c => c.students.some(s => s.id === m.id));
@@ -90,7 +113,6 @@ export class KMeansAlgorithm {
           }
         });
 
-        // Find the majority cluster
         let maxCount = -1;
         let targetClusterIdx = -1;
         clusterCounts.forEach((count, idx) => {
@@ -100,7 +122,6 @@ export class KMeansAlgorithm {
           }
         });
 
-        // Move all members to the target cluster
         if (targetClusterIdx !== -1) {
           clusters.forEach((c, idx) => {
             if (idx !== targetClusterIdx) {
@@ -115,10 +136,10 @@ export class KMeansAlgorithm {
         }
       });
 
-      // 3. Recalculate centroids
+      // Recalculate centroids
       const newCentroids = clusters.map(cluster => {
-        if (cluster.students.length === 0) return cluster.centroid; // Keep old if empty
-        const sumVec = new Array(4).fill(0);
+        if (cluster.students.length === 0) return cluster.centroid;
+        const sumVec = [0, 0, 0, 0];
         cluster.students.forEach(s => {
           const arr = this.vectorToArray(s.vector);
           for (let i = 0; i < 4; i++) sumVec[i] += arr[i];
@@ -126,17 +147,20 @@ export class KMeansAlgorithm {
         return sumVec.map(val => val / cluster.students.length);
       });
 
-      // 4. Check for convergence
-      for (let i = 0; i < k; i++) {
+      for (let i = 0; i < centroids.length; i++) {
         if (this.euclideanDistance(centroids[i], newCentroids[i]) > 0.001) {
           hasChanged = true;
           break;
         }
       }
-
       centroids = newCentroids;
       iterations++;
     }
+
+    // Final touch: Calculate real scores
+    clusters.forEach(c => {
+      c.score = this.calculateCompatibilityScore(c);
+    });
 
     return clusters;
   }

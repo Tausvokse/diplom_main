@@ -57,11 +57,16 @@ export const ApplicationForm: React.FC = () => {
       noiseTolerance: 5,
       cleanliness: 5,
     },
+    consent: false,
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type } = e.target as HTMLInputElement;
+    if (type === 'checkbox') {
+      setFormData(prev => ({ ...prev, [name]: (e.target as HTMLInputElement).checked }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSliderChange = (parameter: keyof ClusteringVector, value: number) => {
@@ -520,6 +525,32 @@ export const ApplicationForm: React.FC = () => {
                   <span>Творчий безлад</span>
                   <span>Педантична чистота</span>
                 </div>
+              </div>
+
+              {/* Data Consent */}
+              <div className="pt-6 border-t border-[rgb(var(--border)/0.2)]">
+                <label className="flex items-start space-x-4 cursor-pointer group">
+                  <div className="relative flex items-center mt-1">
+                    <input
+                      type="checkbox"
+                      name="consent"
+                      checked={formData.consent}
+                      onChange={handleInputChange}
+                      className="sr-only"
+                    />
+                    <div className={`w-6 h-6 rounded-lg transition-all duration-200 flex items-center justify-center ${
+                      formData.consent ? 'bg-[rgb(var(--accent))] nm-inset-sm' : 'nm-flat bg-[rgb(var(--surface))] border-2 border-[rgb(var(--border)/0.5)] group-hover:border-[rgb(var(--accent)/0.5)]'
+                    }`}>
+                      {formData.consent && <CheckCircle className="w-4 h-4 text-white" />}
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-[rgb(var(--text))] mb-1">Згода на автоматизовану обробку даних</p>
+                    <p className="text-xs ui-muted leading-relaxed">
+                      Я даю згоду на використання моїх психометричних даних AI-алгоритмом для підбору сусідів. Дані будуть використані виключно для розрахунку сумісності та формування плану поселення.
+                    </p>
+                  </div>
+                </label>
               </div>
             </div>
           </div>

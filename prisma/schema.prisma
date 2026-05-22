@@ -20,6 +20,12 @@ enum Role {
   MASTER_ELECTRIC
 }
 
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
 enum ApplicationStatus {
   DRAFT
   SUBMITTED
@@ -382,4 +388,6 @@ model AuditLog {
 
   @@index([adminId])
   @@index([action])
+}
+
 }
