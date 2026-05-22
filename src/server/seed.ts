@@ -68,7 +68,7 @@ async function main() {
   // 5. Create Students (Stress Test: 120 students)
   console.log('Generating 120 diverse students...');
   const faculties = ['ФІОТ', 'ІПСА', 'ФЕА', 'ТЕФ', 'РТФ'];
-  const genders = [Gender.MALE, Gender.FEMALE];
+  const genders = ['MALE', 'FEMALE'];
 
   for (let i = 0; i < 120; i++) {
     const gender = genders[i % 2];
