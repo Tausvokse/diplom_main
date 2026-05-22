@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Play, Loader2, Users, FileCheck, CheckCircle2, TrendingUp } from 'lucide-react';
+import { Play, Loader2, Users, FileCheck, CheckCircle2, TrendingUp, X, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../../services/api';
 import { StudentProfile } from '../../types';
@@ -32,7 +32,8 @@ export const AllocationDashboard: React.FC = () => {
 
   const handleRemoveStudent = (roomId: string, studentId: string) => {
     if (!results) return;
-    const student = results.find(r => r.roomId === roomId)?.students.find(s => s.id === studentId);
+    const room = results.find(r => r.roomId === roomId);
+    const student = room?.students.find(s => s.id === studentId);
     if (!student) return;
 
     setResults(prev => prev ? prev.map(result => {
@@ -102,6 +103,7 @@ export const AllocationDashboard: React.FC = () => {
         try {
           const res = await api.post('/admin/allocation/preview');
           setResults(res.data);
+          setUnassignedStudents([]);
           toast.success('План поселення сформовано. Перевірте його перед затвердженням.');
         } catch (error) {
           toast.error('Помилка при виконанні алгоритму');
@@ -222,18 +224,44 @@ export const AllocationDashboard: React.FC = () => {
 
                 <div className="space-y-4 flex-1">
                   {result.students.map((st, idx) => (
-                    <div key={st.id} className="flex items-center bg-[rgb(var(--surface))] nm-flat p-4 rounded-2xl hover:nm-raised-sm transition-all">
+                    <div key={st.id} className="group flex items-center bg-[rgb(var(--surface))] nm-flat p-4 rounded-2xl hover:nm-raised-sm transition-all relative">
                       <div className="w-10 h-10 rounded-xl nm-inset-sm bg-[rgb(var(--surface-2))] flex items-center justify-center text-sm font-black text-[rgb(var(--accent))] mr-4 flex-shrink-0">
                         {idx + 1}
                       </div>
-                      <div>
-                        <p className="text-sm font-bold text-[rgb(var(--text))]">{st.user?.lastName} {st.user?.firstName}</p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-bold text-[rgb(var(--text))] truncate">{st.user?.lastName} {st.user?.firstName}</p>
                         <p className="text-xs font-medium text-[rgb(var(--muted))] flex items-center mt-1">
-                          AHP Score: <span className="font-mono font-bold text-indigo-500 ml-1.5 bg-indigo-500/10 px-1.5 py-0.5 rounded">{st.priorityScore.toFixed(1)}</span>
+                          AHP: <span className="font-mono font-bold text-indigo-500 ml-1">{st.priorityScore.toFixed(1)}</span>
                         </p>
                       </div>
+                      <button 
+                        onClick={() => handleRemoveStudent(result.roomId, st.id)}
+                        className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-full nm-flat hover:nm-inset-sm text-red-500 flex items-center justify-center transition-all ml-2 flex-shrink-0"
+                        title="Вилучити з кімнати"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
                     </div>
                   ))}
+                  
+                  {/* Manual Assignment Slot */}
+                  {result.students.length < result.capacity && unassignedStudents.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-dashed border-[rgb(var(--border)/0.3)]">
+                      <select 
+                        onChange={(e) => {
+                          if (e.target.value) handleAddStudent(result.roomId, e.target.value);
+                          e.target.value = '';
+                        }}
+                        className="w-full ui-input text-xs py-2 bg-[rgb(var(--surface-2))]"
+                      >
+                        <option value="">Додати студента з пулу...</option>
+                        {unassignedStudents.map(s => (
+                          <option key={s.id} value={s.id}>{s.user?.lastName} {s.user?.firstName} ({s.faculty})</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
                   {/* Empty beds placeholders */}
                   {Array.from({ length: Math.max(0, result.capacity - (result.currentOccupancy || 0) - result.students.length) }).map((_, i) => (
                     <div key={`empty-${i}`} className="flex items-center border-2 border-dashed border-[rgb(var(--border)/0.3)] bg-[rgb(var(--surface-2))] nm-inset-sm p-4 rounded-2xl opacity-60">
@@ -245,6 +273,24 @@ export const AllocationDashboard: React.FC = () => {
               </div>
             ))}
           </div>
+
+          {/* Manual Unassigned Pool */}
+          {unassignedStudents.length > 0 && (
+            <div className="ui-card p-6 md:p-8 border-l-4 border-indigo-500 bg-indigo-500/5">
+              <div className="flex items-center mb-4">
+                <Info className="w-5 h-5 text-indigo-500 mr-2" />
+                <h4 className="font-bold text-[rgb(var(--text))]">Нерозподілені студенти (ручне коригування)</h4>
+              </div>
+              <div className="flex flex-wrap gap-3">
+                {unassignedStudents.map(s => (
+                  <div key={s.id} className="nm-flat bg-[rgb(var(--surface))] px-4 py-2 rounded-xl text-xs font-bold text-[rgb(var(--text))] flex items-center">
+                    {s.user?.lastName} {s.user?.firstName}
+                    <span className="ml-2 text-[rgb(var(--muted))]">({s.faculty})</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -289,23 +335,6 @@ export const AllocationDashboard: React.FC = () => {
                       <div className="flex space-x-2">
                         <div title={`Хронотип: ${student.clusteringVector?.chronotype}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-blue-500 flex items-center justify-center text-xs font-bold border border-blue-500/20">{student.clusteringVector?.chronotype}</div>
                         <div title={`Соціалізація: ${student.clusteringVector?.sociability}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-purple-500 flex items-center justify-center text-xs font-bold border border-purple-500/20">{student.clusteringVector?.sociability}</div>
-                        <div title={`Шум: ${student.clusteringVector?.noiseTolerance}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-orange-500 flex items-center justify-center text-xs font-bold border border-orange-500/20">{student.clusteringVector?.noiseTolerance}</div>
-                        <div title={`Чистота: ${student.clusteringVector?.cleanliness}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-teal-500 flex items-center justify-center text-xs font-bold border border-teal-500/20">{student.clusteringVector?.cleanliness}</div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-export default AllocationDashboard;
-ssName="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-purple-500 flex items-center justify-center text-xs font-bold border border-purple-500/20">{student.clusteringVector?.sociability}</div>
                         <div title={`Шум: ${student.clusteringVector?.noiseTolerance}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-orange-500 flex items-center justify-center text-xs font-bold border border-orange-500/20">{student.clusteringVector?.noiseTolerance}</div>
                         <div title={`Чистота: ${student.clusteringVector?.cleanliness}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-teal-500 flex items-center justify-center text-xs font-bold border border-teal-500/20">{student.clusteringVector?.cleanliness}</div>
                       </div>
