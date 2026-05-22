@@ -469,12 +469,12 @@ export class AllocationService {
       where: {
         studentId,
         status: 'APPROVED',
-        type: { in: ['CHECK_IN', 'TRANSFER'] }
+        type: 'CHECK_IN'
       },
       orderBy: { reviewedAt: 'desc' }
     });
     if (!approvedApplication) {
-      throw new AppError('Немає схваленої заяви на поселення або переселення', 400);
+      throw new AppError('Немає схваленої заяви на поселення', 400);
     }
 
     const room = await prisma.room.findUnique({

@@ -10,7 +10,7 @@ import { ShieldCheck } from 'lucide-react';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
+  const { setAuth, isAuthenticated, user, _hasHydrated } = useAuthStore();
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
@@ -22,10 +22,16 @@ const Register: React.FC = () => {
     course: '1',
     faculty: ''
   });
-  
-  const [verificationCode, setVerificationCode] = useState('');
-  const [step, setStep] = useState<1 | 2>(1); // 1 = form, 2 = code verification
-  const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (_hasHydrated && isAuthenticated && user) {
+      if (['ADMIN', 'ADMIN_CAMPUS', 'ADMIN_COMMANDANT'].includes(user.role)) {
+        navigate('/admin/dormitories');
+      } else {
+        navigate('/student/dashboard');
+      }
+    }
+  }, [_hasHydrated, isAuthenticated, user, navigate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));

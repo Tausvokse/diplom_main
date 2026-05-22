@@ -8,7 +8,7 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
-  const { isAuthenticated, user } = useAuthStore();
+  const { isAuthenticated, user, _hasHydrated } = useAuthStore();
   const location = useLocation();
 
   const isAuthorized = useMemo(() => {
@@ -18,6 +18,11 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) 
     }
     return true;
   }, [isAuthenticated, user, allowedRoles]);
+
+  if (!_hasHydrated) {
+    // Show nothing or a small loader while waiting for localStorage to load
+    return null;
+  }
 
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location }} replace />;

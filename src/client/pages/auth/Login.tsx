@@ -8,10 +8,22 @@ import { AuthBackground } from '../../components/AuthBackground';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
-  const { setAuth } = useAuthStore();
+  const { setAuth, isAuthenticated, user, _hasHydrated } = useAuthStore();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  React.useEffect(() => {
+    if (_hasHydrated && isAuthenticated && user) {
+      if (['ADMIN', 'ADMIN_CAMPUS', 'ADMIN_COMMANDANT'].includes(user.role)) {
+        navigate('/admin/dormitories');
+      } else if (['MASTER_SLESAR', 'MASTER_SANTEKHNIK', 'MASTER_ELECTRIC'].includes(user.role)) {
+        navigate('/master/repairs');
+      } else {
+        navigate('/student/dashboard');
+      }
+    }
+  }, [_hasHydrated, isAuthenticated, user, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
