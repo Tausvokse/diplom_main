@@ -76,22 +76,34 @@ async function main() {
   const privilegeList = await prisma.privilegeCategory.findMany();
 
   // 5. Create Students (Stress Test: 120 students)
-  console.log('Generating 120 diverse students...');
-  const faculties = ['ФІОТ', 'ІПСА', 'ФЕА', 'ТЕФ', 'РТФ'];
+  console.log('Generating 120 realistic students...');
+  const faculties = ['ФІОТ', 'ІПСА', 'ФЕА', 'ТЕФ', 'РТФ', 'ФПМ', 'ІТС'];
   const genders = ['MALE', 'FEMALE'];
+  
+  const maleFirstNames = ['Олександр', 'Максим', 'Артем', 'Дмитро', 'Іван', 'Андрій', 'Михайло', 'Ярослав', 'Сергій', 'Владислав'];
+  const maleLastNames = ['Коваленко', 'Мельник', 'Шевченко', 'Поліщук', 'Бондаренко', 'Ткаченко', 'Ковальчук', 'Кравченко', 'Олійник', 'Мороз'];
+  const femaleFirstNames = ['Марія', 'Анна', 'Анастасія', 'Вікторія', 'Олена', 'Дарина', 'Наталія', 'Юлія', 'Тетяна', 'Софія'];
+  const femaleLastNames = ['Шевченко', 'Коваленко', 'Бондар', 'Мельник', 'Лисенко', 'Ткаченко', 'Кравчук', 'Павленко', 'Савченко', 'Романюк'];
 
   for (let i = 0; i < 120; i++) {
     const gender = genders[i % 2];
     const faculty = faculties[Math.floor(Math.random() * faculties.length)];
     
+    const firstName = gender === 'MALE' 
+      ? maleFirstNames[Math.floor(Math.random() * maleFirstNames.length)]
+      : femaleFirstNames[Math.floor(Math.random() * femaleFirstNames.length)];
+    const lastName = gender === 'MALE'
+      ? maleLastNames[Math.floor(Math.random() * maleLastNames.length)]
+      : femaleLastNames[Math.floor(Math.random() * femaleLastNames.length)];
+
     const user = await prisma.user.create({
       data: {
-        email: `student${i}@kpi.ua`,
-        password: 'password123', // In real life hash this
+        email: `student${i + 100}@kpi.ua`,
+        password: 'password123',
         role: Role.STUDENT,
         gender: gender as any,
-        firstName: gender === 'MALE' ? `Олександр${i}` : `Марія${i}`,
-        lastName: gender === 'MALE' ? `Коваленко${i}` : `Шевченко${i}`,
+        firstName,
+        lastName,
       } as any
     });
 
@@ -102,24 +114,31 @@ async function main() {
       cleanliness: Math.floor(Math.random() * 10) + 1
     };
 
-    const hasPrivilege = Math.random() > 0.8;
+    const hasPrivilege = Math.random() > 0.85;
+    const selectedPrivilege = hasPrivilege ? privilegeList[Math.floor(Math.random() * privilegeList.length)] : null;
+    
+    // Simulate AHP Calculation for Seeding
+    // Course weight (older = higher) + Privilege multiplier
+    const course = Math.floor(Math.random() * 4) + 1;
+    const basePriority = 60 + (course * 5); // 65-80
+    const priorityScore = Math.min(100, basePriority * (selectedPrivilege?.multiplier || 1.0));
 
     const student = await prisma.studentProfile.create({
       data: {
         userId: user.id,
-        fullName: `${user.lastName} ${user.firstName}`,
+        fullName: `${lastName} ${firstName}`,
         email: user.email,
         phone: `+38067${Math.floor(1000000 + Math.random() * 9000000)}`,
-        studentIdNumber: `KB${10000000 + i}`,
-        course: Math.floor(Math.random() * 4) + 1,
+        studentIdNumber: `KB${20000000 + i}`,
+        course,
         faculty: faculty,
         clusteringVector: JSON.stringify(vector),
-        privilegeCategoryId: hasPrivilege ? privilegeList[Math.floor(Math.random() * privilegeList.length)].id : null,
+        priorityScore,
+        privilegeCategoryId: selectedPrivilege?.id || null,
         isVerifiedByDiia: true
       }
     });
 
-    // Create approved application for each student
     await prisma.application.create({
       data: {
         studentId: student.id,
@@ -134,7 +153,7 @@ async function main() {
   // 6. Create Admin
   await prisma.user.create({
     data: {
-      email: 'admin@dorm.kpi.ua',
+      email: 'admin@npp.kai.edu.ua',
       password: 'admin-password',
       role: Role.ADMIN,
       gender: 'OTHER' as any,
@@ -154,3 +173,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+
