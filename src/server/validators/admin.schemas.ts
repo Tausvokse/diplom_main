@@ -3,6 +3,7 @@ import { z } from 'zod';
 const adminRoles = z.enum(['ADMIN', 'ADMIN_CAMPUS', 'ADMIN_COMMANDANT', 'MASTER_SLESAR', 'MASTER_SANTEKHNIK', 'MASTER_ELECTRIC']);
 const roomStatuses = z.enum(['AVAILABLE', 'FULL', 'MAINTENANCE']);
 const complaintStatuses = z.enum(['PENDING', 'INVESTIGATING', 'RESOLVED', 'DISMISSED']);
+const applicationStatuses = z.enum(['DRAFT', 'SUBMITTED', 'UNDER_REVIEW', 'APPROVED', 'REJECTED']);
 
 export const createDormitorySchema = z.object({
   body: z.object({
