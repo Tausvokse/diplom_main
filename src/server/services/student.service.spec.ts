@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { StudentService } from './student.service';
 import { prisma } from '../lib/prisma';
-import { AppError } from '../utils/AppError';
 
 vi.mock('../lib/prisma', () => ({
   prisma: {
@@ -68,7 +67,7 @@ describe('StudentService', () => {
       vi.mocked(prisma.groupReferral.findUnique).mockResolvedValueOnce({ ...mockGroup, currentMembers: 2 } as any);
 
       const result = await StudentService.joinGroup('user-2', 'CODE');
-      expect(result.currentMembers).toBe(2);
+      expect(result!.currentMembers).toBe(2);
       expect(prisma.$transaction).toHaveBeenCalled();
     });
   });

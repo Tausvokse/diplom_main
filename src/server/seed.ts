@@ -1,11 +1,12 @@
 import { PrismaClient, Role, ApplicationStatus, ApplicationType } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('--- Starting Production-Grade Seeding (KAI) ---');
 
-  // 1. Clean up (Order matters due to Foreign Keys)
+  // 1. Clean up
   console.log('Cleaning up database...');
   await prisma.notification.deleteMany();
   await prisma.payment.deleteMany();
@@ -26,12 +27,15 @@ async function main() {
   await prisma.privilegeCategory.deleteMany();
   await prisma.groupReferral.deleteMany();
 
+  // Common password hash
+  const defaultPassword = bcrypt.hashSync('password123', 10);
+
   // 2. Create University & Dormitories
   const uni = await prisma.university.create({
     data: { name: 'Київський авіаційний інститут', city: 'Київ' }
   });
 
-  const dorm = await prisma.dormitory.create({
+  const dorm1 = await prisma.dormitory.create({
     data: {
       name: 'Гуртожиток №1',
       address: 'вул. Ніжинська, 29',
@@ -40,19 +44,28 @@ async function main() {
     }
   });
 
+  const dorm2 = await prisma.dormitory.create({
+    data: {
+      name: 'Гуртожиток №3',
+      address: 'вул. Ніжинська, 29Б',
+      universityId: uni.id,
+      totalCapacity: 200
+    }
+  });
+
   const floors = [];
   for (let i = 1; i <= 5; i++) {
-    const floor = await prisma.floor.create({
-      data: { dormitoryId: dorm.id, floorNumber: i }
-    });
-    floors.push(floor);
+    const floor1 = await prisma.floor.create({ data: { dormitoryId: dorm1.id, floorNumber: i } });
+    const floor2 = await prisma.floor.create({ data: { dormitoryId: dorm2.id, floorNumber: i } });
+    floors.push(floor1, floor2);
   }
 
-  // 3. Create Rooms (Mixed capacities)
-  console.log('Generating 50 rooms...');
+  // 3. Create Rooms
+  console.log('Generating rooms...');
+  const rooms: any[] = [];
   for (const floor of floors) {
-    for (let j = 1; j <= 10; j++) {
-      await prisma.room.create({
+    for (let j = 1; j <= 5; j++) {
+      const room = await prisma.room.create({
         data: {
           floorId: floor.id,
           roomNumber: `${floor.floorNumber}${j.toString().padStart(2, '0')}`,
@@ -60,6 +73,7 @@ async function main() {
           status: 'AVAILABLE'
         }
       });
+      rooms.push({ ...room, floor });
     }
   }
 
@@ -70,22 +84,62 @@ async function main() {
     { name: 'Учасник бойових дій', multiplier: 1.4, description: 'Пільга для ветеранів' }
   ];
 
+  const privilegeList = [];
   for (const p of privileges) {
-    await prisma.privilegeCategory.create({ data: p });
+    privilegeList.push(await prisma.privilegeCategory.create({ data: p }));
   }
-  const privilegeList = await prisma.privilegeCategory.findMany();
 
-  // 5. Create Students (Stress Test: 120 students)
-  console.log('Generating 120 realistic students...');
+  // 5. Create Roles (Admins, Masters, Commandant)
+  console.log('Generating staff users...');
+  
+  // Super Admin
+  await prisma.user.create({
+    data: {
+      email: 'admin@npp.kai.edu.ua',
+      password: defaultPassword,
+      role: Role.ADMIN,
+      gender: 'OTHER' as any,
+      firstName: 'Головний',
+      lastName: 'Адміністратор'
+    }
+  });
+
+  // Commandant Dorm 1
+  await prisma.user.create({
+    data: {
+      email: 'commandant1@kai.edu.ua',
+      password: defaultPassword,
+      role: Role.ADMIN_COMMANDANT,
+      gender: 'FEMALE' as any,
+      firstName: 'Олена',
+      lastName: 'Степанівна',
+      dormitoryId: dorm1.id
+    }
+  });
+
+  // Master Slesar
+  const master = await prisma.user.create({
+    data: {
+      email: 'slesar@kai.edu.ua',
+      password: defaultPassword,
+      role: Role.MASTER_SLESAR,
+      gender: 'MALE' as any,
+      firstName: 'Василь',
+      lastName: 'Петрович'
+    }
+  });
+
+  // 6. Create Students (Pool for Allocation)
+  console.log('Generating 50 unallocated realistic students...');
   const faculties = ['АКФ', 'ФКНТ', 'ФЕБА', 'ФЛСК', 'ЮФ', 'ФНСА', 'ФЕБ'];
   const genders = ['MALE', 'FEMALE'];
   
-  const maleFirstNames = ['Олександр', 'Максим', 'Артем', 'Дмитро', 'Іван', 'Андрій', 'Михайло', 'Ярослав', 'Сергій', 'Владислав'];
-  const maleLastNames = ['Коваленко', 'Мельник', 'Шевченко', 'Поліщук', 'Бондаренко', 'Ткаченко', 'Ковальчук', 'Кравченко', 'Олійник', 'Мороз'];
-  const femaleFirstNames = ['Марія', 'Анна', 'Анастасія', 'Вікторія', 'Олена', 'Дарина', 'Наталія', 'Юлія', 'Тетяна', 'Софія'];
-  const femaleLastNames = ['Шевченко', 'Коваленко', 'Бондар', 'Мельник', 'Лисенко', 'Ткаченко', 'Кравчук', 'Павленко', 'Савченко', 'Романюк'];
+  const maleFirstNames = ['Олександр', 'Максим', 'Артем', 'Дмитро', 'Іван'];
+  const maleLastNames = ['Коваленко', 'Мельник', 'Шевченко', 'Поліщук', 'Бондаренко'];
+  const femaleFirstNames = ['Марія', 'Анна', 'Анастасія', 'Вікторія', 'Олена'];
+  const femaleLastNames = ['Шевченко', 'Коваленко', 'Бондар', 'Мельник', 'Лисенко'];
 
-  for (let i = 0; i < 120; i++) {
+  for (let i = 0; i < 50; i++) {
     const gender = genders[i % 2];
     const faculty = faculties[Math.floor(Math.random() * faculties.length)];
     
@@ -98,8 +152,8 @@ async function main() {
 
     const user = await prisma.user.create({
       data: {
-        email: `student${i + 100}@kai.edu.ua`,
-        password: 'password123',
+        email: `pool${i + 1}@kai.edu.ua`,
+        password: defaultPassword,
         role: Role.STUDENT,
         gender: gender as any,
         firstName,
@@ -117,10 +171,8 @@ async function main() {
     const hasPrivilege = Math.random() > 0.85;
     const selectedPrivilege = hasPrivilege ? privilegeList[Math.floor(Math.random() * privilegeList.length)] : null;
     
-    // Simulate AHP Calculation for Seeding
-    // Course weight (older = higher) + Privilege multiplier
     const course = Math.floor(Math.random() * 4) + 1;
-    const basePriority = 60 + (course * 5); // 65-80
+    const basePriority = 60 + (course * 5);
     const priorityScore = Math.min(100, basePriority * (selectedPrivilege?.multiplier || 1.0));
 
     const student = await prisma.studentProfile.create({
@@ -150,19 +202,120 @@ async function main() {
     });
   }
 
-  // 6. Create Admin
-  await prisma.user.create({
+  // 7. Create Allocated Students & Interactive Data
+  console.log('Generating 10 allocated students, complaints, repairs and jars...');
+  const allocatedStudents = [];
+  
+  for (let i = 0; i < 10; i++) {
+    const gender = 'MALE';
+    const firstName = maleFirstNames[i % maleFirstNames.length];
+    const lastName = maleLastNames[i % maleLastNames.length];
+    const targetRoom = rooms[i]; // Put them in different rooms
+
+    const user = await prisma.user.create({
+      data: {
+        email: `resident${i + 1}@kai.edu.ua`,
+        password: defaultPassword,
+        role: Role.STUDENT,
+        gender: gender as any,
+        firstName,
+        lastName,
+      }
+    });
+
+    const student = await prisma.studentProfile.create({
+      data: {
+        userId: user.id,
+        fullName: `${lastName} ${firstName}`,
+        email: user.email,
+        phone: `+38050${Math.floor(1000000 + Math.random() * 9000000)}`,
+        studentIdNumber: `KA${30000000 + i}`,
+        course: 2,
+        faculty: 'ФКНТ',
+        priorityScore: 80,
+        isVerifiedByDiia: true,
+        roomId: targetRoom.id,
+        dormitoryId: targetRoom.floor.dormitoryId
+      }
+    });
+
+    await prisma.roomAllocation.create({
+      data: {
+        studentId: student.id,
+        roomId: targetRoom.id,
+        status: 'ACTIVE'
+      }
+    });
+
+    await prisma.room.update({
+      where: { id: targetRoom.id },
+      data: { currentOccupancy: 1 }
+    });
+
+    allocatedStudents.push(student);
+  }
+
+  await prisma.dormitory.update({
+    where: { id: dorm1.id },
+    data: { currentOccupancy: 10 }
+  });
+
+  // 8. Add Repairs & Complaints
+  await prisma.repairRequest.create({
     data: {
-      email: 'admin@npp.kai.edu.ua',
-      password: 'admin-password',
-      role: Role.ADMIN,
-      gender: 'OTHER' as any,
-      firstName: 'Головний',
-      lastName: 'Адміністратор'
+      roomId: allocatedStudents[0].roomId!,
+      description: 'Тече кран: Сильно протікає кран у вмивальнику',
+      status: 'PENDING'
     }
   });
 
-  console.log('--- Seeding Complete: 120 Students, 50 Rooms, 1 Admin ---');
+  await prisma.repairRequest.create({
+    data: {
+      roomId: allocatedStudents[1].roomId!,
+      description: 'Немає світла: Згоріла розетка',
+      status: 'IN_PROGRESS',
+      masterId: master.id
+    }
+  });
+
+  await prisma.complaint.create({
+    data: {
+      accuserId: allocatedStudents[2].id,
+      accusedId: allocatedStudents[3].id,
+      content: 'Шум після 23:00. Постійно грає на гітарі вночі',
+      status: 'PENDING'
+    }
+  });
+
+  // 9. Create Jars (Global and Local)
+  await prisma.jar.create({
+    data: {
+      title: 'На дрон для 3 ОШБр',
+      description: 'Збираємо на Mavic 3T',
+      goalAmount: 100000,
+      currentAmount: 45000,
+      dormitoryId: null, // Global
+      monobankUrl: 'https://send.monobank.ua/jar/123456789'
+    }
+  });
+
+  await prisma.jar.create({
+    data: {
+      title: 'Пральна машина',
+      description: 'Нова пралка на 3-й поверх',
+      goalAmount: 15000,
+      currentAmount: 2000,
+      dormitoryId: dorm1.id // Local to Dorm 1
+    }
+  });
+
+  console.log('--- Seeding Complete ---');
+  console.log('Test Accounts:');
+  console.log('Admin: admin@npp.kai.edu.ua / password123');
+  console.log('Commandant: commandant1@kai.edu.ua / password123');
+  console.log('Master: slesar@kai.edu.ua / password123');
+  console.log('Student (in pool): pool1@kai.edu.ua / password123');
+  console.log('Resident (allocated): resident1@kai.edu.ua / password123');
 }
 
 main()

@@ -507,10 +507,14 @@ export class AdminService {
 
   static async createMassNotification(title: string, message: string) {
     const students = await prisma.studentProfile.findMany({ select: { id: true } });
-    const { NotificationService } = await import('./notification.service');
-    for (const s of students) {
-      await NotificationService.create(s.id, title, message, 'INFO');
-    }
+    await prisma.notification.createMany({
+      data: students.map(s => ({
+        studentId: s.id,
+        title,
+        message,
+        type: 'INFO'
+      }))
+    });
   }
 
   static async createJar(title: string, goalAmount: number, description: string | undefined, dormitoryId: string | null | undefined, monobankUrl?: string) {

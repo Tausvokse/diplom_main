@@ -102,10 +102,10 @@ export class StudentService {
 
     const fileUrls = allFiles.map(({ file, category }, index) => {
       const ext = path.extname(file.originalname) || '.png';
-      const fullName = profile!.fullName.replace(/\s+/g, '_');
+      const cleanName = encodeURIComponent(profile!.fullName.replace(/\s+/g, '_'));
       const studentId = profile!.studentIdNumber;
 
-      const newFilename = `${category}_${fullName}_${studentId}${index > 0 ? `_${index}` : ''}${ext}`;
+      const newFilename = `${category}_${cleanName}_${studentId}${index > 0 ? `_${index}` : ''}${ext}`;
       const oldPath = file.path;
       const newPath = path.join(path.dirname(file.path), newFilename);
 
@@ -113,7 +113,7 @@ export class StudentService {
       let finalUrl = newFilename;
       if (fs.existsSync(newPath)) {
         const timestamp = Date.now();
-        finalUrl = `${category}_${fullName}_${studentId}_${timestamp}${ext}`;
+        finalUrl = `${category}_${cleanName}_${studentId}_${timestamp}${ext}`;
         finalPath = path.join(path.dirname(file.path), finalUrl);
       }
 
