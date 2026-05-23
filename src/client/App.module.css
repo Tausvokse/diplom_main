@@ -353,6 +353,8 @@
   padding: 0 1rem;
   flex-shrink: 0;
   transition: background-color 200ms;
+  z-index: 50;
+  position: relative;
 }
 
 @media (min-width: 768px) {

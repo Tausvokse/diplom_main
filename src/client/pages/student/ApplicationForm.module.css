@@ -288,6 +288,40 @@
   gap: 1.5rem;
 }
 
+.statusDisplay {
+  display: flex;
+  flex-direction: column;
+}
+
+.profileInfoBox {
+  background-color: rgb(var(--surface));
+  padding: 1.25rem;
+  border-radius: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+  box-shadow: var(--nm-inset-sm);
+}
+
+.profileInfoItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.infoLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: rgb(var(--muted));
+}
+
+.infoValue {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: rgb(var(--text));
+}
+
 .formGrid2 {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -298,6 +332,25 @@
   .formGrid2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+.displayItem {
+  display: flex;
+  flex-direction: column;
+}
+
+.infoDisplayBox {
+  padding: 0.75rem 1rem;
+  border-radius: 1rem;
+  background-color: rgb(var(--surface));
+  color: rgb(var(--text));
+  font-size: 0.875rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  min-height: 2.75rem;
+  border: 1px solid rgba(var(--border), 0.1);
+  box-sizing: border-box;
 }
 
 .inputLabel {

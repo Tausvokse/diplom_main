@@ -31,7 +31,14 @@ export class AdminService {
     return prisma.user.findMany({
       where: {
         role: {
-          in: [Role.ADMIN, Role.ADMIN_CAMPUS, Role.ADMIN_COMMANDANT]
+          in: [
+            Role.ADMIN, 
+            Role.ADMIN_CAMPUS, 
+            Role.ADMIN_COMMANDANT,
+            Role.MASTER_SLESAR,
+            Role.MASTER_SANTEKHNIK,
+            Role.MASTER_ELECTRIC
+          ]
         }
       },
       select: {

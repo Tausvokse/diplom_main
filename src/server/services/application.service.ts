@@ -9,17 +9,28 @@ export class ApplicationService {
       where: { userId },
       include: { 
         applications: { include: { student: { include: { room: true } } } }, 
-        group: { include: { members: { include: { user: true } } } } 
+        group: { include: { members: { include: { user: true } } } },
+        dormitory: { select: { id: true, name: true, address: true } },
+        room: { select: { id: true, roomNumber: true } }
       }
     });
 
-    if (!profile) return { application: null, group: null };
+    if (!profile) return { application: null, group: null, profile: null };
 
     const activeApp = profile.applications.length > 0 
       ? profile.applications.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0]
       : null;
       
-    return { application: activeApp, group: profile.group };
+    return { 
+      application: activeApp, 
+      group: profile.group,
+      profile: {
+        course: profile.course,
+        faculty: profile.faculty,
+        dormitory: profile.dormitory,
+        room: profile.room
+      }
+    };
   }
 
   static async submitApplication(

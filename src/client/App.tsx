@@ -408,6 +408,11 @@ const RootRoutes = () => {
 };
 
 export const App: React.FC = () => {
+  useEffect(() => {
+    socketService.connect();
+    return () => socketService.disconnect();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>

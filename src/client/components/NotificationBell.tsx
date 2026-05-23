@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bell, Check, Info, CreditCard, AlertTriangle, Wrench, FileText, CheckCircle, Clock } from 'lucide-react';
 import { api } from '../services/api';
+import { socketService } from '../services/socket';
 import { Notification } from '../types';
 import styles from './NotificationBell.module.css';
 
@@ -20,10 +21,30 @@ export const NotificationBell: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
+  const fetchNotifications = async () => {
+    try {
+      const res = await api.get('/student/notifications');
+      setNotifications(res.data);
+    } catch (error) {
+      console.error('Failed to fetch notifications', error);
+    }
+  };
+
   useEffect(() => {
     fetchNotifications();
-    const interval = setInterval(fetchNotifications, 60000); // Poll every minute
-    return () => clearInterval(interval);
+
+    const socket = socketService.getSocket();
+    if (socket) {
+      socket.on('new_notification', (notif: Notification) => {
+        setNotifications(prev => [notif, ...prev]);
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('new_notification');
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -35,15 +56,6 @@ export const NotificationBell: React.FC = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
-
-  const fetchNotifications = async () => {
-    try {
-      const res = await api.get('/student/notifications');
-      setNotifications(res.data);
-    } catch (error) {
-      console.error('Failed to fetch notifications', error);
-    }
-  };
 
   const markAsRead = async (id: string) => {
     try {
@@ -70,7 +82,7 @@ export const NotificationBell: React.FC = () => {
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className={styles.bellButton}
-        aria-label="Сповіщення"
+        aria-label={`Сповіщення (${unreadCount} непрочитано)`}
       >
         <Bell className={styles.icon} />
         {unreadCount > 0 && (
@@ -104,15 +116,16 @@ export const NotificationBell: React.FC = () => {
                         {n.title}
                       </h4>
                     </div>
-                    {!n.isRead && <span className={styles.unreadDot}></span>}
+                    {!n.isRead && <span className={styles.unreadDot} title="Непрочитано"></span>}
                   </div>
                   <p className={styles.message}>{n.message}</p>
                   <div className={styles.footer}>
                     <Clock className={styles.clockIcon} />
                     <span className={styles.date}>
-                      {new Date(n.createdAt).toLocaleString('uk-UA', {
-                        day: '2-digit',
-                        month: '2-digit',
+                      {new Date(n.createdAt).toLocaleDateString('uk-UA', {
+                        day: 'numeric',
+                        month: 'short'
+                      })} о {new Date(n.createdAt).toLocaleTimeString('uk-UA', {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
@@ -123,7 +136,7 @@ export const NotificationBell: React.FC = () => {
             ) : (
               <div className={styles.emptyState}>
                 <Bell className={styles.emptyIcon} />
-                <p className={styles.emptyText}>У вас поки немає сповіщень</p>
+                <p className={styles.emptyText}>У вас поки немає нових сповіщень</p>
               </div>
             )}
           </div>

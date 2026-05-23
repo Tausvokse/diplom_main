@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UploadCloud, CheckCircle, FileText, Activity, Smartphone, X } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -6,7 +6,6 @@ import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import DiiaSocketListener from './DiiaSocketListener';
 import { ClusteringVector } from '../../types';
-import InputMask from 'react-input-mask';
 import styles from './ApplicationForm.module.css';
 
 interface FormData {
@@ -40,6 +39,7 @@ export const ApplicationForm: React.FC = () => {
   const [diiaData, setDiiaData] = useState<Record<string, unknown> | null>(null);
   const [showDiiaModal, setShowDiiaModal] = useState(false);
   const [isDiiaLoading, setIsDiiaLoading] = useState(false);
+  const [studentProfile, setStudentProfile] = useState<any>(null);
 
   const [formData, setFormData] = useState<FormData>({
     type: 'CHECK_IN',
@@ -61,6 +61,26 @@ export const ApplicationForm: React.FC = () => {
     },
     consent: false,
   });
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const res = await api.get('/student/dashboard');
+        if (res.data.profile) {
+          setStudentProfile(res.data.profile);
+          setFormData(prev => ({
+            ...prev,
+            course: res.data.profile.course || 1,
+            faculty: res.data.profile.faculty || '',
+            previousRoom: res.data.profile.room?.roomNumber || ''
+          }));
+        }
+      } catch (err) {
+        console.error('Error fetching profile:', err);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
@@ -329,20 +349,20 @@ export const ApplicationForm: React.FC = () => {
 
             <div className={`${styles.formBox} nm-inset-sm`}>
               {formData.type === 'CHECK_OUT' && (
-                <div className={styles.formGrid1}>
-                  <div>
-                    <label className={`ui-muted ${styles.inputLabel}`}>Попередня кімната</label>
-                    <InputMask
-                      mask="999"
-                      maskChar=""
-                      name="previousRoom"
-                      value={formData.previousRoom}
-                      onChange={handleInputChange}
-                      placeholder="Напр. 405"
-                      className="ui-input"
-                    />
+                <div className={styles.formGrid2}>
+                  <div className={styles.displayItem}>
+                    <label className={`ui-muted ${styles.inputLabel}`}>Поточний гуртожиток</label>
+                    <div className={`${styles.infoDisplayBox} nm-flat`}>
+                      {studentProfile?.dormitory?.name || 'Не вказано'}
+                    </div>
                   </div>
-                  <div>
+                  <div className={styles.displayItem}>
+                    <label className={`ui-muted ${styles.inputLabel}`}>Поточна кімната</label>
+                    <div className={`${styles.infoDisplayBox} nm-flat`}>
+                      {studentProfile?.room?.roomNumber || 'Не вказано'}
+                    </div>
+                  </div>
+                  <div className="md:col-span-2">
                     <label className={`ui-muted ${styles.inputLabel}`}>Причина виселення</label>
                     <textarea
                       name="checkoutReason"
@@ -358,42 +378,27 @@ export const ApplicationForm: React.FC = () => {
 
               {formData.type === 'CHECK_IN' && (
                 <div className={styles.formGrid2}>
-                  <div>
+                  <div className={styles.displayItem}>
                     <label className={`ui-muted ${styles.inputLabel}`}>ПІБ</label>
-                    <input
-                      type="text"
-                      disabled
-                      value={`${user?.lastName || ''} ${user?.firstName || ''}`}
-                      className="ui-input w-full opacity-60 cursor-not-allowed"
-                    />
+                    <div className={`${styles.infoDisplayBox} nm-flat`}>
+                      {user?.lastName || ''} {user?.firstName || ''}
+                    </div>
                   </div>
-                  <div>
-                    <label className={`ui-muted ${styles.inputLabel}`}>Курс</label>
-                    <input
-                      type="number"
-                      name="course"
-                      min="1"
-                      max="6"
-                      value={formData.course}
-                      onChange={handleInputChange}
-                      className="ui-input"
-                    />
+                  <div className={styles.displayItem}>
+                    <label className={`ui-muted ${styles.inputLabel}`}>Курс навчання</label>
+                    <div className={`${styles.infoDisplayBox} nm-flat`}>
+                      {formData.course} курс
+                    </div>
                   </div>
-                  <div>
+                  <div className={styles.displayItem}>
                     <label className={`ui-muted ${styles.inputLabel}`}>Факультет</label>
-                    <select
-                      name="faculty"
-                      value={formData.faculty}
-                      onChange={handleInputChange}
-                      className="ui-input"
-                    >
-                      <option value="">Оберіть факультет...</option>
-                      <option value="FI">Факультет інформатики</option>
-                      <option value="FEM">Факультет економіки та менеджменту</option>
-                      <option value="FL">Факультет лінгвістики</option>
-                    </select>
+                    <div className={`${styles.infoDisplayBox} nm-flat`}>
+                      {formData.faculty === 'FI' ? 'Факультет інформатики' : 
+                       formData.faculty === 'FEM' ? 'Факультет економіки та менеджменту' :
+                       formData.faculty === 'FL' ? 'Факультет лінгвістики' : (formData.faculty || 'Не вказано')}
+                    </div>
                   </div>
-                  <div>
+                  <div className={styles.displayItem}>
                     <label className={`ui-muted ${styles.inputLabel}`}>Категорія пільг</label>
                     <select
                       name="privilegeCategoryId"
