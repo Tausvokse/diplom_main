@@ -139,23 +139,27 @@ export class AdminService {
       throw new AppError('Заяву не знайдено', 404);
     }
 
-    const updated = await prisma.application.update({
-      where: { id: appId },
-      data: { status: 'APPROVED', reviewedAt: new Date() }
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedApp = await tx.application.update({
+        where: { id: appId },
+        data: { status: 'APPROVED', reviewedAt: new Date() }
+      });
+
+      // Handle CHECK_IN: ensure student is ready for allocation by clearing any previous roomId
+      if (app.type === 'CHECK_IN' && app.student.roomId) {
+        await tx.studentProfile.update({
+          where: { id: app.studentId },
+          data: { roomId: null, dormitoryId: null }
+        });
+      }
+
+      return updatedApp;
     });
 
-    // Handle CHECK_OUT: auto-evict student
+    // Handle CHECK_OUT: auto-evict student (Eviction handles its own transaction)
     if (app.type === 'CHECK_OUT' && app.student.roomId) {
       const { AllocationService } = await import('./allocation.service');
       await AllocationService.evictStudent(app.studentId);
-    }
-
-    // Handle CHECK_IN: ensure student is ready for allocation by clearing any previous roomId
-    if (app.type === 'CHECK_IN' && app.student.roomId) {
-      await prisma.studentProfile.update({
-        where: { id: app.studentId },
-        data: { roomId: null, dormitoryId: null }
-      });
     }
 
     // Create notification
@@ -303,25 +307,25 @@ export class AdminService {
   }
 
   static async getAnalytics() {
-    const dormData = await prisma.dormitory.findMany({
-      include: {
-        floors: {
-          include: { rooms: true }
-        }
+    const dorms = await prisma.dormitory.findMany({
+      select: {
+        id: true,
+        name: true,
+        totalCapacity: true
       }
     });
 
-    const occupancyStats = dormData.map(d => {
-      let currentOccupancy = 0;
-      d.floors.forEach(f => {
-        f.rooms.forEach(r => { currentOccupancy += r.currentOccupancy; });
+    const occupancyStats = await Promise.all(dorms.map(async d => {
+      const agg = await prisma.room.aggregate({
+        where: { floor: { dormitoryId: d.id } },
+        _sum: { currentOccupancy: true }
       });
       return {
         name: d.name,
         totalCapacity: d.totalCapacity,
-        currentOccupancy
+        currentOccupancy: agg._sum.currentOccupancy || 0
       };
-    });
+    }));
 
     const clusterStats = await prisma.studentProfile.groupBy({
       by: ['clusterId'],

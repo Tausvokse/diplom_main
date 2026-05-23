@@ -1,4 +1,4 @@
-import { Role } from '@prisma/client';
+import { Role, Gender } from '@prisma/client';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { config } from '../config';
@@ -7,7 +7,8 @@ import { AppError } from '../utils/AppError';
 
 export class AuthService {
   static async register(email: string, password: string, firstName: string, lastName: string, phone: string, studentIdNumber: string, course: number, faculty: string, gender: string, isTeacher: boolean = false) {
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = email.toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       throw new AppError('Користувач з таким email вже існує', 409);
     }
@@ -18,10 +19,10 @@ export class AuthService {
     const user = await prisma.$transaction(async (tx) => {
       const newUser = await tx.user.create({
         data: {
-          email,
+          email: normalizedEmail,
           password: hashedPassword,
           role: isTeacher ? 'ADMIN' : 'STUDENT',
-          gender: gender as any,
+          gender: gender as Gender,
           firstName,
           lastName
         }
@@ -31,7 +32,7 @@ export class AuthService {
         data: {
           userId: newUser.id,
           fullName: `${lastName} ${firstName}`,
-          email,
+          email: normalizedEmail,
           phone,
           studentIdNumber,
           course,
@@ -52,7 +53,8 @@ export class AuthService {
   }
 
   static async login(email: string, password: string) {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = email.toLowerCase();
+    const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (!user) {
       throw new AppError('Невірний email або пароль', 401);
     }
@@ -92,7 +94,8 @@ export class AuthService {
   }
 
   static async createAdmin(email: string, password: string, firstName: string, lastName: string, role: string, dormitoryId?: string) {
-    const existing = await prisma.user.findUnique({ where: { email } });
+    const normalizedEmail = email.toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
     if (existing) {
       throw new AppError('Користувач з таким email вже існує', 409);
     }
@@ -108,7 +111,7 @@ export class AuthService {
 
     const user = await prisma.user.create({
       data: {
-        email,
+        email: normalizedEmail,
         password: hashedPassword,
         role: role as Role,
         firstName,

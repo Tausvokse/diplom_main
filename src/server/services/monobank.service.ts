@@ -35,6 +35,11 @@ export class MonobankService {
   private static cachedClientInfo: any = null;
   private static lastFetchTime: number = 0;
   private static CACHE_TTL = 60000; // 60 seconds
+  private static clientInfoPromise: Promise<any> | null = null;
+  
+  private static statementCache = new Map<string, { data: MonoStatementItem[], time: number }>();
+  private static statementPromises = new Map<string, Promise<MonoStatementItem[]>>();
+  private static STATEMENT_TTL = 30000; // 30 seconds
 
   private static async apiRequest<T>(path: string): Promise<T> {
     if (!config.monobankToken) {
@@ -80,17 +85,25 @@ export class MonobankService {
       return this.cachedClientInfo;
     }
 
-    try {
-      const info = await this.apiRequest<any>('/personal/client-info');
-      this.cachedClientInfo = info;
-      this.lastFetchTime = now;
-      return info;
-    } catch (error) {
-      console.error('Error fetching Monobank client info:', error);
-      // Return cached if failed, or throw
-      if (this.cachedClientInfo) return this.cachedClientInfo;
-      throw error;
+    if (this.clientInfoPromise) {
+      return this.clientInfoPromise;
     }
+
+    this.clientInfoPromise = this.apiRequest<any>('/personal/client-info')
+      .then(info => {
+        this.cachedClientInfo = info;
+        this.lastFetchTime = Date.now();
+        this.clientInfoPromise = null;
+        return info;
+      })
+      .catch(error => {
+        this.clientInfoPromise = null;
+        console.error('Error fetching Monobank client info:', error);
+        if (this.cachedClientInfo) return this.cachedClientInfo;
+        throw error;
+      });
+
+    return this.clientInfoPromise;
   }
 
   static async getJarDetails(monobankUrl: string): Promise<MonoJar | null> {
@@ -106,14 +119,33 @@ export class MonobankService {
   }
 
   static async getJarStatement(jarAccountId: string, days: number = 30): Promise<MonoStatementItem[]> {
+    const now = Date.now();
+    const cached = this.statementCache.get(jarAccountId);
+    if (cached && (now - cached.time < this.STATEMENT_TTL)) {
+      return cached.data;
+    }
+
+    if (this.statementPromises.has(jarAccountId)) {
+      return this.statementPromises.get(jarAccountId)!;
+    }
+
     const to = Math.floor(Date.now() / 1000);
     const from = to - (days * 24 * 60 * 60);
     
-    try {
-      return await this.apiRequest<MonoStatementItem[]>(`/personal/statement/${jarAccountId}/${from}/${to}`);
-    } catch (error) {
-      console.error(`Error fetching Monobank statement for jar ${jarAccountId}:`, error);
-      return [];
-    }
+    const promise = this.apiRequest<MonoStatementItem[]>(`/personal/statement/${jarAccountId}/${from}/${to}`)
+      .then(data => {
+        this.statementCache.set(jarAccountId, { data, time: Date.now() });
+        this.statementPromises.delete(jarAccountId);
+        return data;
+      })
+      .catch(error => {
+        this.statementPromises.delete(jarAccountId);
+        console.error(`Error fetching Monobank statement for jar ${jarAccountId}:`, error);
+        if (cached) return cached.data;
+        return [];
+      });
+
+    this.statementPromises.set(jarAccountId, promise);
+    return promise;
   }
 }
