@@ -1,8 +1,19 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Check } from 'lucide-react';
+import { Bell, Check, Info, CreditCard, AlertTriangle, Wrench, FileText, CheckCircle, Clock } from 'lucide-react';
 import { api } from '../services/api';
 import { Notification } from '../types';
 import styles from './NotificationBell.module.css';
+
+const getNotificationIcon = (type: string) => {
+  switch (type) {
+    case 'PAYMENT_REMINDER': return <CreditCard className={styles.typeIcon} style={{ color: '#eab308' }} />;
+    case 'COMPLAINT_ALERT': return <AlertTriangle className={styles.typeIcon} style={{ color: '#ef4444' }} />;
+    case 'REPAIR_UPDATE': return <Wrench className={styles.typeIcon} style={{ color: '#3b82f6' }} />;
+    case 'APPLICATION_UPDATE': return <FileText className={styles.typeIcon} style={{ color: '#6366f1' }} />;
+    case 'ALLOCATION_RESULT': return <CheckCircle className={styles.typeIcon} style={{ color: '#22c55e' }} />;
+    default: return <Info className={styles.typeIcon} style={{ color: 'rgb(var(--muted))' }} />;
+  }
+};
 
 export const NotificationBell: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -59,6 +70,7 @@ export const NotificationBell: React.FC = () => {
       <button 
         onClick={() => setIsOpen(!isOpen)}
         className={styles.bellButton}
+        aria-label="Сповіщення"
       >
         <Bell className={styles.icon} />
         {unreadCount > 0 && (
@@ -73,32 +85,45 @@ export const NotificationBell: React.FC = () => {
             {unreadCount > 0 && (
               <button onClick={markAllAsRead} className={styles.markReadBtn}>
                 <Check className={styles.markReadIcon} />
-                Прочитано всі
+                Прочитати всі
               </button>
             )}
           </div>
           <div className={styles.list}>
             {notifications.length > 0 ? (
-              notifications.map((n, index) => (
+              notifications.map((n) => (
                 <div 
                   key={n.id} 
                   className={`${styles.item} ${!n.isRead ? styles.itemUnread : styles.itemRead}`}
                   onClick={() => !n.isRead && markAsRead(n.id)}
                 >
                   <div className={styles.itemHeader}>
-                    <h4 className={`${styles.itemTitle} ${!n.isRead ? styles.itemTitleUnread : styles.itemTitleRead}`}>{n.title}</h4>
+                    <div className={styles.itemTitleGroup}>
+                      {getNotificationIcon(n.type)}
+                      <h4 className={`${styles.itemTitle} ${!n.isRead ? styles.itemTitleUnread : styles.itemTitleRead}`}>
+                        {n.title}
+                      </h4>
+                    </div>
                     {!n.isRead && <span className={styles.unreadDot}></span>}
                   </div>
                   <p className={styles.message}>{n.message}</p>
-                  <span className={styles.date}>
-                    {new Date(n.createdAt).toLocaleString()}
-                  </span>
+                  <div className={styles.footer}>
+                    <Clock className={styles.clockIcon} />
+                    <span className={styles.date}>
+                      {new Date(n.createdAt).toLocaleString('uk-UA', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
                 </div>
               ))
             ) : (
               <div className={styles.emptyState}>
                 <Bell className={styles.emptyIcon} />
-                <p className={styles.emptyText}>Немає сповіщень</p>
+                <p className={styles.emptyText}>У вас поки немає сповіщень</p>
               </div>
             )}
           </div>
@@ -107,3 +132,4 @@ export const NotificationBell: React.FC = () => {
     </div>
   );
 };
+
