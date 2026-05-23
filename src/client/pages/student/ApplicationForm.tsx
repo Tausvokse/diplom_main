@@ -339,7 +339,7 @@ export const ApplicationForm: React.FC = () => {
                       value={formData.previousRoom}
                       onChange={handleInputChange}
                       placeholder="Напр. 405"
-                      className="ui-input w-full"
+                      className="ui-input"
                     />
                   </div>
                   <div>
@@ -350,7 +350,7 @@ export const ApplicationForm: React.FC = () => {
                       onChange={handleInputChange}
                       rows={3}
                       placeholder="Завершення навчання, переїзд, тощо..."
-                      className="ui-input w-full"
+                      className="ui-input"
                     />
                   </div>
                 </div>
@@ -376,7 +376,7 @@ export const ApplicationForm: React.FC = () => {
                       max="6"
                       value={formData.course}
                       onChange={handleInputChange}
-                      className="ui-input w-full"
+                      className="ui-input"
                     />
                   </div>
                   <div>
@@ -385,7 +385,7 @@ export const ApplicationForm: React.FC = () => {
                       name="faculty"
                       value={formData.faculty}
                       onChange={handleInputChange}
-                      className="ui-input w-full"
+                      className="ui-input"
                     >
                       <option value="">Оберіть факультет...</option>
                       <option value="FI">Факультет інформатики</option>
@@ -399,7 +399,7 @@ export const ApplicationForm: React.FC = () => {
                       name="privilegeCategoryId"
                       value={formData.privilegeCategoryId}
                       onChange={handleInputChange}
-                      className="ui-input w-full"
+                      className="ui-input"
                     >
                       <option value="">Немає пільг</option>
                       <option value="id_orphans">Діти-сироти</option>
@@ -718,6 +718,11 @@ export const ApplicationForm: React.FC = () => {
         }
       `}</style>
     </div>
+  );
+};
+
+export default ApplicationForm;
+</div>
   );
 };
 

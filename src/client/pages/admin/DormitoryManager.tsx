@@ -294,9 +294,8 @@ export const DormitoryManager: React.FC = () => {
                               hidden: { opacity: 0, scale: 0.95 },
                               visible: { opacity: 1, scale: 1 }
                             }}
-                            whileHover={{ scale: 1.02 }}
                             onClick={() => openRoomDetails(room)}
-                            className={styles.roomCard}
+                            className={`${styles.roomCard} ${room.currentOccupancy === 0 ? styles.roomEmpty : styles.roomOccupied}`}
                           >
                             <div className={styles.roomHeader}>
                               <div className={styles.flexCenter}>

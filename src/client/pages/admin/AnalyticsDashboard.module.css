@@ -72,7 +72,7 @@
 .kpiCard {
   background: rgb(var(--surface));
   border-radius: 1rem;
-  box-shadow: var(--nm-flat);
+  box-shadow: var(--nm-raised);
   padding: 1.5rem;
   display: flex;
   align-items: center;
@@ -222,4 +222,6 @@
 
 .fillAccent {
   background-color: rgb(var(--accent));
+}
+b(var(--accent));
 }

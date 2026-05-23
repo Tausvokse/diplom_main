@@ -145,7 +145,7 @@ const Register: React.FC = () => {
                     value={formData.firstName}
                     onChange={handleChange}
                     placeholder="Іван"
-                    className={styles.input}
+                    className="ui-input"
                   />
                 </div>
                 <div>
@@ -156,7 +156,7 @@ const Register: React.FC = () => {
                     value={formData.lastName}
                     onChange={handleChange}
                     placeholder="Студент"
-                    className={styles.input}
+                    className="ui-input"
                   />
                 </div>
               </div>
@@ -169,7 +169,7 @@ const Register: React.FC = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="+380 (__) ___-__-__"
-                  className={styles.input}
+                  className="ui-input"
                 />
               </div>
 
@@ -182,7 +182,7 @@ const Register: React.FC = () => {
                     value={formData.studentIdNumber}
                     onChange={handleChange}
                     placeholder="КВ12345678"
-                    className={styles.input}
+                    className="ui-input"
                   />
                 </div>
                 <div className={styles.grid}>
@@ -192,7 +192,7 @@ const Register: React.FC = () => {
                       name="course"
                       value={formData.course}
                       onChange={(e: any) => handleChange(e)}
-                      className={styles.input}
+                      className="ui-input"
                     >
                       {[1,2,3,4,5,6].map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
@@ -205,7 +205,7 @@ const Register: React.FC = () => {
                       value={formData.faculty}
                       onChange={handleChange}
                       placeholder="АКФ"
-                      className={styles.input}
+                      className="ui-input"
                     />
                   </div>
                 </div>
@@ -250,7 +250,7 @@ const Register: React.FC = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="student@stud.kai.edu.ua"
-                  className={styles.input}
+                  className="ui-input"
                 />
               </div>
               
@@ -262,7 +262,7 @@ const Register: React.FC = () => {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className={styles.input}
+                  className="ui-input"
                 />
               </div>
 
@@ -274,14 +274,14 @@ const Register: React.FC = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className={styles.input}
+                  className="ui-input"
                 />
               </div>
 
               <button 
                 type="submit"
                 disabled={isLoading}
-                className={styles.button}
+                className={`ui-button ui-button-primary ${styles.button}`}
               >
                 {isLoading ? <div className={styles.spinner}></div> : 'Продовжити'}
               </button>
@@ -303,7 +303,7 @@ const Register: React.FC = () => {
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
                   placeholder="000000"
-                  className={`${styles.input} ${styles.verificationInput}`}
+                  className={`ui-input ${styles.verificationInput}`}
                 />
               </div>
 
@@ -312,14 +312,14 @@ const Register: React.FC = () => {
                   type="button"
                   onClick={() => setStep(1)}
                   disabled={isLoading}
-                  className={`${styles.button} ${styles.buttonOutline} ${styles.buttonHalf}`}
+                  className={`ui-button ui-button-outline ${styles.button} ${styles.buttonHalf}`}
                 >
                   Назад
                 </button>
                 <button 
                   type="submit"
                   disabled={isLoading || verificationCode.length !== 6}
-                  className={`${styles.button} ${styles.buttonTwoThirds}`}
+                  className={`ui-button ui-button-primary ${styles.button} ${styles.buttonTwoThirds}`}
                 >
                   {isLoading ? <div className={`${styles.spinner} ${styles.spinnerCenter}`}></div> : 'Підтвердити'}
                 </button>

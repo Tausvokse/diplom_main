@@ -81,7 +81,7 @@ const Login: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="student@uni.edu"
-                className={styles.input}
+                className="ui-input"
               />
             </div>
             
@@ -92,14 +92,14 @@ const Login: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className={styles.input}
+                className="ui-input"
               />
             </div>
 
             <button 
               type="submit"
               disabled={isLoading}
-              className={styles.button}
+              className={`ui-button ui-button-primary ${styles.button}`}
             >
               {isLoading ? <div className={styles.spinner}></div> : 'Увійти'}
             </button>

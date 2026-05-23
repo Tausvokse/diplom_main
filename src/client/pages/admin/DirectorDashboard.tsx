@@ -92,7 +92,7 @@ const DirectorDashboard: React.FC = () => {
             <input
               type="text"
               placeholder="Пошук за ПІБ, email або квитком..."
-              className={styles.searchInput}
+              className={`ui-input ${styles.searchInput}`}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />

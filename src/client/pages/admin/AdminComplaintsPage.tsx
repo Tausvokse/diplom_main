@@ -135,7 +135,7 @@ const AdminComplaintsPage: React.FC = () => {
                 className={`${styles.statusButton} ${
                   isActive 
                     ? statusConfig[status].className
-                    : `nm-flat hover:nm-raised-sm ${styles.statusButtonInactive}`
+                    : `${styles.statusButtonInactive}`
                 }`}
               >
                 <div className={styles.statusButtonContent}>

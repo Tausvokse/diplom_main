@@ -80,19 +80,10 @@
   color: rgb(var(--accent));
 }
 .input {
-  width: 100%;
-  padding: 0.65rem 0.9rem;
-  border-radius: 14px;
-  border: 1px solid rgb(var(--border) / 0.15);
-  background: rgb(var(--surface));
-  color: rgb(var(--text));
-  box-shadow: var(--nm-inset-sm);
-  transition: box-shadow 200ms ease, border-color 200ms ease;
+  /* Used global .ui-input */
 }
 .input:focus {
-  border-color: rgb(var(--accent) / 0.5);
-  box-shadow: var(--nm-inset-sm), 0 0 0 3px rgb(var(--accent) / 0.12);
-  outline: none;
+  /* Used global .ui-input:focus */
 }
 .radioGroup {
   display: flex;

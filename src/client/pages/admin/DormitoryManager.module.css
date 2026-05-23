@@ -220,16 +220,38 @@
 }
 
 .roomCard {
-  box-shadow: var(--nm-flat);
   background: rgb(var(--surface));
   border-radius: 1rem;
   padding: 1.25rem;
-  transition: all 0.3s;
+  transition: box-shadow 0.2s ease-in-out, transform 0.2s ease-in-out;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   min-height: 140px;
+}
+
+.roomEmpty {
+  box-shadow: var(--nm-inset);
+}
+
+.roomEmpty:hover {
+  box-shadow: var(--nm-inset-sm);
+  transform: scale(0.98);
+}
+
+.roomOccupied {
+  box-shadow: var(--nm-raised);
+}
+
+.roomOccupied:hover {
+  box-shadow: var(--nm-raised-sm);
+  transform: scale(0.98);
+}
+
+.roomCard:active {
+  transform: scale(0.96);
+  box-shadow: var(--nm-inset);
 }
 
 .roomHeader {

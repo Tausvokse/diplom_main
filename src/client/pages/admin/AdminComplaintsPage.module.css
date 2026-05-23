@@ -72,6 +72,11 @@
 .statusButtonInactive {
   background-color: rgb(var(--surface));
   color: rgb(var(--muted));
+  box-shadow: var(--nm-raised);
+}
+.statusButtonInactive:hover {
+  box-shadow: var(--nm-raised-hover);
+  color: rgb(var(--text));
 }
 .statusButtonContent {
   display: flex;
