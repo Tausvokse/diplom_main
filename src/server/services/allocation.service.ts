@@ -501,9 +501,15 @@ export class AllocationService {
           await tx.roomAllocation.create({
             data: { roomId: room.id, studentId: profile.id, status: 'ACTIVE' }
           });
+          
+          const updateData: any = { roomId: room.id, dormitoryId: room.floor.dormitoryId };
+          if ((studentRef as any).clusterId !== undefined) {
+            updateData.clusterId = (studentRef as any).clusterId;
+          }
+          
           await tx.studentProfile.update({
             where: { id: profile.id },
-            data: { roomId: room.id, dormitoryId: room.floor.dormitoryId }
+            data: updateData
           });
 
           allocatedStudents.push({
