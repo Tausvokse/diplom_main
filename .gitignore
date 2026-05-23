@@ -1,6 +1,7 @@
 # Dependencies
 .agents/
 .antigravitycli/
+uploads/
 node_modules/
 npm-debug.log*
 yarn-debug.log*

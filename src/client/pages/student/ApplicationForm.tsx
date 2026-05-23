@@ -7,6 +7,7 @@ import { useAuthStore } from '../../store/authStore';
 import DiiaSocketListener from './DiiaSocketListener';
 import { ClusteringVector } from '../../types';
 import InputMask from 'react-input-mask';
+import styles from './ApplicationForm.module.css';
 
 interface FormData {
   type: string;
@@ -238,39 +239,39 @@ export const ApplicationForm: React.FC = () => {
     const files = formData[category] as File[];
     
     return (
-      <div className="mb-6">
-        <label className="block text-sm font-semibold text-[rgb(var(--text))] mb-1">{title}</label>
-        <p className="text-xs ui-muted mb-4">{description}</p>
+      <div className={styles.dropzoneWrapper}>
+        <label className={styles.dropzoneTitle}>{title}</label>
+        <p className={`ui-muted ${styles.dropzoneDesc}`}>{description}</p>
         <div 
-          className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all duration-300 ${
-            isDragActive ? 'border-[rgb(var(--accent))] bg-[rgb(var(--accent-soft))] nm-inset-sm' : 'border-[rgb(var(--border)/0.5)] bg-[rgb(var(--surface))] nm-flat hover:nm-inset-sm'
+          className={`${styles.dropzoneArea} ${
+            isDragActive ? `${styles.dropzoneActive} nm-inset-sm` : `${styles.dropzoneInactive} nm-flat hover:nm-inset-sm`
           }`}
           onDragOver={(e) => handleDragOver(e, category)}
           onDragLeave={handleDragLeave}
           onDrop={(e) => handleDrop(e, category)}
         >
-          <div className="w-12 h-12 rounded-full nm-raised-sm flex items-center justify-center mx-auto mb-3 bg-[rgb(var(--surface-2))] text-[rgb(var(--accent))]">
-            <UploadCloud className="w-6 h-6" />
+          <div className={`${styles.dropzoneIconBox} nm-raised-sm`}>
+            <UploadCloud className={styles.dropzoneIconSvg} />
           </div>
-          <p className="text-[rgb(var(--text))] text-sm font-medium mb-1">Перетягніть файли сюди або</p>
-          <label className="cursor-pointer text-[rgb(var(--accent))] text-sm font-bold hover:underline">
+          <p className={styles.dropzoneText}>Перетягніть файли сюди або</p>
+          <label className={styles.dropzoneLink}>
             оберіть на комп'ютері
             <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" className="hidden" onChange={(e) => handleFileInput(e, category)} />
           </label>
         </div>
         
         {files.length > 0 && (
-          <ul className="mt-3 space-y-2">
+          <ul className={styles.fileList}>
             {files.map((file, idx) => (
-              <li key={idx} className="flex items-center justify-between p-3 nm-flat bg-[rgb(var(--surface))] rounded-xl">
-                <div className="flex items-center overflow-hidden">
-                  <div className="w-8 h-8 rounded-lg nm-inset-sm flex items-center justify-center bg-[rgb(var(--surface-2))] mr-3 flex-shrink-0">
-                    <FileText className="w-4 h-4 text-[rgb(var(--accent))]" />
+              <li key={idx} className={`${styles.fileItem} nm-flat`}>
+                <div className={styles.fileInfo}>
+                  <div className={`${styles.fileIconBox} nm-inset-sm`}>
+                    <FileText className={styles.fileIconSvg} />
                   </div>
-                  <span className="text-xs font-medium text-[rgb(var(--text))] truncate">{file.name}</span>
+                  <span className={styles.fileName}>{file.name}</span>
                 </div>
-                <button type="button" onClick={() => removeFile(idx, category)} className="w-6 h-6 rounded-full nm-flat hover:nm-inset-sm text-red-500 flex items-center justify-center transition-all ml-3">
-                  <X className="w-3 h-3" />
+                <button type="button" onClick={() => removeFile(idx, category)} className={`${styles.removeButton} nm-flat hover:nm-inset-sm`}>
+                  <X className={styles.removeIconSvg} />
                 </button>
               </li>
             ))}
@@ -284,25 +285,25 @@ export const ApplicationForm: React.FC = () => {
     switch (currentStep) {
       case 1:
         return (
-          <div className="space-y-8 animate-fadeIn">
+          <div className={styles.stepContent}>
             <div>
-              <h2 className="text-2xl font-bold text-[rgb(var(--text))] mb-1 tracking-tight">Загальні дані</h2>
-              <p className="text-sm ui-muted">Вкажіть основну інформацію для обробки заяви</p>
+              <h2 className={styles.stepTitle}>Загальні дані</h2>
+              <p className={`ui-muted ${styles.radioDesc}`}>Вкажіть основну інформацію для обробки заяви</p>
             </div>
             
             <div className="mb-8">
-              <label className="block text-xs font-bold uppercase tracking-wider ui-muted mb-4">Тип заяви</label>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <label className={`ui-muted ${styles.sectionLabel}`}>Тип заяви</label>
+              <div className={styles.radioGrid}>
                 {[
                   { id: 'CHECK_IN', label: 'Поселення', desc: 'Заселення в гуртожиток', icon: '🏠' },
                   { id: 'CHECK_OUT', label: 'Виселення', desc: 'Виїзд з гуртожитку', icon: '🚪' }
                 ].map(type => (
                   <label 
                     key={type.id} 
-                    className={`relative flex flex-col p-5 cursor-pointer rounded-2xl transition-all duration-200 border-2 border-transparent ${
+                    className={`${styles.radioCard} ${
                       formData.type === type.id 
-                        ? 'nm-inset bg-[rgb(var(--surface-2))] border-[rgb(var(--accent)/0.3)]' 
-                        : 'nm-flat hover:nm-raised-sm bg-[rgb(var(--surface))] hover:text-[rgb(var(--accent))]'
+                        ? `${styles.radioCardActive} nm-inset` 
+                        : `${styles.radioCardInactive} nm-flat hover:nm-raised-sm`
                     }`}
                   >
                     <input
@@ -313,12 +314,12 @@ export const ApplicationForm: React.FC = () => {
                       onChange={handleInputChange}
                       className="sr-only"
                     />
-                    <div className="text-3xl mb-3">{type.icon}</div>
-                    <div className={`font-semibold text-lg ${formData.type === type.id ? 'text-[rgb(var(--accent))]' : 'text-[rgb(var(--text))]'}`}>{type.label}</div>
-                    <div className="text-sm ui-muted mt-1">{type.desc}</div>
+                    <div className={styles.radioIcon}>{type.icon}</div>
+                    <div className={`${styles.radioLabel} ${formData.type === type.id ? styles.radioLabelActive : styles.radioLabelInactive}`}>{type.label}</div>
+                    <div className={`ui-muted ${styles.radioDesc}`}>{type.desc}</div>
                     {formData.type === type.id && (
-                      <div className="absolute top-5 right-5 w-6 h-6 rounded-full nm-inset-sm flex items-center justify-center bg-[rgb(var(--surface))]">
-                        <div className="w-3 h-3 rounded-full bg-[rgb(var(--accent))]" />
+                      <div className={`${styles.radioCheck} nm-inset-sm`}>
+                        <div className={styles.radioCheckInner} />
                       </div>
                     )}
                   </label>
@@ -326,11 +327,11 @@ export const ApplicationForm: React.FC = () => {
               </div>
             </div>
 
-            <div className="bg-[rgb(var(--surface-2))] nm-inset-sm p-6 md:p-8 rounded-3xl space-y-6">
+            <div className={`${styles.formBox} nm-inset-sm`}>
               {formData.type === 'CHECK_OUT' && (
-                <div className="grid grid-cols-1 gap-6">
+                <div className={styles.formGrid1}>
                   <div>
-                    <label className="block text-sm font-medium ui-muted mb-2">Попередня кімната</label>
+                    <label className={`ui-muted ${styles.inputLabel}`}>Попередня кімната</label>
                     <InputMask
                       mask="999"
                       maskChar=""
@@ -342,7 +343,7 @@ export const ApplicationForm: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium ui-muted mb-2">Причина виселення</label>
+                    <label className={`ui-muted ${styles.inputLabel}`}>Причина виселення</label>
                     <textarea
                       name="checkoutReason"
                       value={formData.checkoutReason}
@@ -356,9 +357,9 @@ export const ApplicationForm: React.FC = () => {
               )}
 
               {formData.type === 'CHECK_IN' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className={styles.formGrid2}>
                   <div>
-                    <label className="block text-sm font-medium ui-muted mb-2">ПІБ</label>
+                    <label className={`ui-muted ${styles.inputLabel}`}>ПІБ</label>
                     <input
                       type="text"
                       disabled
@@ -367,7 +368,7 @@ export const ApplicationForm: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium ui-muted mb-2">Курс</label>
+                    <label className={`ui-muted ${styles.inputLabel}`}>Курс</label>
                     <input
                       type="number"
                       name="course"
@@ -379,7 +380,7 @@ export const ApplicationForm: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium ui-muted mb-2">Факультет</label>
+                    <label className={`ui-muted ${styles.inputLabel}`}>Факультет</label>
                     <select
                       name="faculty"
                       value={formData.faculty}
@@ -393,7 +394,7 @@ export const ApplicationForm: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium ui-muted mb-2">Категорія пільг</label>
+                    <label className={`ui-muted ${styles.inputLabel}`}>Категорія пільг</label>
                     <select
                       name="privilegeCategoryId"
                       value={formData.privilegeCategoryId}
@@ -411,10 +412,10 @@ export const ApplicationForm: React.FC = () => {
             </div>
 
             <div className="mt-8">
-              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-4 border-b border-[rgb(var(--border)/0.2)] pb-2">Скан-копії документів</h3>
+              <h3 className={styles.subSectionTitle}>Скан-копії документів</h3>
               
               {formData.type === 'CHECK_IN' && (
-                <div className="space-y-2">
+                <div className={styles.dropzoneList}>
                   {renderDropZone('passportFiles', 'Паспорт', 'Скан-копія паспорта (PDF, JPG, PNG)')}
                   {renderDropZone('idCodeFiles', 'Ідентифікаційний код', 'Скан-копія РНОКПП (ІПН)')}
                   {renderDropZone('medCardFiles', 'Медична довідка', 'Форма 086/о або аналогічна')}
@@ -425,7 +426,7 @@ export const ApplicationForm: React.FC = () => {
               )}
               
               {formData.type === 'CHECK_OUT' && (
-                <div className="space-y-2">
+                <div className={styles.dropzoneList}>
                   {renderDropZone('checkoutFiles', 'Документи для виселення', 'Завантажте необхідні документи, наприклад, обхідний лист')}
                 </div>
               )}
@@ -435,31 +436,31 @@ export const ApplicationForm: React.FC = () => {
       
       case 2:
         return (
-          <div className="space-y-10 animate-fadeIn">
+          <div className={styles.stepContent}>
             <div>
-              <h2 className="text-2xl font-bold text-[rgb(var(--text))] mb-2 tracking-tight">Психометрична анкета</h2>
-              <p className="ui-muted text-sm leading-relaxed">
+              <h2 className={styles.stepTitle}>Психометрична анкета</h2>
+              <p className={`ui-muted ${styles.consentDesc}`}>
                 Ваші відповіді допоможуть нашому AI-алгоритму підібрати вам ідеальних сусідів по кімнаті за допомогою K-means кластеризації.
               </p>
             </div>
 
-            <div className="bg-[rgb(var(--surface-2))] nm-inset-sm p-6 md:p-10 rounded-3xl space-y-10">
+            <div className={`${styles.formBox} nm-inset-sm`}>
               {/* Chronotype */}
               <div>
-                <div className="flex justify-between mb-4">
-                  <label className="text-sm font-semibold text-[rgb(var(--text))] uppercase tracking-wider">Хронотип (Режим сну)</label>
-                  <span className="text-sm font-bold text-[rgb(var(--accent))] px-3 py-1 nm-raised-xs rounded-full bg-[rgb(var(--surface))]">{formData.clusteringVector.chronotype}/10</span>
+                <div className={styles.sliderHeader}>
+                  <label className={styles.sliderLabel}>Хронотип (Режим сну)</label>
+                  <span className={`${styles.sliderValueBadge} nm-raised-xs`}>{formData.clusteringVector.chronotype}/10</span>
                 </div>
-                <div className="relative pt-1 nm-inset-sm bg-[rgb(var(--surface))] rounded-full p-2">
+                <div className={`${styles.sliderTrackBox} nm-inset-sm`}>
                   <input
                     type="range"
                     min="1" max="10"
                     value={formData.clusteringVector.chronotype}
                     onChange={(e) => handleSliderChange('chronotype', parseInt(e.target.value))}
-                    className="w-full h-3 bg-transparent rounded-lg appearance-none cursor-pointer range-slider"
+                    className={`range-slider ${styles.sliderInput}`}
                   />
                 </div>
-                <div className="flex justify-between text-xs ui-muted mt-3 font-medium">
+                <div className={`ui-muted ${styles.sliderLabels}`}>
                   <span>Жайворонок (ранок)</span>
                   <span>Сова (ніч)</span>
                 </div>
@@ -467,20 +468,20 @@ export const ApplicationForm: React.FC = () => {
 
               {/* Sociability */}
               <div>
-                <div className="flex justify-between mb-4">
-                  <label className="text-sm font-semibold text-[rgb(var(--text))] uppercase tracking-wider">Соціалізація</label>
-                  <span className="text-sm font-bold text-[rgb(var(--accent))] px-3 py-1 nm-raised-xs rounded-full bg-[rgb(var(--surface))]">{formData.clusteringVector.sociability}/10</span>
+                <div className={styles.sliderHeader}>
+                  <label className={styles.sliderLabel}>Соціалізація</label>
+                  <span className={`${styles.sliderValueBadge} nm-raised-xs`}>{formData.clusteringVector.sociability}/10</span>
                 </div>
-                <div className="relative pt-1 nm-inset-sm bg-[rgb(var(--surface))] rounded-full p-2">
+                <div className={`${styles.sliderTrackBox} nm-inset-sm`}>
                   <input
                     type="range"
                     min="1" max="10"
                     value={formData.clusteringVector.sociability}
                     onChange={(e) => handleSliderChange('sociability', parseInt(e.target.value))}
-                    className="w-full h-3 bg-transparent rounded-lg appearance-none cursor-pointer range-slider"
+                    className={`range-slider ${styles.sliderInput}`}
                   />
                 </div>
-                <div className="flex justify-between text-xs ui-muted mt-3 font-medium">
+                <div className={`ui-muted ${styles.sliderLabels}`}>
                   <span>Інтроверт</span>
                   <span>Екстраверт</span>
                 </div>
@@ -488,20 +489,20 @@ export const ApplicationForm: React.FC = () => {
 
               {/* Noise Tolerance */}
               <div>
-                <div className="flex justify-between mb-4">
-                  <label className="text-sm font-semibold text-[rgb(var(--text))] uppercase tracking-wider">Толерантність до шуму</label>
-                  <span className="text-sm font-bold text-[rgb(var(--accent))] px-3 py-1 nm-raised-xs rounded-full bg-[rgb(var(--surface))]">{formData.clusteringVector.noiseTolerance}/10</span>
+                <div className={styles.sliderHeader}>
+                  <label className={styles.sliderLabel}>Толерантність до шуму</label>
+                  <span className={`${styles.sliderValueBadge} nm-raised-xs`}>{formData.clusteringVector.noiseTolerance}/10</span>
                 </div>
-                <div className="relative pt-1 nm-inset-sm bg-[rgb(var(--surface))] rounded-full p-2">
+                <div className={`${styles.sliderTrackBox} nm-inset-sm`}>
                   <input
                     type="range"
                     min="1" max="10"
                     value={formData.clusteringVector.noiseTolerance}
                     onChange={(e) => handleSliderChange('noiseTolerance', parseInt(e.target.value))}
-                    className="w-full h-3 bg-transparent rounded-lg appearance-none cursor-pointer range-slider"
+                    className={`range-slider ${styles.sliderInput}`}
                   />
                 </div>
-                <div className="flex justify-between text-xs ui-muted mt-3 font-medium">
+                <div className={`ui-muted ${styles.sliderLabels}`}>
                   <span>Абсолютна тиша</span>
                   <span>Не звертаю уваги</span>
                 </div>
@@ -509,29 +510,29 @@ export const ApplicationForm: React.FC = () => {
 
               {/* Cleanliness */}
               <div>
-                <div className="flex justify-between mb-4">
-                  <label className="text-sm font-semibold text-[rgb(var(--text))] uppercase tracking-wider">Ставлення до чистоти</label>
-                  <span className="text-sm font-bold text-[rgb(var(--accent))] px-3 py-1 nm-raised-xs rounded-full bg-[rgb(var(--surface))]">{formData.clusteringVector.cleanliness}/10</span>
+                <div className={styles.sliderHeader}>
+                  <label className={styles.sliderLabel}>Ставлення до чистоти</label>
+                  <span className={`${styles.sliderValueBadge} nm-raised-xs`}>{formData.clusteringVector.cleanliness}/10</span>
                 </div>
-                <div className="relative pt-1 nm-inset-sm bg-[rgb(var(--surface))] rounded-full p-2">
+                <div className={`${styles.sliderTrackBox} nm-inset-sm`}>
                   <input
                     type="range"
                     min="1" max="10"
                     value={formData.clusteringVector.cleanliness}
                     onChange={(e) => handleSliderChange('cleanliness', parseInt(e.target.value))}
-                    className="w-full h-3 bg-transparent rounded-lg appearance-none cursor-pointer range-slider"
+                    className={`range-slider ${styles.sliderInput}`}
                   />
                 </div>
-                <div className="flex justify-between text-xs ui-muted mt-3 font-medium">
+                <div className={`ui-muted ${styles.sliderLabels}`}>
                   <span>Творчий безлад</span>
                   <span>Педантична чистота</span>
                 </div>
               </div>
 
               {/* Data Consent */}
-              <div className="pt-6 border-t border-[rgb(var(--border)/0.2)]">
-                <label className="flex items-start space-x-4 cursor-pointer group">
-                  <div className="relative flex items-center mt-1">
+              <div className={styles.consentBox}>
+                <label className={`${styles.consentLabel} group`}>
+                  <div className={styles.consentCheckboxBox}>
                     <input
                       type="checkbox"
                       name="consent"
@@ -539,15 +540,15 @@ export const ApplicationForm: React.FC = () => {
                       onChange={handleInputChange}
                       className="sr-only"
                     />
-                    <div className={`w-6 h-6 rounded-lg transition-all duration-200 flex items-center justify-center ${
-                      formData.consent ? 'bg-[rgb(var(--accent))] nm-inset-sm' : 'nm-flat bg-[rgb(var(--surface))] border-2 border-[rgb(var(--border)/0.5)] group-hover:border-[rgb(var(--accent)/0.5)]'
+                    <div className={`${styles.consentCheckbox} ${
+                      formData.consent ? `${styles.consentCheckboxChecked} nm-inset-sm` : `${styles.consentCheckboxUnchecked} nm-flat`
                     }`}>
-                      {formData.consent && <CheckCircle className="w-4 h-4 text-white" />}
+                      {formData.consent && <CheckCircle className={styles.consentCheckIcon} />}
                     </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-[rgb(var(--text))] mb-1">Згода на автоматизовану обробку даних</p>
-                    <p className="text-xs ui-muted leading-relaxed">
+                  <div className={styles.consentText}>
+                    <p className={styles.consentTitle}>Згода на автоматизовану обробку даних</p>
+                    <p className={`ui-muted ${styles.consentDesc}`}>
                       Я даю згоду на використання моїх психометричних даних AI-алгоритмом для підбору сусідів. Дані будуть використані виключно для розрахунку сумісності та формування плану поселення.
                     </p>
                   </div>
@@ -559,12 +560,12 @@ export const ApplicationForm: React.FC = () => {
 
       case 3:
         return (
-          <div className="space-y-6 animate-fadeIn text-center py-10">
-            <div className="w-24 h-24 rounded-3xl nm-inset-sm mx-auto flex items-center justify-center mb-8 bg-[rgb(var(--surface-2))]">
-              <Smartphone className="w-12 h-12 text-[rgb(var(--text))]" />
+          <div className={styles.step3Content}>
+            <div className={`${styles.diiaIconBox} nm-inset-sm`}>
+              <Smartphone className={styles.diiaIconSvg} />
             </div>
-            <h2 className="text-2xl font-bold text-[rgb(var(--text))] tracking-tight mb-4">Верифікація особи</h2>
-            <p className="ui-muted max-w-md mx-auto leading-relaxed mb-10">
+            <h2 className={styles.diiaTitle}>Верифікація особи</h2>
+            <p className={`ui-muted ${styles.diiaDesc}`}>
               Останній крок перед подачею заяви. Пройдіть швидку верифікацію через застосунок Дія.Шеринг, щоб підтвердити вашу особу та автоматично підтягнути необхідні дані.
             </p>
             
@@ -572,15 +573,15 @@ export const ApplicationForm: React.FC = () => {
               <button
                 onClick={openDiiaModal}
                 disabled={isDiiaLoading}
-                className="inline-flex items-center px-8 py-4 bg-[rgb(var(--text))] text-[rgb(var(--surface))] rounded-2xl hover:opacity-90 transition-all transform hover:-translate-y-1 active:translate-y-0 shadow-lg"
+                className={styles.diiaButton}
               >
-                <span className="font-bold text-lg tracking-wide">
+                <span className={styles.diiaButtonText}>
                   {isDiiaLoading ? 'ЗАВАНТАЖЕННЯ...' : 'ПРОЙТИ ВЕРИФІКАЦІЮ В ДІЇ'}
                 </span>
               </button>
             </div>
 
-            <div className="text-xs ui-muted mt-10 max-w-sm mx-auto">
+            <div className={`ui-muted ${styles.diiaFooterText}`}>
               Ваші дані надійно захищені та використовуються виключно для формування наказу на поселення.
             </div>
           </div>
@@ -592,18 +593,18 @@ export const ApplicationForm: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div className={styles.container}>
       <div className="ui-card overflow-hidden transition-colors">
         {/* Stepper Header */}
-        <div className="px-6 md:px-10 py-8 border-b border-[rgb(var(--border)/0.2)] bg-[rgb(var(--surface-2))]">
-          <div className="flex items-center justify-between relative">
+        <div className={styles.stepperHeader}>
+          <div className={styles.stepperInner}>
             {/* Progress line background */}
-            <div className="absolute top-7 left-12 right-12 h-1.5 nm-inset-sm bg-[rgb(var(--surface))] rounded-full hidden sm:block z-0" />
+            <div className={`${styles.progressBackground} nm-inset-sm`} />
             
             {/* Active progress line */}
-            <div className="absolute top-7 left-12 right-12 h-1.5 hidden sm:block z-0 overflow-hidden rounded-full">
+            <div className={styles.progressForeground}>
               <div 
-                className="h-full bg-[rgb(var(--accent))] transition-all duration-500 ease-out shadow-[0_0_10px_rgba(var(--accent),0.5)]"
+                className={styles.progressFill}
                 style={{ width: `${((currentStep - 1) / (STEPS.length - 1)) * 100}%` }}
               />
             </div>
@@ -614,16 +615,16 @@ export const ApplicationForm: React.FC = () => {
               const isCompleted = currentStep > step.id;
               
               return (
-                <div key={step.id} className="flex flex-col items-center relative z-10">
+                <div key={step.id} className={styles.stepItem}>
                   <div 
-                    className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-3 transition-all duration-300 ${
-                      isActive ? 'nm-inset-sm bg-[rgb(var(--surface))] text-[rgb(var(--accent))] border border-[rgb(var(--accent)/0.3)]' :
-                      isCompleted ? 'nm-raised bg-[rgb(var(--surface))] text-green-500' : 'nm-flat bg-[rgb(var(--surface-2))] text-[rgb(var(--muted))]'
+                    className={`${styles.stepIconBox} ${
+                      isActive ? `${styles.stepIconActive} nm-inset-sm` :
+                      isCompleted ? `${styles.stepIconCompleted} nm-raised` : `${styles.stepIconPending} nm-flat`
                     }`}
                   >
-                    {isCompleted ? <CheckCircle className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
+                    {isCompleted ? <CheckCircle className={styles.iconSvg} /> : <Icon className={styles.iconSvg} />}
                   </div>
-                  <span className={`text-xs font-bold uppercase tracking-wider ${isActive ? 'text-[rgb(var(--accent))]' : 'ui-muted'}`}>
+                  <span className={`${styles.stepLabel} ${isActive ? styles.stepLabelActive : 'ui-muted'}`}>
                     {step.title}
                   </span>
                 </div>
@@ -633,12 +634,12 @@ export const ApplicationForm: React.FC = () => {
         </div>
 
         {/* Form Content */}
-        <div className="p-6 md:p-10">
+        <div className={styles.contentBox}>
           {renderStepContent()}
         </div>
 
         {/* Navigation Actions */}
-        <div className="px-6 md:px-10 py-6 bg-[rgb(var(--surface-2))] border-t border-[rgb(var(--border)/0.2)] flex justify-between items-center">
+        <div className={styles.actionFooter}>
           <button
             onClick={prevStep}
             disabled={currentStep === 1 || isSubmitting}
@@ -676,18 +677,18 @@ export const ApplicationForm: React.FC = () => {
 
       {/* Diia Modal Overlay */}
       {showDiiaModal && (
-        <div className="nm-modal-backdrop p-4">
-          <div className="nm-modal-content w-full max-w-md animate-slideUp">
+        <div className={`nm-modal-backdrop ${styles.modalBackdrop}`}>
+          <div className={`nm-modal-content ${styles.modalContent}`}>
             <button 
               onClick={closeDiiaModal}
-              className="absolute top-4 right-4 w-10 h-10 nm-flat hover:nm-inset-sm rounded-full flex items-center justify-center text-[rgb(var(--muted))] transition-all z-10"
+              className={`${styles.modalClose} nm-flat hover:nm-inset-sm`}
             >
-              <X className="w-5 h-5" />
+              <X className={styles.iconSvg} />
             </button>
             {diiaSessionId && diiaData ? (
               <DiiaSocketListener onSuccess={handleDiiaSuccess} sessionId={diiaSessionId} diiaData={diiaData} />
             ) : (
-              <div className="p-12 text-center text-sm ui-muted font-medium">ЗАВАНТАЖЕННЯ ДАНИХ ДЛЯ ДІЇ...</div>
+              <div className={`ui-muted ${styles.modalLoading}`}>ЗАВАНТАЖЕННЯ ДАНИХ ДЛЯ ДІЇ...</div>
             )}
           </div>
         </div>

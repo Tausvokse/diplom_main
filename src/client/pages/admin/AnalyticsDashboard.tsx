@@ -3,6 +3,7 @@ import { api } from '../../services/api';
 import { BarChart3, Users, Home, TrendingUp, AlertCircle } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import styles from './AnalyticsDashboard.module.css';
 
 interface Analytics {
   occupancy: { name: string; totalCapacity: number; currentOccupancy: number }[];
@@ -35,7 +36,7 @@ const AnalyticsDashboard: React.FC = () => {
 
   if (loading || !data) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+      <div className={styles.loadingContainer}>
         <Skeleton height={28} width={240} />
         <Skeleton height={200} />
       </div>
@@ -49,73 +50,73 @@ const AnalyticsDashboard: React.FC = () => {
   const totalComplaints = data.complaints.reduce((acc, curr) => acc + curr.count, 0);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-3xl font-bold text-[rgb(var(--text))] tracking-tight">Аналітика та Статистика</h1>
+    <div className={styles.container}>
+      <div className={styles.header}>
+        <h1 className={styles.pageTitle}>Аналітика та Статистика</h1>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-6 mb-8">
-        <div className="ui-card p-6 flex items-center">
-          <div className="p-3 rounded-2xl nm-inset-sm bg-[rgb(var(--surface-2))] text-blue-500 mr-4 flex-shrink-0">
-            <Users className="h-6 w-6" />
+      <div className={styles.kpiGrid}>
+        <div className={styles.kpiCard}>
+          <div className={`${styles.kpiIconWrapper} ${styles.kpiIconWrapperBlue}`}>
+            <Users className={styles.kpiIcon} />
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider ui-muted mb-1">Всього поселено</p>
-            <p className="text-2xl font-black text-[rgb(var(--text))]">{currentOccupancy}</p>
+            <p className={styles.kpiLabel}>Всього поселено</p>
+            <p className={styles.kpiValue}>{currentOccupancy}</p>
           </div>
         </div>
         
-        <div className="ui-card p-6 flex items-center">
-          <div className="p-3 rounded-2xl nm-inset-sm bg-[rgb(var(--surface-2))] text-indigo-500 mr-4 flex-shrink-0">
-            <Home className="h-6 w-6" />
+        <div className={styles.kpiCard}>
+          <div className={`${styles.kpiIconWrapper} ${styles.kpiIconWrapperIndigo}`}>
+            <Home className={styles.kpiIcon} />
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider ui-muted mb-1">Заповненість</p>
-            <p className="text-2xl font-black text-[rgb(var(--text))]">{occupancyPercentage}%</p>
+            <p className={styles.kpiLabel}>Заповненість</p>
+            <p className={styles.kpiValue}>{occupancyPercentage}%</p>
           </div>
         </div>
 
-        <div className="ui-card p-6 flex items-center">
-          <div className="p-3 rounded-2xl nm-inset-sm bg-[rgb(var(--surface-2))] text-yellow-500 mr-4 flex-shrink-0">
-            <TrendingUp className="h-6 w-6" />
+        <div className={styles.kpiCard}>
+          <div className={`${styles.kpiIconWrapper} ${styles.kpiIconWrapperYellow}`}>
+            <TrendingUp className={styles.kpiIcon} />
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider ui-muted mb-1">Середній рейтинг</p>
-            <p className="text-2xl font-black text-[rgb(var(--text))]">{data.averageRating.toFixed(2)}</p>
+            <p className={styles.kpiLabel}>Середній рейтинг</p>
+            <p className={styles.kpiValue}>{data.averageRating.toFixed(2)}</p>
           </div>
         </div>
 
-        <div className="ui-card p-6 flex items-center">
-          <div className="p-3 rounded-2xl nm-inset-sm bg-[rgb(var(--surface-2))] text-red-500 mr-4 flex-shrink-0">
-            <AlertCircle className="h-6 w-6" />
+        <div className={styles.kpiCard}>
+          <div className={`${styles.kpiIconWrapper} ${styles.kpiIconWrapperRed}`}>
+            <AlertCircle className={styles.kpiIcon} />
           </div>
           <div>
-            <p className="text-xs font-bold uppercase tracking-wider ui-muted mb-1">Скарги</p>
-            <p className="text-2xl font-black text-[rgb(var(--text))]">{totalComplaints}</p>
+            <p className={styles.kpiLabel}>Скарги</p>
+            <p className={styles.kpiValue}>{totalComplaints}</p>
           </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+      <div className={styles.chartsGrid}>
         {/* Occupancy by Dormitory */}
-        <div className="ui-card p-6 md:p-8">
-          <h2 className="text-xl font-bold text-[rgb(var(--text))] mb-6 flex items-center">
-            <BarChart3 className="h-5 w-5 mr-3 text-[rgb(var(--accent))]" /> 
+        <div className={styles.chartCard}>
+          <h2 className={styles.chartTitle}>
+            <BarChart3 className={styles.chartIcon} /> 
             Заповненість по гуртожитках
           </h2>
-          <div className="space-y-6">
+          <div className={styles.chartList}>
             {data.occupancy.map((dorm) => {
               const percent = dorm.totalCapacity ? Math.round((dorm.currentOccupancy / dorm.totalCapacity) * 100) : 0;
               return (
                 <div key={dorm.name}>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="font-bold text-[rgb(var(--text))]">{dorm.name}</span>
-                    <span className="font-medium ui-muted">{dorm.currentOccupancy} / {dorm.totalCapacity} ({percent}%)</span>
+                  <div className={styles.chartItemHeader}>
+                    <span className={styles.chartItemName}>{dorm.name}</span>
+                    <span className={styles.chartItemValue}>{dorm.currentOccupancy} / {dorm.totalCapacity} ({percent}%)</span>
                   </div>
-                  <div className="w-full bg-[rgb(var(--surface-2))] nm-inset rounded-full h-3">
+                  <div className={styles.progressBarBg}>
                     <div 
-                      className={`h-3 rounded-full shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] ${percent > 90 ? 'bg-red-500' : percent > 75 ? 'bg-yellow-500' : 'bg-green-500'}`} 
+                      className={`${styles.progressBarFill} ${percent > 90 ? styles.fillRed : percent > 75 ? styles.fillYellow : styles.fillGreen}`} 
                       style={{ width: `${percent}%` }}
                     ></div>
                   </div>
@@ -126,12 +127,12 @@ const AnalyticsDashboard: React.FC = () => {
         </div>
 
         {/* Cluster Distribution */}
-        <div className="ui-card p-6 md:p-8">
-          <h2 className="text-xl font-bold text-[rgb(var(--text))] mb-6 flex items-center">
-            <Users className="h-5 w-5 mr-3 text-[rgb(var(--accent))]" /> 
+        <div className={styles.chartCard}>
+          <h2 className={styles.chartTitle}>
+            <Users className={styles.chartIcon} /> 
             Психотипи (K-Means Кластери)
           </h2>
-          <div className="space-y-6">
+          <div className={styles.chartList}>
             {data.clusters.map((cluster) => {
               const clusterNames = ['Сови (Інтроверти)', 'Жайворонки (Екстраверти)', 'Збалансовані', 'Любителі тиші', 'Толерантні до шуму'];
               const name = clusterNames[cluster.clusterId] || `Кластер ${cluster.clusterId}`;
@@ -140,13 +141,13 @@ const AnalyticsDashboard: React.FC = () => {
               
               return (
                 <div key={cluster.clusterId}>
-                  <div className="flex justify-between text-sm mb-2">
-                    <span className="font-bold text-[rgb(var(--text))]">{name}</span>
-                    <span className="font-medium ui-muted">{cluster.count} чол. ({percent}%)</span>
+                  <div className={styles.chartItemHeader}>
+                    <span className={styles.chartItemName}>{name}</span>
+                    <span className={styles.chartItemValue}>{cluster.count} чол. ({percent}%)</span>
                   </div>
-                  <div className="w-full bg-[rgb(var(--surface-2))] nm-inset rounded-full h-3">
+                  <div className={styles.progressBarBg}>
                     <div 
-                      className="h-3 rounded-full bg-[rgb(var(--accent))] shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)]" 
+                      className={`${styles.progressBarFill} ${styles.fillAccent}`} 
                       style={{ width: `${percent}%` }}
                     ></div>
                   </div>

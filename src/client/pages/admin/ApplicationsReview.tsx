@@ -5,6 +5,7 @@ import { Application } from '../../types';
 import { api } from '../../services/api';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import styles from './ApplicationsReview.module.css';
 
 export const ApplicationsReview: React.FC = () => {
   const [applications, setApplications] = useState<Application[]>([]);
@@ -86,10 +87,10 @@ export const ApplicationsReview: React.FC = () => {
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case 'SUBMITTED': return <span className="ui-pill nm-inset-sm bg-blue-500/10 text-blue-500">Нова</span>;
-      case 'UNDER_REVIEW': return <span className="ui-pill nm-inset-sm bg-yellow-500/10 text-yellow-500">На розгляді</span>;
-      case 'APPROVED': return <span className="ui-pill nm-inset-sm bg-green-500/10 text-green-500">Схвалено</span>;
-      case 'REJECTED': return <span className="ui-pill nm-inset-sm bg-red-500/10 text-red-500">Відхилено</span>;
+      case 'SUBMITTED': return <span className={`${styles.statusBadge} ${styles.statusBlue}`}>Нова</span>;
+      case 'UNDER_REVIEW': return <span className={`${styles.statusBadge} ${styles.statusYellow}`}>На розгляді</span>;
+      case 'APPROVED': return <span className={`${styles.statusBadge} ${styles.statusGreen}`}>Схвалено</span>;
+      case 'REJECTED': return <span className={`${styles.statusBadge} ${styles.statusRed}`}>Відхилено</span>;
       default: return null;
     }
   };
@@ -106,7 +107,7 @@ export const ApplicationsReview: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+      <div className={styles.loadingContainer}>
         <Skeleton height={28} width={260} />
         <Skeleton height={260} />
       </div>
@@ -114,78 +115,78 @@ export const ApplicationsReview: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-[rgb(var(--text))] tracking-tight mb-2">Розгляд заяв на поселення</h1>
-        <p className="ui-muted text-sm">Перевірка документів та валідація пільгових категорій</p>
+    <div className={styles.container}>
+      <header className={styles.header}>
+        <h1 className={styles.pageTitle}>Розгляд заяв на поселення</h1>
+        <p className={styles.pageSubtitle}>Перевірка документів та валідація пільгових категорій</p>
       </header>
 
-      <div className="ui-card overflow-hidden transition-colors p-1">
-        <div className="overflow-x-auto rounded-3xl bg-[rgb(var(--surface-2))] nm-inset-sm">
-          <table className="w-full text-left border-collapse min-w-[900px]">
+      <div className={styles.tableCard}>
+        <div className={styles.tableWrapper}>
+          <table className={styles.table}>
             <thead>
-              <tr className="border-b border-[rgb(var(--border)/0.2)]">
-                <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">Студент</th>
-                <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">Факультет / Курс</th>
-                <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">Пільги</th>
-                <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">Тип</th>
-                <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">Статус</th>
-                <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider text-right">Дії</th>
+              <tr className={styles.thRow}>
+                <th className={styles.th}>Студент</th>
+                <th className={styles.th}>Факультет / Курс</th>
+                <th className={styles.th}>Пільги</th>
+                <th className={styles.th}>Тип</th>
+                <th className={styles.th}>Статус</th>
+                <th className={styles.thRight}>Дії</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[rgb(var(--border)/0.1)]">
+            <tbody>
               {applications.map(app => (
-                <tr key={app.id} className="hover:bg-[rgb(var(--surface))] transition-colors">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      <div className="h-10 w-10 rounded-xl nm-raised bg-[rgb(var(--surface))] flex items-center justify-center text-[rgb(var(--accent))] font-bold mr-4">
+                <tr key={app.id} className={styles.tr}>
+                  <td className={styles.td}>
+                    <div className={styles.flexCenter}>
+                      <div className={styles.avatar}>
                         {app.student?.user?.firstName[0]}{app.student?.user?.lastName[0]}
                       </div>
                       <div>
-                        <p className="text-sm font-bold text-[rgb(var(--text))]">{app.student?.user?.lastName} {app.student?.user?.firstName}</p>
-                        <p className="text-xs font-medium text-[rgb(var(--muted))]">{app.student?.studentIdNumber}</p>
+                        <p className={styles.primaryText}>{app.student?.user?.lastName} {app.student?.user?.firstName}</p>
+                        <p className={styles.secondaryText}>{app.student?.studentIdNumber}</p>
                       </div>
                     </div>
                   </td>
-                  <td className="px-6 py-4">
-                    <p className="text-sm font-bold text-[rgb(var(--text))]">{app.student?.faculty}</p>
-                    <p className="text-xs font-medium text-[rgb(var(--muted))]">{app.student?.course} курс</p>
+                  <td className={styles.td}>
+                    <p className={styles.primaryText}>{app.student?.faculty}</p>
+                    <p className={styles.secondaryText}>{app.student?.course} курс</p>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className={styles.td}>
                     {app.student?.privilege ? (
-                      <div className="flex items-center text-orange-500 font-bold bg-orange-500/10 px-3 py-1 rounded-lg nm-inset-sm w-fit text-xs">
-                        <AlertTriangle className="w-3.5 h-3.5 mr-1.5" />
+                      <div className={styles.privilegeBadge}>
+                        <AlertTriangle className={styles.privilegeIcon} />
                         <span>{app.student.privilege.name}</span>
                       </div>
                     ) : (
-                      <span className="text-sm text-[rgb(var(--muted))] font-medium">-</span>
+                      <span className={styles.emptyText}>-</span>
                     )}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className="text-xs font-bold text-[rgb(var(--text))] uppercase tracking-wider bg-[rgb(var(--surface))] nm-raised-xs px-3 py-1.5 rounded-lg">
+                  <td className={styles.td}>
+                    <span className={styles.typeBadge}>
                       {{ CHECK_IN: 'Поселення', CHECK_OUT: 'Виселення' }[app.type as string] || app.type}
                     </span>
                   </td>
-                  <td className="px-6 py-4">
+                  <td className={styles.td}>
                     {getStatusBadge(app.status)}
                   </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex justify-end space-x-3">
+                  <td className={styles.tdRight}>
+                    <div className={styles.actions}>
                       <button 
                         onClick={() => setDocumentsApp(app)}
                         title="Переглянути документи"
-                        className="w-9 h-9 flex items-center justify-center text-[rgb(var(--accent))] nm-flat hover:nm-inset-sm bg-[rgb(var(--surface))] rounded-xl transition-all"
+                        className={styles.actionBtn}
                       >
-                        <Eye className="w-4 h-4" />
+                        <Eye className={styles.actionIcon} />
                       </button>
                       {app.status === 'SUBMITTED' && (
                         <button 
                           onClick={() => handleSetUnderReview(app.id)}
                           disabled={isProcessing}
                           title="На розгляд"
-                          className="w-9 h-9 flex items-center justify-center text-yellow-500 nm-flat hover:nm-inset-sm bg-[rgb(var(--surface))] rounded-xl transition-all disabled:opacity-50"
+                          className={`${styles.actionBtn} ${styles.actionBtnYellow}`}
                         >
-                          <Clock className="w-4 h-4" />
+                          <Clock className={styles.actionIcon} />
                         </button>
                       )}
                       {(app.status === 'SUBMITTED' || app.status === 'UNDER_REVIEW') && (
@@ -194,17 +195,17 @@ export const ApplicationsReview: React.FC = () => {
                             onClick={() => handleApprove(app.id)}
                             disabled={isProcessing}
                             title="Схвалити"
-                            className="w-9 h-9 flex items-center justify-center text-green-500 nm-flat hover:nm-inset-sm bg-[rgb(var(--surface))] rounded-xl transition-all disabled:opacity-50"
+                            className={`${styles.actionBtn} ${styles.actionBtnGreen}`}
                           >
-                            <CheckCircle className="w-4 h-4" />
+                            <CheckCircle className={styles.actionIcon} />
                           </button>
                           <button 
                             onClick={() => handleRejectClick(app)}
                             disabled={isProcessing}
                             title="Відхилити"
-                            className="w-9 h-9 flex items-center justify-center text-red-500 nm-flat hover:nm-inset-sm bg-[rgb(var(--surface))] rounded-xl transition-all disabled:opacity-50"
+                            className={`${styles.actionBtn} ${styles.actionBtnRed}`}
                           >
-                            <XCircle className="w-4 h-4" />
+                            <XCircle className={styles.actionIcon} />
                           </button>
                         </>
                       )}
@@ -214,8 +215,8 @@ export const ApplicationsReview: React.FC = () => {
               ))}
               {applications.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-16 text-center text-[rgb(var(--muted))] font-medium">
-                    <FileText className="w-12 h-12 mx-auto opacity-30 mb-4" />
+                  <td colSpan={6} className={styles.emptyState}>
+                    <FileText className={styles.emptyStateIcon} />
                     Немає заяв для розгляду
                   </td>
                 </tr>
@@ -226,39 +227,39 @@ export const ApplicationsReview: React.FC = () => {
       </div>
 
       {documentsApp && (
-        <div className="nm-modal-backdrop p-4">
-          <div className="nm-modal-content w-full max-w-4xl max-h-[90vh] animate-slideUp flex flex-col">
-            <div className="px-6 py-5 border-b border-[rgb(var(--border)/0.2)] bg-[rgb(var(--surface-2))] flex justify-between items-center">
+        <div className={styles.modalBackdrop}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
               <div>
-                <h3 className="text-xl font-bold text-[rgb(var(--text))] mb-1">Документи заявки</h3>
-                <p className="text-xs font-bold uppercase tracking-wider ui-muted">
+                <h3 className={styles.modalTitle}>Документи заявки</h3>
+                <p className={styles.modalSubtitle}>
                   {documentsApp.student?.user?.lastName} {documentsApp.student?.user?.firstName} • {documentsApp.student?.studentIdNumber}
                 </p>
               </div>
               <button
                 onClick={() => setDocumentsApp(null)}
-                className="w-10 h-10 nm-flat hover:nm-inset-sm rounded-full flex items-center justify-center text-[rgb(var(--muted))] transition-all"
+                className={styles.closeBtn}
               >
-                <X className="w-5 h-5" />
+                <X className={styles.closeIcon} />
               </button>
             </div>
 
-            <div className="p-6 overflow-y-auto custom-scrollbar flex-1 space-y-6">
+            <div className={styles.modalBody}>
               {(!documentsApp.scanDocumentsUrl || documentsApp.scanDocumentsUrl.length === 0) ? (
-                <div className="text-center py-16 nm-inset-sm bg-[rgb(var(--surface-2))] rounded-3xl text-[rgb(var(--muted))] font-medium">
+                <div className={styles.emptyDocs}>
                   До цієї заявки не прикріплено документів.
                 </div>
               ) : (
                 documentsApp.scanDocumentsUrl.map((documentUrl: string, index: number) => {
                   const fullUrl = getDocumentUrl(documentUrl);
                   return (
-                    <div key={`${documentUrl}-${index}`} className="rounded-3xl border border-[rgb(var(--border)/0.3)] overflow-hidden nm-flat bg-[rgb(var(--surface))]">
-                      <div className="flex items-center justify-between gap-3 px-6 py-4 bg-[rgb(var(--surface-2))] nm-inset-sm m-2 rounded-2xl">
-                        <div className="flex items-center min-w-0">
-                          <div className="w-8 h-8 rounded-lg bg-[rgb(var(--surface))] nm-raised-xs flex items-center justify-center mr-3 flex-shrink-0">
-                            <FileText className="w-4 h-4 text-[rgb(var(--accent))]" />
+                    <div key={`${documentUrl}-${index}`} className={styles.docItem}>
+                      <div className={styles.docItemHeader}>
+                        <div className={styles.docItemTitle}>
+                          <div className={styles.docIconWrapper}>
+                            <FileText className={styles.docIcon} />
                           </div>
-                          <span className="text-sm font-bold text-[rgb(var(--text))] truncate" title={documentUrl.split('/').pop()}>
+                          <span className={styles.docName} title={documentUrl.split('/').pop()}>
                             {documentUrl.split('/').pop() || `Документ ${index + 1}`}
                           </span>
                         </div>
@@ -267,18 +268,18 @@ export const ApplicationsReview: React.FC = () => {
                           download
                           target="_blank"
                           rel="noreferrer"
-                          className="text-xs font-bold uppercase tracking-widest text-[rgb(var(--accent))] hover:text-[rgb(var(--text))] px-4 py-2 bg-[rgb(var(--surface))] nm-raised hover:nm-inset-sm rounded-lg transition-all"
+                          className={styles.downloadBtn}
                         >
                           Завантажити
                         </a>
                       </div>
-                      <div className="p-2">
+                      <div className={styles.docPreview}>
                         {isImageDocument(documentUrl) ? (
-                          <img src={fullUrl} alt={`Документ ${index + 1}`} className="w-full max-h-[520px] object-contain rounded-2xl nm-inset" />
+                          <img src={fullUrl} alt={`Документ ${index + 1}`} className={styles.imgPreview} />
                         ) : isPdfDocument(documentUrl) ? (
-                          <iframe title={`Документ ${index + 1}`} src={fullUrl} className="w-full h-[520px] rounded-2xl nm-inset" />
+                          <iframe title={`Документ ${index + 1}`} src={fullUrl} className={styles.pdfPreview} />
                         ) : (
-                          <div className="p-10 text-center text-sm font-medium ui-muted nm-inset bg-[rgb(var(--surface-2))] rounded-2xl">
+                          <div className={styles.noPreview}>
                             Попередній перегляд для цього типу файлу недоступний. Відкрийте документ в окремій вкладці.
                           </div>
                         )}
@@ -294,21 +295,21 @@ export const ApplicationsReview: React.FC = () => {
 
       {/* Reject Modal Overlay */}
       {isRejectModalOpen && (
-        <div className="nm-modal-backdrop p-4">
-          <div className="nm-modal-content w-full max-w-lg animate-slideUp">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold text-[rgb(var(--text))]">Відхилення заяви</h3>
+        <div className={styles.modalBackdrop}>
+          <div className={styles.rejectModalContent}>
+            <div className={styles.rejectModalHeader}>
+              <h3 className={styles.rejectModalTitle}>Відхилення заяви</h3>
               <button 
                 onClick={() => setIsRejectModalOpen(false)}
-                className="w-10 h-10 nm-flat hover:nm-inset-sm rounded-full flex items-center justify-center text-[rgb(var(--muted))] transition-all"
+                className={styles.closeBtn}
               >
-                <X className="w-5 h-5" />
+                <X className={styles.closeIcon} />
               </button>
             </div>
             
-            <div className="nm-inset-sm bg-[rgb(var(--surface-2))] p-5 rounded-2xl mb-6 text-sm text-[rgb(var(--text))] leading-relaxed">
+            <div className={styles.rejectInfo}>
               Вкажіть причину відхилення заяви студента 
-              <span className="font-bold text-[rgb(var(--accent))]"> {selectedApp?.student?.user?.firstName} {selectedApp?.student?.user?.lastName}</span>. 
+              <span className={styles.rejectName}> {selectedApp?.student?.user?.firstName} {selectedApp?.student?.user?.lastName}</span>. 
               Це повідомлення буде надіслано на пошту.
             </div>
 
@@ -316,20 +317,20 @@ export const ApplicationsReview: React.FC = () => {
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
               placeholder="Наприклад: Неякісна скан-копія..."
-              className="ui-input w-full h-32 mb-8 resize-none"
+              className={styles.rejectTextarea}
             />
 
-            <div className="flex justify-end space-x-4">
+            <div className={styles.rejectActions}>
               <button
                 onClick={() => setIsRejectModalOpen(false)}
-                className="ui-button ui-button-outline px-6"
+                className={styles.btnCancel}
               >
                 Скасувати
               </button>
               <button
                 onClick={submitRejection}
                 disabled={isProcessing || !rejectionReason.trim()}
-                className="ui-button bg-red-500 text-white hover:bg-red-600 px-6 disabled:opacity-50"
+                className={styles.btnReject}
               >
                 {isProcessing ? 'Обробка...' : 'Відхилити заяву'}
               </button>
@@ -337,12 +338,6 @@ export const ApplicationsReview: React.FC = () => {
           </div>
         </div>
       )}
-      
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgb(var(--border)); border-radius: 4px; }
-      `}</style>
     </div>
   );
 };

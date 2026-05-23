@@ -1,0 +1,97 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background-color: rgb(var(--surface));
+  border-radius: 0.75rem;
+}
+
+.logoWrapper {
+  background-color: rgb(var(--surface-2));
+  padding: 1rem;
+  border-radius: 9999px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo {
+  width: 4rem;
+  height: 4rem;
+  object-fit: contain;
+  filter: invert(1);
+  opacity: 0.8;
+}
+
+.logoText {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  color: rgb(var(--text));
+}
+
+.title {
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+  color: rgb(var(--text));
+  margin-bottom: 0.5rem;
+}
+
+.description {
+  color: rgb(var(--muted));
+  text-align: center;
+  margin-bottom: 2rem;
+  max-width: 24rem;
+}
+
+.qrWrapper {
+  padding: 1rem;
+  background-color: rgb(var(--surface));
+  border: 2px solid rgba(var(--border), 0.5);
+  border-radius: 1rem;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  margin-bottom: 2rem;
+}
+
+.qrCode {
+  border-radius: 0.5rem;
+}
+
+.statusWrapper {
+  display: flex;
+  align-items: center;
+  font-size: 0.875rem;
+  color: rgb(var(--muted));
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.statusDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: #3b82f6; /* blue-500 */
+  border-radius: 9999px;
+  margin-right: 0.5rem;
+}
+
+.devButton {
+  margin-top: 2rem;
+  font-size: 0.75rem;
+  color: rgb(var(--muted));
+  text-decoration: underline;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}

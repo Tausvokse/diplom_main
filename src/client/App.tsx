@@ -11,6 +11,7 @@ import { NotificationBell } from './components/NotificationBell';
 import { useTheme } from './components/ThemeProvider';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import styles from './App.module.css';
 import {
   LayoutDashboard,
   Users,
@@ -55,18 +56,18 @@ const AdminAuditLog = React.lazy(() => import('./pages/admin/AdminAuditLog'));
 const MasterRepairsPage = React.lazy(() => import('./pages/master/MasterRepairsPage'));
 
 const Unauthorized = () => (
-  <div className="flex items-center justify-center min-h-screen ui-shell">
-    <div className="ui-card p-8 text-center">
-      <h1 className="text-2xl font-semibold text-red-500">Доступ заборонено (403)</h1>
+  <div className={`${styles.unauthorizedContainer} ui-shell`}>
+    <div className={`ui-card ${styles.unauthorizedCard}`}>
+      <h1 className={styles.unauthorizedText}>Доступ заборонено (403)</h1>
     </div>
   </div>
 );
 
 const PageLoader = () => (
-  <div className="w-full max-w-4xl space-y-4 animate-fadeIn">
+  <div className={styles.pageLoader}>
     <Skeleton height={28} width={220} borderRadius={14} />
     <Skeleton height={16} width={320} borderRadius={14} />
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+    <div className={styles.pageLoaderGrid}>
       <Skeleton height={160} borderRadius={20} />
       <Skeleton height={160} borderRadius={20} />
     </div>
@@ -75,7 +76,7 @@ const PageLoader = () => (
 );
 
 const FullScreenLoader = () => (
-  <div className="flex items-center justify-center min-h-screen ui-shell p-4">
+  <div className={`${styles.fullScreenLoader} ui-shell`}>
     <PageLoader />
   </div>
 );
@@ -86,14 +87,10 @@ const NavItem = ({ to, icon: Icon, label, onClick, isActive }: { to: string, ico
     <Link
       to={to}
       onClick={onClick}
-      className={`flex items-center px-4 py-3 text-sm font-semibold rounded-xl transition-all duration-200 ${
-        isActive
-          ? 'bg-[rgb(var(--surface))] text-[rgb(var(--accent))] nm-inset-sm'
-          : 'text-[rgb(var(--muted))] hover:text-[rgb(var(--text))] hover:bg-[rgb(var(--surface))] hover:shadow-[var(--nm-raised-xs)]'
-      }`}
+      className={`${styles.navItem} ${isActive ? styles.navItemActive : styles.navItemInactive} ${isActive ? 'nm-inset-sm' : ''}`}
       style={isActive ? { boxShadow: 'var(--nm-inset-sm)' } : {}}
     >
-      <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-[rgb(var(--accent))]' : 'text-[rgb(var(--muted))]'}`} />
+      <Icon className={`${styles.navItemIcon} ${isActive ? styles.navItemIconActive : styles.navItemIconInactive}`} />
       {label}
     </Link>
   );
@@ -133,35 +130,35 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const closeSidebar = () => setIsSidebarOpen(false);
 
   return (
-    <div className="flex h-screen overflow-hidden transition-colors duration-300">
+    <div className={styles.layoutContainer}>
       {/* Mobile overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 z-20 bg-black/30 backdrop-blur-sm md:hidden"
+          className={styles.mobileOverlay}
           onClick={closeSidebar}
         />
       )}
 
       {/* Sidebar — Neumorphic raised panel */}
-      <aside className={`fixed md:static inset-y-0 left-0 z-30 w-64 flex-shrink-0 bg-[rgb(var(--surface))] flex flex-col transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 transition-transform duration-200 ease-in-out`}
+      <aside className={`${styles.sidebar} ${isSidebarOpen ? styles.sidebarOpen : styles.sidebarClosed}`}
         style={{ boxShadow: '6px 0 16px rgba(var(--nm-dark), 0.15), -2px 0 8px rgba(var(--nm-light), 0.1)' }}
       >
         {/* Accent gradient strip */}
-        <div className="absolute inset-y-0 left-0 w-1 bg-gradient-to-b from-[rgb(var(--accent))] via-[rgb(var(--accent))] to-transparent opacity-60 rounded-r" />
+        <div className={styles.accentStrip} />
         
         {/* Logo area */}
-        <div className="h-16 flex items-center justify-between px-6">
-          <span className="text-xl font-semibold text-[rgb(var(--text))]">Dormitory SaaS</span>
-          <button className="md:hidden text-[rgb(var(--muted))] p-1 rounded-lg hover:bg-[rgb(var(--surface-2))]" onClick={closeSidebar}>
-            <X className="w-6 h-6" />
+        <div className={styles.logoArea}>
+          <span className={styles.logoText}>Dormitory SaaS</span>
+          <button className={styles.closeButton} onClick={closeSidebar}>
+            <X className={styles.icon} />
           </button>
         </div>
 
         {/* Separator — neumorphic groove */}
-        <div className="mx-4 h-[1px] bg-[rgb(var(--border)/0.3)]" style={{ boxShadow: '0 1px 0 var(--nm-light)' }} />
+        <div className={styles.separator} style={{ boxShadow: '0 1px 0 var(--nm-light)' }} />
         
         {/* Navigation */}
-        <div className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+        <div className={styles.navContainer}>
           {isAdmin && (
             <>
               <NavItem to="/admin/analytics" icon={LayoutDashboard} label="Аналітика" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/analytics')} />
@@ -191,19 +188,19 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
         </div>
 
         {/* User section — Neumorphic inset panel */}
-        <div className="p-4">
-          <div className="rounded-2xl p-3 bg-[rgb(var(--surface-2))]" style={{ boxShadow: 'var(--nm-inset-sm)' }}>
-            <div className="flex items-center justify-between mb-3 gap-1">
-              <div className="flex items-center space-x-2 flex-1 min-w-0">
-                <div className="w-9 h-9 flex-shrink-0 rounded-full bg-[rgb(var(--accent-soft))] flex items-center justify-center text-[rgb(var(--accent))] font-bold text-sm" style={{ boxShadow: 'var(--nm-raised-xs)' }}>
+        <div className={styles.userSection}>
+          <div className={styles.userCard} style={{ boxShadow: 'var(--nm-inset-sm)' }}>
+            <div className={styles.userHeader}>
+              <div className={styles.userInfo}>
+                <div className={styles.userAvatar} style={{ boxShadow: 'var(--nm-raised-xs)' }}>
                   {user?.firstName?.[0] || ''}{user?.lastName?.[0] || ''}
                 </div>
-                <div className="flex-1 min-w-0 overflow-hidden">
-                  <p className="text-sm font-semibold text-[rgb(var(--text))] truncate block" title={`${user?.lastName} ${user?.firstName}`}>
+                <div className={styles.userDetails}>
+                  <p className={styles.userName} title={`${user?.lastName} ${user?.firstName}`}>
                     {user?.lastName} {user?.firstName}
                   </p>
-                  <div className="mt-0.5 flex">
-                    <span className="inline-block truncate px-2 py-0.5 rounded-full text-[10px] font-medium bg-[rgb(var(--accent-soft))] text-[rgb(var(--accent))]">
+                  <div className={styles.userRoleWrapper}>
+                    <span className={styles.userRole}>
                       {getRoleLabel(user?.role)}
                     </span>
                   </div>
@@ -213,20 +210,20 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               {/* Theme toggle — Neumorphic */}
               <button
                 onClick={toggleTheme}
-                className="p-1.5 flex-shrink-0 rounded-xl text-[rgb(var(--muted))] hover:text-[rgb(var(--text))] transition-all duration-200"
+                className={styles.themeToggle}
                 style={{ boxShadow: theme === 'dark' ? 'var(--nm-inset-sm)' : 'var(--nm-raised-xs)' }}
                 title="Перемкнути тему"
               >
-                {theme === 'light' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+                {theme === 'light' ? <Moon className={styles.smallIcon} /> : <Sun className={styles.smallIcon} />}
               </button>
             </div>
             
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center px-4 py-2.5 text-sm font-semibold rounded-xl text-[rgb(var(--text))] bg-[rgb(var(--surface))] transition-all duration-200 hover:translate-y-[-1px]"
+              className={styles.logoutButton}
               style={{ boxShadow: 'var(--nm-raised-sm)' }}
             >
-              <LogOut className="w-4 h-4 mr-2 text-[rgb(var(--muted))]" />
+              <LogOut className={styles.logoutIcon} />
               Вийти
             </button>
           </div>
@@ -234,26 +231,26 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
+      <div className={styles.mainContent}>
         {/* Top bar — Neumorphic raised strip */}
-        <header className="h-16 bg-[rgb(var(--surface))] flex items-center justify-between px-4 md:px-6 flex-shrink-0 transition-colors duration-200"
+        <header className={styles.header}
           style={{ boxShadow: '0 4px 12px var(--nm-dark), 0 -2px 6px var(--nm-light)' }}
         >
-           <div className="flex items-center md:hidden">
+           <div className={styles.mobileHeader}>
              <button
                onClick={() => setIsSidebarOpen(true)}
-               className="p-2 -ml-2 mr-2 text-[rgb(var(--muted))] rounded-xl hover:text-[rgb(var(--text))]"
+               className={styles.menuButton}
                style={{ boxShadow: 'var(--nm-raised-xs)' }}
              >
-               <Menu className="w-6 h-6" />
+               <Menu className={styles.icon} />
              </button>
-             <span className="text-lg font-semibold text-[rgb(var(--text))]">Dormitory SaaS</span>
+             <span className={styles.headerTitle}>Dormitory SaaS</span>
            </div>
-           <div className="flex-1" />
+           <div className={styles.spacer} />
            {user?.role === 'STUDENT' && <NotificationBell />}
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 md:p-6 relative">
+        <main className={styles.mainArea}>
           <Suspense fallback={<PageLoader />}>
             {children}
           </Suspense>

@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { Wallet, CreditCard, PiggyBank, History, Check, AlertCircle, ArrowRight, Clock } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import styles from './StudentFinancials.module.css';
 
 interface JarTransaction {
   id: string;
@@ -93,10 +94,10 @@ const StudentFinancials: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
+      <div className={`${styles.container} ${styles.containerLoading}`}>
         <Skeleton height={40} width={200} borderRadius={12} />
         <Skeleton height={60} borderRadius={16} />
-        <div className="grid grid-cols-1 gap-6">
+        <div className={styles.loadingGrid}>
           <Skeleton height={200} borderRadius={24} />
           <Skeleton height={200} borderRadius={24} />
         </div>
@@ -105,74 +106,74 @@ const StudentFinancials: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-      <h1 className="text-3xl font-bold text-[rgb(var(--text))] mb-8 tracking-tight">Фінанси</h1>
+    <div className={styles.container}>
+      <h1 className={styles.pageTitle}>Фінанси</h1>
 
-      <div className="flex bg-[rgb(var(--surface-2))] p-1.5 rounded-2xl nm-inset-sm mb-8 overflow-x-auto hide-scrollbar">
+      <div className={`${styles.tabsContainer} nm-inset-sm`}>
         <button
-          className={`flex-1 flex justify-center items-center py-3 px-6 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${activeTab === 'payments' ? 'nm-raised bg-[rgb(var(--surface))] text-[rgb(var(--accent))]' : 'text-[rgb(var(--muted))] hover:text-[rgb(var(--text))] hover:nm-flat'}`}
+          className={`${styles.tab} ${activeTab === 'payments' ? `${styles.tabActive} nm-raised` : styles.tabInactive}`}
           onClick={() => setActiveTab('payments')}
         >
-          <CreditCard className="w-4 h-4 mr-2" /> Оплата проживання
+          <CreditCard className={styles.tabIcon} /> Оплата проживання
         </button>
         <button
-          className={`flex-1 flex justify-center items-center py-3 px-6 rounded-xl text-sm font-semibold transition-all whitespace-nowrap ${activeTab === 'jars' ? 'nm-raised bg-[rgb(var(--surface))] text-[rgb(var(--accent))]' : 'text-[rgb(var(--muted))] hover:text-[rgb(var(--text))] hover:nm-flat'}`}
+          className={`${styles.tab} ${activeTab === 'jars' ? `${styles.tabActive} nm-raised` : styles.tabInactive}`}
           onClick={() => setActiveTab('jars')}
         >
-          <PiggyBank className="w-4 h-4 mr-2" /> Банки (Збори)
+          <PiggyBank className={styles.tabIcon} /> Банки (Збори)
         </button>
       </div>
 
       {activeTab === 'payments' && (
-        <div className="ui-card p-6 md:p-8">
-          <div className="flex items-center mb-8">
-            <div className="w-10 h-10 rounded-xl nm-raised flex items-center justify-center mr-4 bg-[rgb(var(--surface))]">
-              <CreditCard className="w-5 h-5 text-[rgb(var(--accent))]" />
+        <div className={`ui-card ${styles.paymentsCard}`}>
+          <div className={styles.paymentsHeader}>
+            <div className={`${styles.paymentsIconBox} nm-raised`}>
+              <CreditCard className={styles.paymentsIconSvg} />
             </div>
-            <h2 className="text-xl font-bold text-[rgb(var(--text))]">Мої рахунки</h2>
+            <h2 className={styles.paymentsTitle}>Мої рахунки</h2>
           </div>
           
           {payments.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-12 text-center bg-[rgb(var(--surface-2))] nm-inset-sm rounded-3xl">
-              <Check className="w-16 h-16 text-[rgb(var(--accent))] opacity-40 mb-4" />
-              <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-2">Усе сплачено</h3>
-              <p className="ui-muted text-sm font-medium">Немає виставлених рахунків.</p>
+            <div className={`${styles.emptyPaymentsBox} nm-inset-sm`}>
+              <Check className={styles.emptyPaymentsIcon} />
+              <h3 className={styles.emptyPaymentsTitle}>Усе сплачено</h3>
+              <p className={`ui-muted ${styles.emptyPaymentsDesc}`}>Немає виставлених рахунків.</p>
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className={styles.paymentsList}>
               {payments.map(p => (
-                <div key={p.id} className={`p-6 rounded-2xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6 transition-all duration-300 ${
-                  p.status === 'OVERDUE' ? 'nm-inset-sm bg-red-50/20 dark:bg-red-900/10 border-l-4 border-red-500' : 
-                  p.status === 'PAID' ? 'nm-flat bg-[rgb(var(--surface))] border border-green-500/30' : 
-                  'nm-flat bg-[rgb(var(--surface))] hover:nm-raised-sm'
+                <div key={p.id} className={`${styles.paymentItem} ${
+                  p.status === 'OVERDUE' ? styles.paymentOverdue : 
+                  p.status === 'PAID' ? styles.paymentPaid : 
+                  `${styles.paymentPending} nm-flat`
                 }`}>
-                  <div className="flex-1">
-                    <h3 className="text-lg font-bold text-[rgb(var(--text))] mb-2">{p.description}</h3>
-                    <div className="flex flex-wrap items-center gap-4 text-sm">
-                      <span className="font-bold text-[rgb(var(--accent))] text-xl">{p.amount} ₴</span>
-                      <span className="w-1.5 h-1.5 rounded-full bg-[rgb(var(--muted)/0.5)]"></span>
-                      <span className="ui-muted font-medium flex items-center">
-                        <Clock className="w-4 h-4 mr-1.5" /> Термін: {new Date(p.dueDate).toLocaleDateString()}
+                  <div className={styles.paymentInfo}>
+                    <h3 className={styles.paymentDesc}>{p.description}</h3>
+                    <div className={styles.paymentDetails}>
+                      <span className={styles.paymentAmount}>{p.amount} ₴</span>
+                      <span className={styles.paymentDot}></span>
+                      <span className={`ui-muted ${styles.paymentDate}`}>
+                        <Clock className={styles.paymentDateIcon} /> Термін: {new Date(p.dueDate).toLocaleDateString()}
                       </span>
                     </div>
                   </div>
                   
-                  <div className="flex-shrink-0">
+                  <div className={styles.paymentActions}>
                     {p.status === 'PAID' ? (
-                      <div className="inline-flex items-center justify-center h-12 px-6 rounded-xl font-bold text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50">
-                        <Check className="w-5 h-5 mr-2"/> ОПЛАЧЕНО
+                      <div className={styles.paidBadge}>
+                        <Check className={styles.paidBadgeIcon}/> ОПЛАЧЕНО
                       </div>
                     ) : (
-                      <div className="flex flex-col items-end gap-3 w-full sm:w-auto">
+                      <div className={styles.payActionGroup}>
                         {p.status === 'OVERDUE' && (
-                          <span className="inline-flex items-center text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 px-3 py-1 rounded-full">
-                            <AlertCircle className="w-3.5 h-3.5 mr-1.5"/> ПРОТЕРМІНОВАНО
+                          <span className={styles.overdueBadge}>
+                            <AlertCircle className={styles.overdueBadgeIcon}/> ПРОТЕРМІНОВАНО
                           </span>
                         )}
                         <button 
                           onClick={() => handlePay(p.id)}
-                          className={`w-full sm:w-auto h-12 px-8 rounded-xl font-bold tracking-wide transition-all ${
-                            p.status === 'OVERDUE' ? 'bg-red-500 hover:bg-red-600 text-white shadow-[0_4px_14px_0_rgba(239,68,68,0.39)]' : 'ui-button-primary nm-raised text-white hover:nm-raised-sm'
+                          className={`${styles.payButton} ${
+                            p.status === 'OVERDUE' ? styles.payButtonOverdue : 'ui-button-primary nm-raised'
                           }`}
                         >
                           СПЛАТИТИ
@@ -188,116 +189,116 @@ const StudentFinancials: React.FC = () => {
       )}
 
       {activeTab === 'jars' && (
-        <div className="grid grid-cols-1 gap-6 md:gap-8">
+        <div className={styles.jarsGrid}>
           {jars.length === 0 ? (
-            <div className="ui-card p-12 text-center flex flex-col items-center">
-              <PiggyBank className="w-16 h-16 text-[rgb(var(--muted))] opacity-30 mb-4" />
-              <p className="text-[rgb(var(--text))] font-medium">Активних зборів немає.</p>
+            <div className={`ui-card ${styles.emptyJarsBox}`}>
+              <PiggyBank className={styles.emptyJarsIcon} />
+              <p className={styles.emptyJarsText}>Активних зборів немає.</p>
             </div>
           ) : jars.map(jar => {
             const percent = Math.min(100, Math.round((jar.currentAmount / jar.goalAmount) * 100));
             return (
-              <div key={jar.id} className="ui-card p-6 md:p-8 overflow-hidden relative">
+              <div key={jar.id} className={`ui-card ${styles.jarCard}`}>
                 {/* Decorative background glow */}
-                <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/5 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none"></div>
+                <div className={styles.jarGlow}></div>
                 
-                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-end gap-6 mb-8 relative z-10">
-                  <div className="flex-1">
-                    <div className="flex items-center mb-3">
-                      <div className="w-12 h-12 rounded-2xl nm-raised flex items-center justify-center mr-4 bg-[rgb(var(--surface))]">
-                        <PiggyBank className="w-6 h-6 text-pink-500" />
+                <div className={styles.jarHeader}>
+                  <div className={styles.jarTitleArea}>
+                    <div className={styles.jarTitleBox}>
+                      <div className={`${styles.jarIconBox} nm-raised`}>
+                        <PiggyBank className={styles.jarIconSvg} />
                       </div>
-                      <h3 className="text-2xl font-bold text-[rgb(var(--text))] tracking-tight">{jar.title}</h3>
+                      <h3 className={styles.jarTitle}>{jar.title}</h3>
                     </div>
-                    {jar.description && <p className="ui-muted text-sm mt-4 ml-16 leading-relaxed max-w-2xl">{jar.description}</p>}
+                    {jar.description && <p className={`ui-muted ${styles.jarDesc}`}>{jar.description}</p>}
                   </div>
                   
-                  <div className="lg:text-right bg-[rgb(var(--surface-2))] nm-inset-sm p-4 rounded-2xl min-w-[200px]">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-[rgb(var(--muted))] mb-1">Зібрано коштів</p>
-                    <div className="flex items-baseline lg:justify-end">
-                      <span className="text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-orange-400">{jar.currentAmount}</span>
-                      <span className="text-[rgb(var(--muted))] font-medium ml-2">/ {jar.goalAmount} ₴</span>
+                  <div className={`${styles.jarStatsBox} nm-inset-sm`}>
+                    <p className={styles.jarStatsLabel}>Зібрано коштів</p>
+                    <div className={styles.jarStatsValues}>
+                      <span className={styles.jarCurrentAmount}>{jar.currentAmount}</span>
+                      <span className={styles.jarGoalAmount}>/ {jar.goalAmount} ₴</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="relative pt-1 w-full mb-10">
-                  <div className="w-full h-4 bg-[rgb(var(--surface-2))] nm-inset rounded-full overflow-hidden">
+                <div className={styles.jarProgressContainer}>
+                  <div className={`${styles.jarProgressTrack} nm-inset`}>
                     <div 
-                      className="h-full bg-gradient-to-r from-pink-500 to-orange-400 shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)] transition-all duration-1000 ease-out" 
+                      className={styles.jarProgressFill} 
                       style={{ width: `${percent}%` }}
                     ></div>
                   </div>
-                  <div className="absolute -top-6 right-0 text-xs font-bold text-pink-500" style={{ right: `${100-percent}%`, transform: 'translateX(50%)' }}>
+                  <div className={styles.jarProgressLabel} style={{ right: `${100-percent}%`, transform: 'translateX(50%)' }}>
                     {percent}%
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8">
+                <div className={styles.jarBodyGrid}>
                   {/* Donate Form */}
-                  <div className="lg:col-span-5 bg-[rgb(var(--surface-2))] nm-inset-sm p-6 md:p-8 rounded-3xl flex flex-col justify-center">
-                    <h4 className="font-bold text-lg text-[rgb(var(--text))] mb-6 flex items-center">
-                      <Wallet className="w-5 h-5 mr-3 text-pink-500" /> 
+                  <div className={`${styles.donateBox} nm-inset-sm`}>
+                    <h4 className={styles.donateTitle}>
+                      <Wallet className={styles.donateTitleIcon} /> 
                       Зробити внесок
                     </h4>
-                    <div className="space-y-4">
+                    <div className={styles.donateForm}>
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider ui-muted mb-2">Сума внеску</label>
-                        <div className="relative">
+                        <label className={`ui-muted ${styles.donateLabel}`}>Сума внеску</label>
+                        <div className={styles.donateInputWrapper}>
                           <input 
                             type="number" 
                             placeholder="0" 
-                            className="ui-input bg-[rgb(var(--surface))] w-full text-lg font-bold text-pink-500 placeholder-pink-500/30 h-14 pl-6" 
+                            className={`ui-input ${styles.donateInputAmount}`} 
                             value={donateAmount[jar.id] || ''} 
                             onChange={e => setDonateAmount(prev => ({...prev, [jar.id]: e.target.value}))} 
                           />
-                          <span className="absolute right-6 top-1/2 -translate-y-1/2 font-bold text-[rgb(var(--muted))]">₴</span>
+                          <span className={styles.donateCurrency}>₴</span>
                         </div>
                       </div>
                       <div>
-                        <label className="block text-xs font-bold uppercase tracking-wider ui-muted mb-2">Коментар</label>
+                        <label className={`ui-muted ${styles.donateLabel}`}>Коментар</label>
                         <input 
                           type="text" 
                           placeholder="Ваше побажання (необов'язково)" 
-                          className="ui-input bg-[rgb(var(--surface))] w-full h-12" 
+                          className={`ui-input ${styles.donateInputComment}`} 
                           value={donateComment[jar.id] || ''} 
                           onChange={e => setDonateComment(prev => ({...prev, [jar.id]: e.target.value}))} 
                         />
                       </div>
                       <button 
                         onClick={() => handleDonate(jar.id)} 
-                        className="w-full h-14 mt-4 bg-gradient-to-r from-pink-500 to-orange-400 text-white rounded-xl font-bold text-lg tracking-wide hover:opacity-90 transition-all shadow-[0_4px_20px_rgba(236,72,153,0.3)] flex items-center justify-center transform hover:-translate-y-0.5 active:translate-y-0"
+                        className={styles.donateSubmitBtn}
                       >
-                        ПОПОВНИТИ БАНКУ <ArrowRight className="w-5 h-5 ml-2" />
+                        ПОПОВНИТИ БАНКУ <ArrowRight className={styles.donateSubmitBtnIcon} />
                       </button>
                     </div>
                   </div>
 
                   {/* Top Donors */}
-                  <div className="lg:col-span-7 bg-[rgb(var(--surface))] nm-flat p-6 md:p-8 rounded-3xl border border-[rgb(var(--border)/0.2)]">
-                    <h4 className="font-bold text-lg text-[rgb(var(--text))] mb-6 flex items-center">
-                      <History className="w-5 h-5 mr-3 text-orange-400" /> 
+                  <div className={`${styles.transactionsBox} nm-flat`}>
+                    <h4 className={styles.transactionsTitle}>
+                      <History className={styles.transactionsTitleIcon} /> 
                       Останні внески
                     </h4>
                     {jar.transactions.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center h-48 text-center bg-[rgb(var(--surface-2))] nm-inset-sm rounded-2xl">
-                        <History className="w-10 h-10 text-[rgb(var(--muted))] opacity-30 mb-3" />
-                        <p className="text-sm font-medium ui-muted">Ще немає внесків.<br/>Будьте першим!</p>
+                      <div className={`${styles.emptyTransactionsBox} nm-inset-sm`}>
+                        <History className={styles.emptyTransactionsIcon} />
+                        <p className={`ui-muted ${styles.emptyTransactionsText}`}>Ще немає внесків.<br/>Будьте першим!</p>
                       </div>
                     ) : (
-                      <div className="overflow-y-auto pr-2 custom-scrollbar max-h-[320px] space-y-3">
+                      <div className={styles.transactionsList}>
                         {jar.transactions.map((t, idx) => (
-                          <div key={t.id} className="flex justify-between items-center p-4 rounded-xl transition-all hover:bg-[rgb(var(--surface-2))]">
-                            <div className="flex items-center gap-4">
-                              <div className="w-10 h-10 rounded-full nm-inset-sm flex items-center justify-center bg-[rgb(var(--surface-2))] font-bold text-pink-500 flex-shrink-0">
+                          <div key={t.id} className={styles.transactionItem}>
+                            <div className={styles.transactionInfo}>
+                              <div className={`${styles.transactionAvatar} nm-inset-sm`}>
                                 {idx + 1}
                               </div>
                               <div>
-                                <span className="font-bold text-[rgb(var(--text))] block">{t.student.fullName}</span>
-                                {t.comment && <p className="text-[13px] text-[rgb(var(--muted))] italic mt-1 bg-[rgb(var(--surface-2))] px-2 py-1 rounded inline-block">"{t.comment}"</p>}
+                                <span className={styles.transactionName}>{t.student.fullName}</span>
+                                {t.comment && <p className={styles.transactionComment}>"{t.comment}"</p>}
                               </div>
                             </div>
-                            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-orange-400 text-lg whitespace-nowrap ml-4">
+                            <span className={styles.transactionAmount}>
                               +{t.amount} ₴
                             </span>
                           </div>
@@ -311,20 +312,6 @@ const StudentFinancials: React.FC = () => {
           })}
         </div>
       )}
-      
-      <style>{`
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: rgb(var(--surface-2));
-          border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgb(var(--border));
-          border-radius: 4px;
-        }
-      `}</style>
     </div>
   );
 };

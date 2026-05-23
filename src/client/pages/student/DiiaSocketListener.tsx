@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import QRCode from 'react-qr-code';
 import { socketService } from '../../services/socket';
 import toast from 'react-hot-toast';
+import styles from './DiiaSocketListener.module.css';
 
 interface DiiaSocketListenerProps {
   onSuccess: () => void;
@@ -46,36 +47,36 @@ export const DiiaSocketListener: React.FC<DiiaSocketListenerProps> = ({ onSucces
   }, [sessionId, onSuccess]);
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 bg-white rounded-xl">
-      <div className="bg-blue-50 p-4 rounded-full mb-6">
+    <div className={styles.container}>
+      <div className={styles.logoWrapper}>
         <img 
           src="https://diia.gov.ua/build/assets/images/diia-logo-black.svg" 
           alt="Diia Logo" 
-          className="w-16 h-16 object-contain filter invert opacity-80" 
+          className={styles.logo} 
           onError={(e) => {
             // Fallback text if logo fails to load
             (e.target as HTMLElement).style.display = 'none';
           }}
         />
-        <span className="text-2xl font-bold">Дія</span>
+        <span className={styles.logoText}>Дія</span>
       </div>
       
-      <h3 className="text-xl font-bold text-gray-900 mb-2">Шеринг документів</h3>
-      <p className="text-gray-500 text-center mb-8 max-w-sm">
+      <h3 className={styles.title}>Шеринг документів</h3>
+      <p className={styles.description}>
         Відскануйте QR-код за допомогою застосунку Дія для автоматичної передачі копії паспорта та ідентифікаційного коду.
       </p>
 
-      <div className="p-4 bg-white border-2 border-gray-100 rounded-2xl shadow-sm mb-8">
+      <div className={styles.qrWrapper}>
         <QRCode 
           value={JSON.stringify(diiaData)} 
           size={200}
           level="H"
-          className="rounded-lg"
+          className={styles.qrCode}
         />
       </div>
 
-      <div className="flex items-center text-sm text-gray-500 animate-pulse">
-        <div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
+      <div className={styles.statusWrapper}>
+        <div className={styles.statusDot}></div>
         Очікування підтвердження в застосунку...
       </div>
       
@@ -83,7 +84,7 @@ export const DiiaSocketListener: React.FC<DiiaSocketListenerProps> = ({ onSucces
       {import.meta.env.MODE === 'development' && (
         <button 
           onClick={onSuccess}
-          className="mt-8 text-xs text-gray-400 underline"
+          className={styles.devButton}
         >
           [DEV] Імітувати успішну верифікацію
         </button>

@@ -7,6 +7,7 @@ import { AuthResponse } from '../../types';
 import InputMask from 'react-input-mask';
 import { AuthBackground } from '../../components/AuthBackground';
 import { ShieldCheck } from 'lucide-react';
+import styles from './Register.module.css';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
@@ -114,10 +115,10 @@ const Register: React.FC = () => {
 
   return (
     <AuthBackground>
-      <div className="flex items-center justify-center min-h-screen px-6 py-8">
-        <div className="ui-card p-8 w-full max-w-md animate-fadeIn">
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[rgb(var(--surface))] nm-raised mb-4">
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <div className={styles.header}>
+            <div className={styles.logoBadge}>
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="4" y="8" width="24" height="20" rx="3" stroke="rgb(var(--accent))" strokeWidth="2" opacity="0.8" />
                 <rect x="4" y="8" width="24" height="6" rx="3" fill="rgb(var(--accent))" fillOpacity="0.15" stroke="rgb(var(--accent))" strokeWidth="2" opacity="0.6" />
@@ -125,123 +126,123 @@ const Register: React.FC = () => {
                 <rect x="18" y="18" width="5" height="5" rx="1" stroke="rgb(var(--accent))" strokeWidth="1.5" opacity="0.6" />
               </svg>
             </div>
-            <h1 className="text-2xl font-semibold text-[rgb(var(--text))] mb-2">
+            <h1 className={styles.title}>
               {step === 1 ? 'Реєстрація' : 'Підтвердження Email'}
             </h1>
-            <p className="text-sm ui-muted">
+            <p className={styles.subtitle}>
               {step === 1 ? 'Створіть свій кабінет' : `Код надіслано на ${formData.email}`}
             </p>
           </div>
           
           {step === 1 ? (
-            <form onSubmit={handleSendCode} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <form onSubmit={handleSendCode} className={styles.form}>
+              <div className={styles.grid}>
                 <div>
-                  <label className="block text-sm font-medium ui-muted mb-1.5">Ім'я</label>
+                  <label className={styles.label}>Ім'я</label>
                   <input 
                     type="text" 
                     name="firstName"
                     value={formData.firstName}
                     onChange={handleChange}
                     placeholder="Іван"
-                    className="ui-input"
+                    className={styles.input}
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium ui-muted mb-1.5">Прізвище</label>
+                  <label className={styles.label}>Прізвище</label>
                   <input 
                     type="text" 
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
                     placeholder="Студент"
-                    className="ui-input"
+                    className={styles.input}
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium ui-muted mb-1.5">Телефон</label>
+                <label className={styles.label}>Телефон</label>
                 <InputMask
                   mask="+380 (99) 999-99-99"
                   name="phone"
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="+380 (__) ___-__-__"
-                  className="ui-input"
+                  className={styles.input}
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className={styles.grid}>
                 <div>
-                  <label className="block text-sm font-medium ui-muted mb-1.5">Номер студентського/залікової</label>
+                  <label className={styles.label}>Номер студентського/залікової</label>
                   <input 
                     type="text" 
                     name="studentIdNumber"
                     value={formData.studentIdNumber}
                     onChange={handleChange}
                     placeholder="КВ12345678"
-                    className="ui-input"
+                    className={styles.input}
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className={styles.grid}>
                   <div>
-                    <label className="block text-sm font-medium ui-muted mb-1.5">Курс</label>
+                    <label className={styles.label}>Курс</label>
                     <select 
                       name="course"
                       value={formData.course}
                       onChange={(e: any) => handleChange(e)}
-                      className="ui-input"
+                      className={styles.input}
                     >
                       {[1,2,3,4,5,6].map(c => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium ui-muted mb-1.5">Факультет</label>
+                    <label className={styles.label}>Факультет</label>
                     <input 
                       type="text" 
                       name="faculty"
                       value={formData.faculty}
                       onChange={handleChange}
                       placeholder="АКФ"
-                      className="ui-input"
+                      className={styles.input}
                     />
                   </div>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium ui-muted mb-1.5">Стать</label>
-                <div className="flex gap-4">
-                  <label className="flex items-center gap-2 cursor-pointer">
+                <label className={styles.label}>Стать</label>
+                <div className={styles.radioGroup}>
+                  <label className={styles.radioLabel}>
                     <input 
                       type="radio" 
                       name="gender" 
                       value="MALE" 
                       checked={formData.gender === 'MALE'} 
                       onChange={handleChange} 
-                      className="text-[rgb(var(--accent))] focus:ring-[rgb(var(--accent))]"
+                      className={styles.radioInput}
                     />
-                    <span className="text-sm text-[rgb(var(--text))]">Чоловіча</span>
+                    <span className={styles.radioText}>Чоловіча</span>
                   </label>
-                  <label className="flex items-center gap-2 cursor-pointer">
+                  <label className={styles.radioLabel}>
                     <input 
                       type="radio" 
                       name="gender" 
                       value="FEMALE" 
                       checked={formData.gender === 'FEMALE'} 
                       onChange={handleChange} 
-                      className="text-[rgb(var(--accent))] focus:ring-[rgb(var(--accent))]"
+                      className={styles.radioInput}
                     />
-                    <span className="text-sm text-[rgb(var(--text))]">Жіноча</span>
+                    <span className={styles.radioText}>Жіноча</span>
                   </label>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium ui-muted mb-1.5 flex items-center justify-between">
+                <label className={`${styles.label} ${styles.labelWithHint}`}>
                   <span>Email</span>
-                  <span className="text-xs text-[rgb(var(--accent))]">Тільки @stud.kai.edu.ua або @npp.kai.edu.ua</span>
+                  <span className={styles.hint}>Тільки @stud.kai.edu.ua або @npp.kai.edu.ua</span>
                 </label>
                 <input 
                   type="email" 
@@ -249,51 +250,51 @@ const Register: React.FC = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="student@stud.kai.edu.ua"
-                  className="ui-input"
+                  className={styles.input}
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium ui-muted mb-1.5">Пароль</label>
+                <label className={styles.label}>Пароль</label>
                 <input 
                   type="password" 
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className="ui-input"
+                  className={styles.input}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium ui-muted mb-1.5">Підтвердіть пароль</label>
+                <label className={styles.label}>Підтвердіть пароль</label>
                 <input 
                   type="password" 
                   name="confirmPassword"
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className="ui-input"
+                  className={styles.input}
                 />
               </div>
 
               <button 
                 type="submit"
                 disabled={isLoading}
-                className="w-full ui-button ui-button-primary py-3 mt-2"
+                className={styles.button}
               >
-                {isLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Продовжити'}
+                {isLoading ? <div className={styles.spinner}></div> : 'Продовжити'}
               </button>
             </form>
           ) : (
-            <form onSubmit={handleRegister} className="space-y-6">
-              <div className="nm-inset-sm p-6 rounded-2xl bg-[rgb(var(--surface))]">
-                <div className="flex justify-center mb-4">
-                  <div className="w-16 h-16 rounded-full nm-flat flex items-center justify-center text-[rgb(var(--accent))]">
-                    <ShieldCheck className="w-8 h-8" />
+            <form onSubmit={handleRegister} className={styles.formVerify}>
+              <div className={styles.verificationContainer}>
+                <div className={styles.shieldWrapper}>
+                  <div className={styles.shieldIconBg}>
+                    <ShieldCheck className={styles.shieldIcon} />
                   </div>
                 </div>
-                <label className="block text-sm font-medium text-center text-[rgb(var(--text))] mb-4">
+                <label className={styles.verificationLabel}>
                   Введіть 6-значний код з листа
                 </label>
                 <input 
@@ -302,33 +303,33 @@ const Register: React.FC = () => {
                   value={verificationCode}
                   onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, ''))}
                   placeholder="000000"
-                  className="ui-input text-center text-2xl tracking-[0.5em] font-bold h-16"
+                  className={`${styles.input} ${styles.verificationInput}`}
                 />
               </div>
 
-              <div className="flex gap-4">
+              <div className={styles.buttonGroup}>
                 <button 
                   type="button"
                   onClick={() => setStep(1)}
                   disabled={isLoading}
-                  className="w-1/3 ui-button ui-button-outline py-3"
+                  className={`${styles.button} ${styles.buttonOutline} ${styles.buttonHalf}`}
                 >
                   Назад
                 </button>
                 <button 
                   type="submit"
                   disabled={isLoading || verificationCode.length !== 6}
-                  className="w-2/3 ui-button ui-button-primary py-3"
+                  className={`${styles.button} ${styles.buttonTwoThirds}`}
                 >
-                  {isLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto"></div> : 'Підтвердити'}
+                  {isLoading ? <div className={`${styles.spinner} ${styles.spinnerCenter}`}></div> : 'Підтвердити'}
                 </button>
               </div>
             </form>
           )}
 
-          <div className="mt-8 text-center text-sm ui-muted">
+          <div className={styles.footer}>
             Вже маєте акаунт?{' '}
-            <Link to="/login" className="text-[rgb(var(--accent))] hover:text-[rgb(var(--accent-strong))] font-medium hover:underline">
+            <Link to="/login" className={styles.link}>
               Увійти
             </Link>
           </div>

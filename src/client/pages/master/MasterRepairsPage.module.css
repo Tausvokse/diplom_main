@@ -1,0 +1,364 @@
+.statusPending {
+  color: #eab308;
+  background-color: rgba(234, 179, 8, 0.1);
+}
+.statusInProgress {
+  color: #3b82f6;
+  background-color: rgba(59, 130, 246, 0.1);
+}
+.statusCompleted {
+  color: #22c55e;
+  background-color: rgba(34, 197, 94, 0.1);
+}
+.statusCancelled {
+  color: rgb(var(--muted));
+  background-color: rgb(var(--surface-2));
+}
+
+.loaderContainer {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+@media (min-width: 640px) {
+  .loaderContainer {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .loaderContainer {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.loaderContainer > * + * {
+  margin-top: 1rem;
+}
+
+.pageContainer {
+  max-width: 80rem;
+  margin: 0 auto;
+  padding: 1.5rem 1rem;
+}
+
+.pageContainer > * + * {
+  margin-top: 2rem;
+}
+
+@media (min-width: 640px) {
+  .pageContainer {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pageContainer {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .header {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+  }
+}
+
+.title {
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  color: rgb(var(--text));
+  letter-spacing: -0.025em;
+  margin-bottom: 0.5rem;
+}
+
+.subtitle {
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .statsGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.statButton {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  border-radius: 1rem;
+  padding: 0.75rem 1rem;
+  text-align: left;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
+  border: none;
+  cursor: pointer;
+}
+
+.statButtonInactive {
+  background-color: rgb(var(--surface));
+  color: rgb(var(--muted));
+}
+
+.statButtonInactive:hover {
+  box-shadow: var(--nm-raised-sm);
+}
+
+.statButtonInner {
+  display: flex;
+  align-items: center;
+}
+
+.statIcon {
+  width: 1rem;
+  height: 1rem;
+  margin-right: 0.5rem;
+}
+
+.statLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.statCount {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 900;
+}
+
+.searchCard {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .searchCard {
+    flex-direction: row;
+  }
+}
+
+.searchInputWrapper {
+  position: relative;
+  flex: 1 1 0%;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 1.25rem;
+  width: 1.25rem;
+  color: rgb(var(--muted));
+}
+
+.searchInput {
+  width: 100%;
+  padding-left: 3rem;
+  padding-right: 1rem;
+  background-color: rgb(var(--surface-2));
+}
+
+.resetButton {
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+.repairsGrid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .repairsGrid {
+    gap: 2rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .repairsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.repairCard {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+@media (min-width: 768px) {
+  .repairCard {
+    padding: 2rem;
+  }
+}
+
+.repairHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.repairHeaderLeft {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.repairIconWrapper {
+  height: 3rem;
+  width: 3rem;
+  border-radius: 1rem;
+  background-color: rgb(var(--surface));
+  color: #3b82f6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.repairIcon {
+  height: 1.5rem;
+  width: 1.5rem;
+}
+
+.roomTitle {
+  font-weight: 700;
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+  color: rgb(var(--text));
+}
+
+.roomAccent {
+  color: rgb(var(--accent));
+}
+
+.roomLocation {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  margin-top: 0.25rem;
+}
+
+.locationIcon {
+  height: 0.875rem;
+  width: 0.875rem;
+  margin-right: 0.25rem;
+  color: rgb(var(--muted));
+}
+
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 0.75rem;
+  padding: 0.375rem 0.75rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.badgeIcon {
+  height: 0.875rem;
+  width: 0.875rem;
+}
+
+.descriptionBox {
+  background-color: rgb(var(--surface-2));
+  padding: 1.25rem;
+  border-radius: 1rem;
+  margin-bottom: 1.5rem;
+  flex: 1 1 0%;
+}
+
+.descriptionText {
+  font-size: 0.875rem;
+  line-height: 1.625;
+  color: rgb(var(--text));
+  font-weight: 500;
+}
+
+.footer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: auto;
+  padding-top: 1.5rem;
+  border-top: 1px solid rgba(var(--border), 0.2);
+}
+
+@media (min-width: 640px) {
+  .footer {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.selectInput {
+  min-height: 2.5rem;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  background-color: rgb(var(--surface-2));
+}
+
+.selectInput:disabled {
+  opacity: 0.5;
+}
+
+.dateInfo {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dateValue {
+  color: rgb(var(--text));
+  margin-left: 0.25rem;
+}
+
+.emptyState {
+  text-align: center;
+  padding: 4rem 0;
+  background-color: rgb(var(--surface-2));
+  border-radius: 1.5rem;
+  color: rgb(var(--muted));
+  font-weight: 500;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
+}

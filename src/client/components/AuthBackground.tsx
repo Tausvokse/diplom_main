@@ -1,5 +1,6 @@
 import React, { useRef, useState, useCallback } from 'react';
 import { useTheme } from './ThemeProvider';
+import styles from './AuthBackground.module.css';
 
 interface ParallaxLayer {
   speed: number;
@@ -127,13 +128,13 @@ export const AuthBackground: React.FC<{ children: React.ReactNode }> = ({ childr
     <div
       ref={containerRef}
       onMouseMove={handleMouseMove}
-      className="relative min-h-screen overflow-hidden"
+      className={styles.container}
     >
       {/* Animated SVG background layers */}
       {layers.map((layer, layerIdx) => (
         <div
           key={layerIdx}
-          className="absolute inset-0 pointer-events-none"
+          className={styles.layer}
           style={{
             transform: `translate(${-offset.x * layer.speed}px, ${-offset.y * layer.speed}px)`,
             transition: 'transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
@@ -142,7 +143,7 @@ export const AuthBackground: React.FC<{ children: React.ReactNode }> = ({ childr
           {layer.icons.map((icon) => (
             <div
               key={icon.id}
-              className="absolute nm-float-slow"
+              className={styles.icon}
               style={{
                 left: `${icon.x}%`,
                 top: `${icon.y}%`,
@@ -159,7 +160,7 @@ export const AuthBackground: React.FC<{ children: React.ReactNode }> = ({ childr
 
       {/* Soft radial glow accents */}
       <div
-        className="absolute inset-0 pointer-events-none"
+        className={styles.glow}
         style={{
           background: theme === 'dark'
             ? 'radial-gradient(600px 400px at 30% 20%, rgba(120, 143, 255, 0.06), transparent 70%), radial-gradient(500px 350px at 70% 70%, rgba(140, 100, 255, 0.04), transparent 70%)'
@@ -169,7 +170,7 @@ export const AuthBackground: React.FC<{ children: React.ReactNode }> = ({ childr
       />
 
       {/* Content */}
-      <div className="relative z-10">
+      <div className={styles.content}>
         {children}
       </div>
     </div>

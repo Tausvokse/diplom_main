@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
-import { useAuthStore } from '../store/authStore';
 import { Role } from '../types';
+import { useAuthStore } from '../store/authStore';
 
 interface ProtectedRouteProps {
   allowedRoles?: Role[];

@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import { StudentProfile } from '../../types';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import styles from './AllocationDashboard.module.css';
 
 interface AllocationResult {
   roomId: string;
@@ -136,7 +137,7 @@ export const AllocationDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+      <div className={styles.loadingContainer}>
         <Skeleton height={28} width={280} />
         <Skeleton height={220} />
       </div>
@@ -144,18 +145,18 @@ export const AllocationDashboard: React.FC = () => {
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      <header className="mb-8 flex flex-col lg:flex-row lg:justify-between lg:items-end gap-4">
+    <div className={styles.container}>
+      <header className={styles.header}>
         <div>
-          <h1 className="text-3xl font-bold text-[rgb(var(--text))] tracking-tight mb-2">Дашборд розподілу (AHP + K-means)</h1>
-          <p className="ui-muted text-sm">Автоматизований підбір ідеальних сусідів на основі психометрики</p>
+          <h1 className={styles.pageTitle}>Дашборд розподілу (AHP + K-means)</h1>
+          <p className={styles.pageSubtitle}>Автоматизований підбір ідеальних сусідів на основі психометрики</p>
         </div>
         {!results && !isRunningAlgorithm && (
           <button 
             onClick={runAlgorithm}
-            className="flex items-center px-8 py-4 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-2xl font-bold shadow-[0_4px_20px_rgba(99,102,241,0.3)] hover:-translate-y-0.5 transition-all"
+            className={styles.runButton}
           >
-            <Play className="w-5 h-5 mr-3" />
+            <Play className={styles.runIcon} />
             ЗАПУСТИТИ АЛГОРИТМ
           </button>
         )}
@@ -163,35 +164,35 @@ export const AllocationDashboard: React.FC = () => {
 
       {/* Progress Bar Overlay / Section */}
       {isRunningAlgorithm && (
-        <div className="relative ui-card p-10 md:p-14 mb-8 overflow-hidden rounded-3xl border-0 shadow-[0_8px_32px_rgba(99,102,241,0.15)] bg-gradient-to-b from-[rgb(var(--surface))] to-[rgb(var(--surface-2))]">
+        <div className={styles.progressOverlay}>
           {/* Animated Background Glow */}
-          <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/20 rounded-full blur-[80px] animate-pulse"></div>
-          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-purple-500/20 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '1s' }}></div>
+          <div className={styles.bgGlow1}></div>
+          <div className={styles.bgGlow2}></div>
           
-          <div className="relative z-10 flex flex-col items-center text-center">
-            <div className="relative mb-6">
-              <div className="absolute inset-0 bg-indigo-500 rounded-full blur-md opacity-30 animate-pulse"></div>
-              <Loader2 className="w-12 h-12 animate-spin text-indigo-500 relative z-10" />
+          <div className={styles.progressContent}>
+            <div className={styles.loaderWrapper}>
+              <div className={styles.loaderGlow}></div>
+              <Loader2 className={styles.loaderIcon} />
             </div>
             
-            <h3 className="text-2xl font-black text-[rgb(var(--text))] mb-2 tracking-tight">
+            <h3 className={styles.progressTitle}>
               Робота AI алгоритму
             </h3>
-            <p className="text-[rgb(var(--muted))] text-sm font-medium max-w-sm mb-8">
+            <p className={styles.progressDesc}>
               Аналізуємо психометричні профілі та формуємо ідеальні кластери...
             </p>
             
-            <div className="w-full max-w-md">
-              <div className="flex justify-between items-end mb-3 px-1">
-                <span className="text-xs font-bold uppercase tracking-wider text-indigo-500">{progressStatus}</span>
-                <span className="text-indigo-500 font-mono font-bold text-xl">{progress}%</span>
+            <div className={styles.progressBarContainer}>
+              <div className={styles.progressHeader}>
+                <span className={styles.progressStatus}>{progressStatus}</span>
+                <span className={styles.progressPercentage}>{progress}%</span>
               </div>
-              <div className="h-3 w-full bg-[rgb(var(--border)/0.2)] rounded-full overflow-hidden backdrop-blur-sm">
+              <div className={styles.progressTrack}>
                 <div 
-                  className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 transition-all duration-700 ease-out relative rounded-full bg-[length:200%_100%] animate-[gradient_2s_linear_infinite]"
+                  className={styles.progressFill}
                   style={{ width: `${progress}%` }}
                 >
-                  <div className="absolute inset-0 bg-white/20 animate-[shimmer_1.5s_infinite]"></div>
+                  <div className={styles.progressShimmer}></div>
                 </div>
               </div>
             </div>
@@ -201,74 +202,74 @@ export const AllocationDashboard: React.FC = () => {
 
       {/* Results View */}
       {results && (
-        <div className="space-y-8 animate-fadeIn">
-          <div className="flex flex-col lg:flex-row justify-between lg:items-center gap-6 ui-card p-6 md:p-8 border-l-4 border-green-500">
-            <div className="flex items-center">
-              <div className="w-16 h-16 rounded-2xl nm-raised bg-[rgb(var(--surface))] flex items-center justify-center mr-6 flex-shrink-0 text-green-500">
-                <CheckCircle2 className="w-8 h-8" />
+        <div className={styles.resultsView}>
+          <div className={styles.successCard}>
+            <div className={styles.successInfo}>
+              <div className={styles.successIconWrapper}>
+                <CheckCircle2 className={styles.successIcon} />
               </div>
               <div>
-                <h3 className="text-2xl font-bold text-[rgb(var(--text))] mb-1">Розподіл завершено</h3>
-                <p className="text-sm font-medium ui-muted">Згенеровано попередній план поселення. Перевірте результати.</p>
+                <h3 className={styles.successTitle}>Розподіл завершено</h3>
+                <p className={styles.successDesc}>Згенеровано попередній план поселення. Перевірте результати.</p>
               </div>
             </div>
             <button 
               onClick={confirmAllocation}
               disabled={isConfirming}
-              className="flex items-center justify-center px-8 py-4 bg-green-500 text-white rounded-2xl font-bold shadow-[0_4px_20px_rgba(34,197,94,0.3)] hover:-translate-y-0.5 transition-all disabled:opacity-50"
+              className={styles.confirmBtn}
             >
-              <FileCheck className="w-5 h-5 mr-3" />
+              <FileCheck className={styles.confirmIcon} />
               {isConfirming ? 'ЗАТВЕРДЖЕННЯ...' : 'ЗАТВЕРДИТИ НАКАЗ'}
             </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+          <div className={styles.roomsGrid}>
             {results.map(result => (
-              <div key={result.roomId} className="ui-card p-6 md:p-8 flex flex-col">
-                <div className="flex justify-between items-start mb-6 border-b border-[rgb(var(--border)/0.2)] pb-6">
+              <div key={result.roomId} className={styles.roomCard}>
+                <div className={styles.roomHeader}>
                   <div>
-                    <h4 className="font-black text-2xl text-[rgb(var(--text))]">Кімната {result.roomNumber}</h4>
-                    <p className="text-xs font-bold uppercase tracking-wider ui-muted mt-2">Місткість: {result.capacity} місця</p>
+                    <h4 className={styles.roomTitle}>Кімната {result.roomNumber}</h4>
+                    <p className={styles.roomCapacity}>Місткість: {result.capacity} місця</p>
                   </div>
-                  <div className="text-right flex-shrink-0">
-                    <div className="flex items-center px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-500/10 text-indigo-500 nm-inset-sm">
-                      <TrendingUp className="w-4 h-4 mr-1.5" />
+                  <div className={styles.roomScore}>
+                    <div className={styles.scoreBadge}>
+                      <TrendingUp className={styles.scoreIcon} />
                       {result.compatibilityScore}%
                     </div>
                   </div>
                 </div>
 
-                <div className="space-y-4 flex-1">
+                <div className={styles.studentsList}>
                   {result.students.map((st, idx) => (
-                    <div key={st.id} className="group flex items-center bg-[rgb(var(--surface))] nm-flat p-4 rounded-2xl hover:nm-raised-sm transition-all relative">
-                      <div className="w-10 h-10 rounded-xl nm-inset-sm bg-[rgb(var(--surface-2))] flex items-center justify-center text-sm font-black text-[rgb(var(--accent))] mr-4 flex-shrink-0">
+                    <div key={st.id} className={styles.studentItem}>
+                      <div className={styles.studentIdx}>
                         {idx + 1}
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-bold text-[rgb(var(--text))] truncate">{st.user?.lastName} {st.user?.firstName}</p>
-                        <p className="text-xs font-medium text-[rgb(var(--muted))] flex items-center mt-1">
-                          AHP: <span className="font-mono font-bold text-indigo-500 ml-1">{st.priorityScore.toFixed(1)}</span>
+                      <div className={styles.studentInfo}>
+                        <p className={styles.studentName}>{st.user?.lastName} {st.user?.firstName}</p>
+                        <p className={styles.studentAhp}>
+                          AHP: <span className={styles.ahpScore}>{st.priorityScore.toFixed(1)}</span>
                         </p>
                       </div>
                       <button 
                         onClick={() => handleRemoveStudent(result.roomId, st.id)}
-                        className="opacity-0 group-hover:opacity-100 w-8 h-8 rounded-full nm-flat hover:nm-inset-sm text-red-500 flex items-center justify-center transition-all ml-2 flex-shrink-0"
+                        className={styles.removeBtn}
                         title="Вилучити з кімнати"
                       >
-                        <X className="w-3 h-3" />
+                        <X className={styles.removeIcon} />
                       </button>
                     </div>
                   ))}
                   
                   {/* Manual Assignment Slot */}
                   {result.students.length < result.capacity && unassignedStudents.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-dashed border-[rgb(var(--border)/0.3)]">
+                    <div className={styles.manualSlot}>
                       <select 
                         onChange={(e) => {
                           if (e.target.value) handleAddStudent(result.roomId, e.target.value);
                           e.target.value = '';
                         }}
-                        className="w-full ui-input text-xs py-2 bg-[rgb(var(--surface-2))]"
+                        className={styles.manualSelect}
                       >
                         <option value="">Додати студента з пулу...</option>
                         {unassignedStudents.map(s => (
@@ -280,9 +281,9 @@ export const AllocationDashboard: React.FC = () => {
 
                   {/* Empty beds placeholders */}
                   {Array.from({ length: Math.max(0, result.capacity - (result.currentOccupancy || 0) - result.students.length) }).map((_, i) => (
-                    <div key={`empty-${i}`} className="flex items-center border-2 border-dashed border-[rgb(var(--border)/0.3)] bg-[rgb(var(--surface-2))] nm-inset-sm p-4 rounded-2xl opacity-60">
-                      <div className="w-10 h-10 rounded-xl border-2 border-dashed border-[rgb(var(--border)/0.5)] flex items-center justify-center mr-4 flex-shrink-0"></div>
-                      <span className="text-sm font-bold text-[rgb(var(--muted))]">Вільне місце</span>
+                    <div key={`empty-${i}`} className={styles.emptyBed}>
+                      <div className={styles.emptyBedIcon}></div>
+                      <span className={styles.emptyBedText}>Вільне місце</span>
                     </div>
                   ))}
                 </div>
@@ -292,16 +293,16 @@ export const AllocationDashboard: React.FC = () => {
 
           {/* Manual Unassigned Pool */}
           {unassignedStudents.length > 0 && (
-            <div className="ui-card p-6 md:p-8 border-l-4 border-indigo-500 bg-indigo-500/5">
-              <div className="flex items-center mb-4">
-                <Info className="w-5 h-5 text-indigo-500 mr-2" />
-                <h4 className="font-bold text-[rgb(var(--text))]">Нерозподілені студенти (ручне коригування)</h4>
+            <div className={styles.unassignedPool}>
+              <div className={styles.poolHeader}>
+                <Info className={styles.poolIcon} />
+                <h4 className={styles.poolTitle}>Нерозподілені студенти (ручне коригування)</h4>
               </div>
-              <div className="flex flex-wrap gap-3">
+              <div className={styles.poolTags}>
                 {unassignedStudents.map(s => (
-                  <div key={s.id} className="nm-flat bg-[rgb(var(--surface))] px-4 py-2 rounded-xl text-xs font-bold text-[rgb(var(--text))] flex items-center">
+                  <div key={s.id} className={styles.poolTag}>
                     {s.user?.lastName} {s.user?.firstName}
-                    <span className="ml-2 text-[rgb(var(--muted))]">({s.faculty})</span>
+                    <span className={styles.poolTagFaculty}>({s.faculty})</span>
                   </div>
                 ))}
               </div>
@@ -312,47 +313,47 @@ export const AllocationDashboard: React.FC = () => {
 
       {/* Pre-run Data Table */}
       {!results && !isRunningAlgorithm && (
-        <div className="ui-card overflow-hidden transition-colors p-1">
-          <div className="p-6 border-b border-[rgb(var(--border)/0.2)] bg-[rgb(var(--surface-2))] flex items-center rounded-t-[31px]">
-            <Users className="w-6 h-6 text-[rgb(var(--accent))] mr-3" />
-            <h3 className="font-bold text-lg text-[rgb(var(--text))]">Пул студентів, готових до розподілу (Сортування за AHP пріоритетом)</h3>
+        <div className={styles.preRunTable}>
+          <div className={styles.tableHeader}>
+            <Users className={styles.tableHeaderIcon} />
+            <h3 className={styles.tableHeaderTitle}>Пул студентів, готових до розподілу (Сортування за AHP пріоритетом)</h3>
           </div>
-          <div className="overflow-x-auto bg-[rgb(var(--surface-2))] nm-inset-sm rounded-b-[31px] m-1 mt-0">
-            <table className="w-full text-left border-collapse min-w-[900px]">
+          <div className={styles.tableContainer}>
+            <table className={styles.table}>
               <thead>
-                <tr className="border-b border-[rgb(var(--border)/0.2)]">
-                  <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">Рейтинг</th>
-                  <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">Студент</th>
-                  <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">AHP Score (Пріоритет)</th>
-                  <th className="px-6 py-5 text-xs font-bold text-[rgb(var(--muted))] uppercase tracking-wider">AI Вектор (Психометрика)</th>
+                <tr className={styles.thRow}>
+                  <th className={styles.th}>Рейтинг</th>
+                  <th className={styles.th}>Студент</th>
+                  <th className={styles.th}>AHP Score (Пріоритет)</th>
+                  <th className={styles.th}>AI Вектор (Психометрика)</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[rgb(var(--border)/0.1)]">
+              <tbody className={styles.tbody}>
                 {students.map((student, index) => (
-                  <tr key={student.id} className="hover:bg-[rgb(var(--surface))] transition-colors">
-                    <td className="px-6 py-4">
-                      <span className="inline-flex items-center justify-center w-10 h-10 rounded-xl nm-raised bg-[rgb(var(--surface))] text-[rgb(var(--text))] font-black text-sm">
+                  <tr key={student.id} className={styles.tr}>
+                    <td className={styles.td}>
+                      <span className={styles.rankBadge}>
                         #{index + 1}
                       </span>
                     </td>
-                    <td className="px-6 py-4">
-                      <p className="text-sm font-bold text-[rgb(var(--text))]">{student.user?.lastName} {student.user?.firstName}</p>
-                      <p className="text-xs font-medium text-[rgb(var(--muted))] mt-1">{student.studentIdNumber} • {student.faculty}</p>
+                    <td className={styles.td}>
+                      <p className={styles.studentNameTd}>{student.user?.lastName} {student.user?.firstName}</p>
+                      <p className={styles.studentDescTd}>{student.studentIdNumber} • {student.faculty}</p>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center w-full max-w-[200px]">
-                        <div className="w-full bg-[rgb(var(--surface))] nm-inset-sm rounded-full h-2.5 mr-3">
-                          <div className="bg-indigo-500 h-2.5 rounded-full shadow-[inset_0_1px_2px_rgba(255,255,255,0.3)]" style={{ width: `${student.priorityScore}%` }}></div>
+                    <td className={styles.td}>
+                      <div className={styles.ahpContainer}>
+                        <div className={styles.ahpTrack}>
+                          <div className={styles.ahpFill} style={{ width: `${student.priorityScore}%` }}></div>
                         </div>
-                        <span className="text-sm font-mono font-bold text-indigo-500">{student.priorityScore.toFixed(1)}</span>
+                        <span className={styles.ahpText}>{student.priorityScore.toFixed(1)}</span>
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex space-x-2">
-                        <div title={`Хронотип: ${student.clusteringVector?.chronotype}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-blue-500 flex items-center justify-center text-xs font-bold border border-blue-500/20">{student.clusteringVector?.chronotype}</div>
-                        <div title={`Соціалізація: ${student.clusteringVector?.sociability}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-purple-500 flex items-center justify-center text-xs font-bold border border-purple-500/20">{student.clusteringVector?.sociability}</div>
-                        <div title={`Шум: ${student.clusteringVector?.noiseTolerance}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-orange-500 flex items-center justify-center text-xs font-bold border border-orange-500/20">{student.clusteringVector?.noiseTolerance}</div>
-                        <div title={`Чистота: ${student.clusteringVector?.cleanliness}`} className="w-8 h-8 rounded-lg nm-inset-sm bg-[rgb(var(--surface))] text-teal-500 flex items-center justify-center text-xs font-bold border border-teal-500/20">{student.clusteringVector?.cleanliness}</div>
+                    <td className={styles.td}>
+                      <div className={styles.vectorContainer}>
+                        <div title={`Хронотип: ${student.clusteringVector?.chronotype}`} className={`${styles.vectorBadge} ${styles.vectorBlue}`}>{student.clusteringVector?.chronotype}</div>
+                        <div title={`Соціалізація: ${student.clusteringVector?.sociability}`} className={`${styles.vectorBadge} ${styles.vectorPurple}`}>{student.clusteringVector?.sociability}</div>
+                        <div title={`Шум: ${student.clusteringVector?.noiseTolerance}`} className={`${styles.vectorBadge} ${styles.vectorOrange}`}>{student.clusteringVector?.noiseTolerance}</div>
+                        <div title={`Чистота: ${student.clusteringVector?.cleanliness}`} className={`${styles.vectorBadge} ${styles.vectorTeal}`}>{student.clusteringVector?.cleanliness}</div>
                       </div>
                     </td>
                   </tr>

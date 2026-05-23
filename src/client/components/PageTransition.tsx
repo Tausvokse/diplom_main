@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-
+import styles from './PageTransition.module.css';
 export const PageTransition: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <motion.div
@@ -8,7 +8,7 @@ export const PageTransition: React.FC<{ children: React.ReactNode }> = ({ childr
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -15 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
-      className="w-full h-full"
+      className={styles.container}
     >
       {children}
     </motion.div>

@@ -5,6 +5,7 @@ import { api } from '../../services/api';
 import { useAuthStore } from '../../store/authStore';
 import { AuthResponse } from '../../types';
 import { AuthBackground } from '../../components/AuthBackground';
+import styles from './Login.module.css';
 
 const Login: React.FC = () => {
   const navigate = useNavigate();
@@ -56,11 +57,11 @@ const Login: React.FC = () => {
 
   return (
     <AuthBackground>
-      <div className="flex items-center justify-center min-h-screen px-6">
-        <div className="ui-card p-8 w-full max-w-md animate-fadeIn">
-          <div className="text-center mb-8">
+      <div className={styles.container}>
+        <div className={styles.card}>
+          <div className={styles.header}>
             {/* Neumorphic logo badge */}
-            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[rgb(var(--surface))] nm-raised mb-4">
+            <div className={styles.logoBadge}>
               <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <rect x="4" y="8" width="24" height="20" rx="3" stroke="rgb(var(--accent))" strokeWidth="2" opacity="0.8" />
                 <rect x="4" y="8" width="24" height="6" rx="3" fill="rgb(var(--accent))" fillOpacity="0.15" stroke="rgb(var(--accent))" strokeWidth="2" opacity="0.6" />
@@ -68,45 +69,45 @@ const Login: React.FC = () => {
                 <rect x="18" y="18" width="5" height="5" rx="1" stroke="rgb(var(--accent))" strokeWidth="1.5" opacity="0.6" />
               </svg>
             </div>
-            <h1 className="text-2xl font-semibold text-[rgb(var(--text))] mb-2">Вхід до системи</h1>
-            <p className="text-sm ui-muted">Авторизуйтеся для доступу до кабінету</p>
+            <h1 className={styles.title}>Вхід до системи</h1>
+            <p className={styles.subtitle}>Авторизуйтеся для доступу до кабінету</p>
           </div>
           
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className={styles.form}>
             <div>
-              <label className="block text-sm font-medium ui-muted mb-1.5">Email</label>
+              <label className={styles.label}>Email</label>
               <input 
                 type="email" 
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="student@uni.edu"
-                className="ui-input"
+                className={styles.input}
               />
             </div>
             
             <div>
-              <label className="block text-sm font-medium ui-muted mb-1.5">Пароль</label>
+              <label className={styles.label}>Пароль</label>
               <input 
                 type="password" 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="ui-input"
+                className={styles.input}
               />
             </div>
 
             <button 
               type="submit"
               disabled={isLoading}
-              className="w-full ui-button ui-button-primary py-3 mt-2"
+              className={styles.button}
             >
-              {isLoading ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : 'Увійти'}
+              {isLoading ? <div className={styles.spinner}></div> : 'Увійти'}
             </button>
           </form>
 
-          <div className="mt-8 text-center text-sm ui-muted">
+          <div className={styles.footer}>
             Ще не маєте акаунту?{' '}
-            <Link to="/register" className="text-[rgb(var(--accent))] hover:text-[rgb(var(--accent-strong))] font-medium hover:underline">
+            <Link to="/register" className={styles.link}>
               Зареєструватися
             </Link>
           </div>

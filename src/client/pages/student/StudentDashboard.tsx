@@ -7,6 +7,7 @@ import { Application, GroupReferral } from '../../types';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import InputMask from 'react-input-mask';
+import styles from './StudentDashboard.module.css';
 
 export const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -72,12 +73,12 @@ export const StudentDashboard: React.FC = () => {
   const renderApplicationStatus = () => {
     if (!application) {
       return (
-        <div className="ui-card p-8 flex flex-col items-center text-center">
-          <div className="w-20 h-20 rounded-full nm-inset flex items-center justify-center mb-5 bg-[rgb(var(--surface-2))]">
-            <AlertCircle className="w-10 h-10 text-[rgb(var(--muted))]" />
+        <div className={`ui-card ${styles.emptyStateCard}`}>
+          <div className={`${styles.emptyStateIconBox} nm-inset`}>
+            <AlertCircle className={styles.emptyStateIconSvg} />
           </div>
-          <h3 className="text-xl font-semibold text-[rgb(var(--text))] mb-3">Заява не подана</h3>
-          <p className="text-sm ui-muted mb-8 max-w-sm">Ви ще не подали заяву на поселення в гуртожиток. Зробіть це зараз, щоб забронювати місце.</p>
+          <h3 className={styles.emptyStateTitle}>Заява не подана</h3>
+          <p className={`ui-muted ${styles.emptyStateDesc}`}>Ви ще не подали заяву на поселення в гуртожиток. Зробіть це зараз, щоб забронювати місце.</p>
           <button
             onClick={() => navigate('/student/application')}
             className="ui-button ui-button-primary px-8 py-3"
@@ -105,21 +106,21 @@ export const StudentDashboard: React.FC = () => {
     }[application.type as string] || '';
 
     return (
-      <div className="ui-card p-6">
-        <h3 className="text-lg font-semibold text-[rgb(var(--text))] mb-6">Статус вашої заяви {appTypeLabel}</h3>
-        <div className={`flex items-center p-5 rounded-2xl nm-inset-sm ${config.bg}`}>
-          <div className={`w-12 h-12 rounded-full flex items-center justify-center bg-[rgb(var(--surface))] nm-raised-xs mr-4`}>
+      <div className={`ui-card ${styles.statusCard}`}>
+        <h3 className={styles.statusTitle}>Статус вашої заяви {appTypeLabel}</h3>
+        <div className={`${styles.statusBox} nm-inset-sm ${config.bg}`}>
+          <div className={`${styles.statusIconBox} nm-raised-xs`}>
             <StatusIcon className={`w-6 h-6 ${config.color}`} />
           </div>
           <div>
-            <p className="text-[11px] font-bold tracking-wider uppercase ui-muted mb-1">Поточний статус</p>
-            <p className={`text-lg font-bold ${config.color}`}>{config.text}</p>
+            <p className={styles.statusLabel}>Поточний статус</p>
+            <p className={`${styles.statusValue} ${config.color}`}>{config.text}</p>
           </div>
         </div>
         {application.status === 'REJECTED' && application.rejectionReason && (
-          <div className="mt-5 p-4 bg-red-50/50 dark:bg-red-900/10 nm-inset-sm rounded-xl border-l-4 border-red-500">
-            <p className="text-xs font-bold uppercase tracking-wider text-red-800 dark:text-red-300 mb-1.5">Причина відхилення:</p>
-            <p className="text-sm text-red-600 dark:text-red-400">{application.rejectionReason}</p>
+          <div className={`${styles.rejectionBox} nm-inset-sm`}>
+            <p className={styles.rejectionLabel}>Причина відхилення:</p>
+            <p className={styles.rejectionText}>{application.rejectionReason}</p>
           </div>
         )}
       </div>
@@ -128,9 +129,9 @@ export const StudentDashboard: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
+      <div className={styles.container}>
         <Skeleton height={80} borderRadius={16} />
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        <div className={styles.grid}>
           <Skeleton height={300} borderRadius={24} />
           <Skeleton height={300} borderRadius={24} />
         </div>
@@ -139,50 +140,50 @@ export const StudentDashboard: React.FC = () => {
   }
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-6">
-      <header className="mb-8">
-        <h1 className="text-3xl font-bold text-[rgb(var(--text))] mb-2 tracking-tight">Особистий кабінет студента</h1>
-        <p className="text-sm ui-muted">Керуйте своїми заявами та налаштуваннями поселення</p>
+    <div className={styles.container}>
+      <header className={styles.header}>
+        <h1 className={styles.pageTitle}>Особистий кабінет студента</h1>
+        <p className={styles.pageSubtitle}>Керуйте своїми заявами та налаштуваннями поселення</p>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className={styles.grid}>
         {/* Application Status Widget */}
         {renderApplicationStatus()}
 
         {/* Co-living Widget */}
-        <div className="ui-card p-6 flex flex-col">
-          <div className="flex items-center mb-5">
-            <div className="w-10 h-10 rounded-xl nm-raised flex items-center justify-center mr-4 bg-[rgb(var(--surface))]">
-              <Users className="w-5 h-5 text-[rgb(var(--accent))]" />
+        <div className={`ui-card ${styles.colivingCard}`}>
+          <div className={styles.colivingHeader}>
+            <div className={`${styles.colivingIconBox} nm-raised`}>
+              <Users className={styles.colivingIconSvg} />
             </div>
-            <h3 className="text-lg font-semibold text-[rgb(var(--text))]">Co-living (Мікро-групи)</h3>
+            <h3 className={styles.colivingTitle}>Co-living (Мікро-групи)</h3>
           </div>
-          <p className="text-sm ui-muted mb-6 leading-relaxed">
+          <p className={`ui-muted ${styles.colivingDesc}`}>
             Бажаєте жити з друзями? Створіть групу або приєднайтеся до існуючої за допомогою реферального коду. Система врахує це під час розподілу кімнат.
           </p>
 
-          <div className="flex-1 flex flex-col justify-end">
+          <div className={styles.colivingContent}>
             {group ? (
-              <div className="space-y-4">
-                <div className="p-5 nm-inset-sm bg-[rgb(var(--surface-2))] rounded-2xl">
-                  <p className="text-[10px] text-[rgb(var(--accent))] font-bold uppercase tracking-widest mb-3">Ваша група</p>
-                  <div className="flex items-center justify-between bg-[rgb(var(--surface))] nm-raised-xs p-2 pl-4 rounded-xl mb-5">
-                    <span className="font-mono text-xl font-bold tracking-[0.2em] text-[rgb(var(--text))]">{group.code}</span>
+              <div className={styles.groupInfo}>
+                <div className={`${styles.groupCodeBox} nm-inset-sm`}>
+                  <p className={styles.groupCodeLabel}>Ваша група</p>
+                  <div className={`${styles.groupCodeDisplay} nm-raised-xs`}>
+                    <span className={styles.groupCodeText}>{group.code}</span>
                     <button
                       onClick={() => copyToClipboard(group.code)}
-                      className="w-10 h-10 flex items-center justify-center text-[rgb(var(--accent))] nm-flat hover:nm-raised active:nm-inset-sm rounded-lg transition-all"
+                      className={`${styles.copyButton} nm-flat hover:nm-raised active:nm-inset-sm`}
                       title="Скопіювати код"
                     >
                       <Copy className="w-5 h-5" />
                     </button>
                   </div>
                   <div>
-                    <p className="text-xs font-semibold text-[rgb(var(--text))] mb-3 uppercase tracking-wider">Учасники ({group.currentMembers}/{group.maxMembers}):</p>
-                    <ul className="space-y-2">
+                    <p className={styles.membersLabel}>Учасники ({group.currentMembers}/{group.maxMembers}):</p>
+                    <ul className={styles.membersList}>
                       {group.members.map(member => (
-                        <li key={member.id} className="text-sm text-[rgb(var(--text))] flex items-center p-2.5 rounded-lg nm-flat bg-[rgb(var(--surface))]">
-                          <CheckCircle className="w-4 h-4 text-[rgb(var(--accent))] mr-3" />
-                          {member.user?.firstName} {member.user?.lastName} <span className="ui-muted ml-2 text-xs">({member.studentIdNumber})</span>
+                        <li key={member.id} className={`${styles.memberItem} nm-flat`}>
+                          <CheckCircle className={styles.memberIconSvg} />
+                          {member.user?.firstName} {member.user?.lastName} <span className={styles.memberId}>({member.studentIdNumber})</span>
                         </li>
                       ))}
                     </ul>
@@ -190,42 +191,42 @@ export const StudentDashboard: React.FC = () => {
                 </div>
               </div>
             ) : (
-              <div className="space-y-6">
+              <div className={styles.groupActions}>
                 <div>
                   <button
                     onClick={handleGenerateGroup}
                     disabled={isGeneratingGroup}
-                    className="w-full flex items-center justify-center px-4 py-4 border-2 border-dashed border-[rgb(var(--border)/0.5)] text-[rgb(var(--text))] rounded-2xl nm-flat hover:nm-inset-sm hover:text-[rgb(var(--accent))] transition-all disabled:opacity-50 font-semibold"
+                    className={`${styles.generateButton} nm-flat hover:nm-inset-sm`}
                   >
                     <Plus className="w-5 h-5 mr-2" />
                     {isGeneratingGroup ? 'Генерація...' : 'Створити нову групу'}
                   </button>
                 </div>
                 
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full h-px bg-[rgb(var(--border)/0.5)]"></div>
+                <div className={styles.divider}>
+                  <div className={styles.dividerLineWrapper}>
+                    <div className={styles.dividerLine}></div>
                   </div>
-                  <div className="relative flex justify-center text-[10px] font-bold uppercase tracking-widest">
-                    <span className="px-4 bg-[rgb(var(--surface))] text-[rgb(var(--muted))] rounded-full nm-flat border border-[rgb(var(--surface))]">АБО</span>
+                  <div className={styles.dividerTextWrapper}>
+                    <span className={`${styles.dividerText} nm-flat`}>АБО</span>
                   </div>
                 </div>
 
-                <div className="bg-[rgb(var(--surface-2))] nm-inset-sm p-4 rounded-2xl">
-                  <label className="block text-xs font-bold uppercase tracking-wider ui-muted mb-3">Приєднатися до групи</label>
-                  <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3">
+                <div className={`${styles.joinBox} nm-inset-sm`}>
+                  <label className={`ui-muted ${styles.joinLabel}`}>Приєднатися до групи</label>
+                  <div className={styles.joinInputWrapper}>
                     <InputMask
                       mask="******"
                       maskChar=""
                       value={joinCode}
                       onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
                       placeholder="ВВЕДІТЬ КОД"
-                      className="flex-1 ui-input uppercase font-mono text-center tracking-[0.2em] font-bold h-12"
+                      className={`ui-input ${styles.joinInput}`}
                     />
                     <button
                       onClick={handleJoinGroup}
                       disabled={isJoiningGroup || !joinCode.trim()}
-                      className="px-6 ui-button ui-button-primary h-12 disabled:opacity-50"
+                      className={`ui-button ui-button-primary ${styles.joinButton}`}
                     >
                       {isJoiningGroup ? 'Приєднання...' : 'Приєднатися'}
                     </button>

@@ -6,6 +6,7 @@ import { Dormitory, Room, RoomStatus } from '../../types';
 import { api } from '../../services/api';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import styles from './DormitoryManager.module.css';
 
 interface AllocationCandidate {
   id: string;
@@ -184,12 +185,12 @@ export const DormitoryManager: React.FC = () => {
 
   const getStatusBadge = (status: RoomStatus) => {
     const config = {
-      AVAILABLE: { color: 'text-green-500 bg-green-500/10', label: 'Доступна' },
-      FULL: { color: 'text-red-500 bg-red-500/10', label: 'Заповнена' },
-      MAINTENANCE: { color: 'text-yellow-500 bg-yellow-500/10', label: 'Ремонт' }
+      AVAILABLE: { color: styles.statusGreen, label: 'Доступна' },
+      FULL: { color: styles.statusRed, label: 'Заповнена' },
+      MAINTENANCE: { color: styles.statusYellow, label: 'Ремонт' }
     };
     const c = config[status];
-    return <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider nm-inset-sm ${c.color}`}>{c.label}</span>;
+    return <span className={`${styles.statusBadge} ${c.color}`}>{c.label}</span>;
   };
 
   const availableSeats = selectedRoom ? Math.max(0, selectedRoom.capacity - selectedRoom.currentOccupancy) : 0;
@@ -206,7 +207,7 @@ export const DormitoryManager: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+      <div className={styles.loadingContainer}>
         <Skeleton height={28} width={220} />
         <Skeleton height={240} />
       </div>
@@ -214,15 +215,15 @@ export const DormitoryManager: React.FC = () => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-      <header className="mb-8 flex justify-between items-center">
+    <div className={styles.container}>
+      <header className={styles.header}>
         <div>
-          <h1 className="text-3xl font-bold text-[rgb(var(--text))] tracking-tight mb-2">Управління фондом</h1>
-          <p className="ui-muted text-sm">Візуальний конструктор та моніторинг стану кімнат</p>
+          <h1 className={styles.pageTitle}>Управління фондом</h1>
+          <p className={styles.pageSubtitle}>Візуальний конструктор та моніторинг стану кімнат</p>
         </div>
       </header>
 
-      <div className="ui-card p-6 md:p-8">
+      <div className={`ui-card ${styles.card}`}>
         <motion.div 
           initial="hidden" 
           animate="visible" 
@@ -234,24 +235,24 @@ export const DormitoryManager: React.FC = () => {
         {dormitories.map(dorm => (
           <motion.div 
             key={dorm.id} 
-            className="mb-6 select-none"
+            className={styles.dormitoryItem}
             variants={{
               hidden: { opacity: 0, y: 15 },
               visible: { opacity: 1, y: 0 }
             }}
           >
             <div 
-              className="flex items-center p-4 nm-flat bg-[rgb(var(--surface))] rounded-2xl cursor-pointer hover:nm-inset-sm transition-all"
+              className={styles.dormitoryHeader}
               onClick={() => toggleNode(dorm.id)}
             >
-              <div className="w-8 h-8 flex items-center justify-center mr-2">
-                {expandedNodes.has(dorm.id) ? <ChevronDown className="w-5 h-5 text-[rgb(var(--muted))]" /> : <ChevronRight className="w-5 h-5 text-[rgb(var(--muted))]" />}
+              <div className={styles.expandIconWrapper}>
+                {expandedNodes.has(dorm.id) ? <ChevronDown className={styles.expandIcon} /> : <ChevronRight className={styles.expandIcon} />}
               </div>
-              <div className="w-10 h-10 rounded-xl nm-inset-sm bg-[rgb(var(--surface-2))] flex items-center justify-center mr-4">
-                <Building className="w-5 h-5 text-[rgb(var(--accent))]" />
+              <div className={styles.dormIconWrapper}>
+                <Building className={styles.dormIcon} />
               </div>
-              <span className="font-bold text-lg text-[rgb(var(--text))]">{dorm.name}</span>
-              <span className="ml-auto text-xs font-bold uppercase tracking-wider ui-pill nm-inset-sm">{dorm.totalCapacity} місць</span>
+              <span className={styles.dormName}>{dorm.name}</span>
+              <span className={`ui-pill nm-inset-sm ${styles.capacityBadge}`}>{dorm.totalCapacity} місць</span>
             </div>
 
             <AnimatePresence>
@@ -260,18 +261,18 @@ export const DormitoryManager: React.FC = () => {
                 initial={{ opacity: 0, height: 0 }}
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
-                className="ml-12 mt-4 space-y-4 border-l-2 border-[rgb(var(--border)/0.2)] pl-6 overflow-hidden"
+                className={styles.floorsContainer}
               >
                 {dorm.floors.map(floor => (
                   <div key={floor.id}>
                     <div 
-                      className="flex items-center p-3 rounded-xl cursor-pointer hover:bg-[rgb(var(--surface-2))] transition-colors"
+                      className={styles.floorHeader}
                       onClick={() => toggleNode(floor.id)}
                     >
-                      {expandedNodes.has(floor.id) ? <ChevronDown className="w-4 h-4 text-[rgb(var(--muted))] mr-3" /> : <ChevronRight className="w-4 h-4 text-[rgb(var(--muted))] mr-3" />}
-                      <Layers className="w-4 h-4 text-blue-500 mr-3" />
-                      <span className="font-bold text-[rgb(var(--text))]">Поверх {floor.floorNumber}</span>
-                      <span className="ml-auto text-xs font-medium ui-muted">{floor.rooms.reduce((acc, r) => acc + r.capacity, 0)} місць ({floor.rooms.length} кімнат)</span>
+                      {expandedNodes.has(floor.id) ? <ChevronDown className={styles.floorExpandIcon} /> : <ChevronRight className={styles.floorExpandIcon} />}
+                      <Layers className={styles.floorIcon} />
+                      <span className={styles.floorName}>Поверх {floor.floorNumber}</span>
+                      <span className={styles.floorCapacity}>{floor.rooms.reduce((acc, r) => acc + r.capacity, 0)} місць ({floor.rooms.length} кімнат)</span>
                     </div>
 
                     <AnimatePresence>
@@ -284,7 +285,7 @@ export const DormitoryManager: React.FC = () => {
                           hidden: { opacity: 0, height: 0 },
                           visible: { opacity: 1, height: 'auto', transition: { staggerChildren: 0.05 } }
                         }}
-                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 py-4 pl-4 overflow-hidden"
+                        className={styles.roomsGrid}
                       >
                         {floor.rooms.map(room => (
                           <motion.div 
@@ -295,19 +296,19 @@ export const DormitoryManager: React.FC = () => {
                             }}
                             whileHover={{ scale: 1.02 }}
                             onClick={() => openRoomDetails(room)}
-                            className="nm-flat bg-[rgb(var(--surface))] rounded-2xl p-5 transition-all cursor-pointer flex flex-col justify-between min-h-[140px]"
+                            className={styles.roomCard}
                           >
-                            <div className="flex justify-between items-start mb-4">
-                              <div className="flex items-center">
-                                <DoorOpen className="w-4 h-4 text-[rgb(var(--muted))] mr-2" />
-                                <span className="font-black text-[rgb(var(--text))] text-lg">{room.roomNumber}</span>
+                            <div className={styles.roomHeader}>
+                              <div className={styles.flexCenter}>
+                                <DoorOpen className={styles.roomIcon} />
+                                <span className={styles.roomNumber}>{room.roomNumber}</span>
                               </div>
                               {editingRoomId === room.id ? (
                                 <div onClick={e => e.stopPropagation()}>
                                   <select 
                                     value={selectedStatus}
                                     onChange={(e) => setSelectedStatus(e.target.value as RoomStatus)}
-                                    className="text-xs ui-input py-1 px-2 min-h-0 h-auto"
+                                    className={`ui-input ${styles.statusSelect}`}
                                   >
                                     <option value="AVAILABLE">Доступна</option>
                                     <option value="FULL">Заповнена</option>
@@ -319,17 +320,17 @@ export const DormitoryManager: React.FC = () => {
                               )}
                             </div>
 
-                            <div className="flex justify-between items-end mt-auto">
-                              <div className="bg-[rgb(var(--surface-2))] nm-inset-sm px-3 py-1.5 rounded-lg flex items-center">
-                                <Users className="w-3.5 h-3.5 mr-2 text-[rgb(var(--muted))]" />
-                                <span className="font-bold text-[rgb(var(--text))] text-sm">{room.currentOccupancy}</span>
-                                <span className="text-[rgb(var(--muted))] text-sm ml-1">/ {room.capacity}</span>
+                            <div className={styles.roomFooter}>
+                              <div className={styles.occupancyBadge}>
+                                <Users className={styles.occupancyIcon} />
+                                <span className={styles.currentOccupancy}>{room.currentOccupancy}</span>
+                                <span className={styles.totalOccupancy}>/ {room.capacity}</span>
                               </div>
                               
-                              <div className="flex space-x-2">
+                              <div className={styles.actions}>
                                 <button 
                                   onClick={(e) => handleDeleteRoom(e, room.id)}
-                                  className="w-8 h-8 flex items-center justify-center text-red-500 nm-flat rounded-lg hover:nm-inset-sm transition-all"
+                                  className={`${styles.btnAction} ${styles.btnDelete}`}
                                   title="Видалити кімнату"
                                 >
                                   <span className="font-bold">&times;</span>
@@ -337,18 +338,18 @@ export const DormitoryManager: React.FC = () => {
                                 {editingRoomId === room.id ? (
                                   <button 
                                     onClick={(e) => saveRoomStatus(e, room.id)}
-                                    className="w-8 h-8 flex items-center justify-center text-green-500 nm-flat rounded-lg hover:nm-inset-sm transition-all"
+                                    className={`${styles.btnAction} ${styles.btnSave}`}
                                     title="Зберегти"
                                   >
-                                    <Check className="w-4 h-4" />
+                                    <Check className={styles.actionIcon} />
                                   </button>
                                 ) : (
                                   <button 
                                     onClick={(e) => startEditingRoom(e, room)}
-                                    className="w-8 h-8 flex items-center justify-center text-[rgb(var(--muted))] nm-flat rounded-lg hover:nm-inset-sm transition-all"
+                                    className={`${styles.btnAction} ${styles.btnEdit}`}
                                     title="Змінити статус"
                                   >
-                                    <Edit2 className="w-4 h-4" />
+                                    <Edit2 className={styles.actionIcon} />
                                   </button>
                                 )}
                               </div>
@@ -368,63 +369,63 @@ export const DormitoryManager: React.FC = () => {
         </motion.div>
       </div>
       {dormitories.length === 0 && (
-          <div className="text-center text-[rgb(var(--muted))] font-medium py-12 nm-inset-sm bg-[rgb(var(--surface-2))] rounded-3xl">
+          <div className={styles.emptyState}>
             Немає даних про гуртожитки. Переконайтесь, що ви запустили seed-скрипт.
           </div>
         )}
       {/* Room Details Modal */}
       {isRoomModalOpen && selectedRoom && (
-        <div className="nm-modal-backdrop p-4">
-          <div className="nm-modal-content w-full max-w-3xl animate-slideUp">
-            <div className="px-6 py-5 border-b border-[rgb(var(--border)/0.2)] flex justify-between items-center bg-[rgb(var(--surface-2))]">
-              <h3 className="text-xl font-bold text-[rgb(var(--text))] flex items-center">
-                <div className="w-10 h-10 rounded-xl nm-raised flex items-center justify-center mr-4 bg-[rgb(var(--surface))]">
+        <div className={styles.modalBackdrop}>
+          <div className={styles.modalContent}>
+            <div className={styles.modalHeader}>
+              <h3 className={styles.modalTitle}>
+                <div className={styles.modalIconWrapper}>
                   <DoorOpen className="w-5 h-5 text-[rgb(var(--accent))]" />
                 </div>
                 Деталі кімнати {selectedRoom.roomNumber}
               </h3>
-              <button onClick={() => setIsRoomModalOpen(false)} className="w-10 h-10 nm-flat hover:nm-inset-sm rounded-full flex items-center justify-center text-[rgb(var(--muted))] transition-all">
+              <button onClick={() => setIsRoomModalOpen(false)} className={styles.closeBtn}>
                 <span className="sr-only">Закрити</span>
                 <X className="w-5 h-5" />
               </button>
             </div>
             
-            <div className="p-6 md:p-8 space-y-8">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="nm-inset-sm bg-[rgb(var(--surface-2))] p-5 rounded-2xl flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider ui-muted">Статус</p>
+            <div className={styles.modalBody}>
+              <div className={styles.statsGrid}>
+                <div className={styles.statCard}>
+                  <p className={styles.statLabel}>Статус</p>
                   <div>{getStatusBadge(selectedRoom.status)}</div>
                 </div>
-                <div className="nm-inset-sm bg-[rgb(var(--surface-2))] p-5 rounded-2xl flex items-center justify-between">
-                  <p className="text-xs font-bold uppercase tracking-wider ui-muted">Заповненість</p>
-                  <p className="font-bold text-lg text-[rgb(var(--text))]">{selectedRoom.currentOccupancy} <span className="text-sm ui-muted">з {selectedRoom.capacity}</span></p>
+                <div className={styles.statCard}>
+                  <p className={styles.statLabel}>Заповненість</p>
+                  <p className={styles.statValue}>{selectedRoom.currentOccupancy} <span className={styles.statSubValue}>з {selectedRoom.capacity}</span></p>
                 </div>
               </div>
 
-              <div className="nm-flat bg-[rgb(var(--surface))] p-6 rounded-3xl">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-6">
-                  <h4 className="font-bold text-lg text-[rgb(var(--text))] flex items-center">
+              <div className={styles.allocateSection}>
+                <div className={styles.allocateHeader}>
+                  <h4 className={styles.allocateTitle}>
                     <UserPlus className="w-5 h-5 mr-2 text-[rgb(var(--accent))]" /> Заселити студента
                   </h4>
-                  <span className="text-xs font-bold uppercase tracking-wider px-3 py-1 bg-[rgb(var(--accent-soft))] text-[rgb(var(--accent))] rounded-full nm-inset-sm">Вільні місця: {availableSeats}</span>
+                  <span className={styles.availableSeatsBadge}>Вільні місця: {availableSeats}</span>
                 </div>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
-                  <div className="lg:col-span-5">
+                <div className={styles.allocateGrid}>
+                  <div className={styles.allocateCol5}>
                     <input
                       type="text"
                       placeholder="Пошук за ПІБ, квитком..."
                       value={poolSearch}
                       onChange={(e) => setPoolSearch(e.target.value)}
-                      className="ui-input w-full bg-[rgb(var(--surface-2))]"
+                      className={`ui-input ${styles.allocateInput}`}
                     />
                   </div>
-                  <div className="lg:col-span-5">
+                  <div className={styles.allocateCol5}>
                     <select
                       value={selectedStudentId}
                       onChange={(e) => setSelectedStudentId(e.target.value)}
                       disabled={isPoolLoading || !isRoomAssignable}
-                      className="ui-input w-full bg-[rgb(var(--surface-2))]"
+                      className={`ui-input ${styles.allocateInput}`}
                     >
                       <option value="">{isPoolLoading ? 'Завантаження пулу...' : 'Оберіть студента'}</option>
                       {filteredPool.slice(0, 50).map(student => (
@@ -434,59 +435,59 @@ export const DormitoryManager: React.FC = () => {
                       ))}
                     </select>
                   </div>
-                  <div className="lg:col-span-2">
+                  <div className={styles.allocateCol2}>
                     <button
                       onClick={handleAllocateStudent}
                       disabled={!isRoomAssignable || isAllocating || !selectedStudentId}
-                      className="ui-button ui-button-primary w-full h-full min-h-[48px] px-2 py-0"
+                      className={`ui-button ui-button-primary ${styles.btnAllocate}`}
                     >
                       {isAllocating ? '...' : 'Заселити'}
                     </button>
                   </div>
                 </div>
                 {!isRoomAssignable && (
-                  <p className="text-xs font-bold text-red-500 mt-4 flex items-center">
+                  <p className={styles.errorText}>
                     * Заселення недоступне: {selectedRoom.status === 'MAINTENANCE' ? 'кімната на ремонті' : 'немає вільних місць'}.
                   </p>
                 )}
                 {isRoomAssignable && !isPoolLoading && allocationPool.length === 0 && (
-                  <p className="text-xs font-bold text-yellow-500 mt-4">
+                  <p className={styles.warningText}>
                     * Пул студентів порожній або немає схвалених заяв.
                   </p>
                 )}
               </div>
 
               <div>
-                <h4 className="font-bold text-lg text-[rgb(var(--text))] mb-6 flex items-center">
+                <h4 className={styles.studentsTitle}>
                   <Users className="w-5 h-5 mr-3 text-[rgb(var(--accent))]" /> Мешканці
                 </h4>
                 
                 {isModalLoading ? (
-                  <div className="text-center font-bold tracking-widest text-[rgb(var(--muted))] py-8 uppercase text-xs">Завантаження...</div>
+                  <div className={styles.loadingText}>Завантаження...</div>
                 ) : roomStudents.length === 0 ? (
-                  <div className="text-center text-[rgb(var(--muted))] py-10 bg-[rgb(var(--surface-2))] nm-inset-sm rounded-2xl font-medium text-sm">
+                  <div className={styles.emptyStudents}>
                     Кімната порожня. Додайте студентів через систему розподілу.
                   </div>
                 ) : (
-                  <ul className="space-y-4">
+                  <ul className={styles.studentsList}>
                     {roomStudents.map(student => (
-                      <li key={student.id} className="p-4 nm-inset-sm bg-[rgb(var(--surface-2))] rounded-2xl flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 rounded-full nm-flat bg-[rgb(var(--surface))] flex items-center justify-center font-bold text-[rgb(var(--accent))] mr-4 flex-shrink-0">
+                      <li key={student.id} className={styles.studentItem}>
+                        <div className={styles.flexCenter}>
+                          <div className={styles.studentAvatar}>
                             {student.fullName.charAt(0)}
                           </div>
                           <div>
-                            <p className="font-bold text-[rgb(var(--text))] text-sm">{student.fullName}</p>
-                            <p className="text-xs text-[rgb(var(--muted))] mt-1 font-medium">{student.faculty}, {student.course} курс • {student.studentIdNumber}</p>
+                            <p className={styles.studentName}>{student.fullName}</p>
+                            <p className={styles.studentInfo}>{student.faculty}, {student.course} курс • {student.studentIdNumber}</p>
                           </div>
                         </div>
                         <button 
                           onClick={() => evictStudent(student.id)}
-                          className="text-red-500 nm-flat bg-[rgb(var(--surface))] hover:nm-inset-sm px-4 py-2 rounded-xl transition-all flex items-center justify-center"
+                          className={styles.btnEvict}
                           title="Виселити"
                         >
                           <UserMinus className="w-4 h-4 mr-2" />
-                          <span className="text-xs font-bold tracking-wide uppercase">Виселити</span>
+                          <span className={styles.btnEvictText}>Виселити</span>
                         </button>
                       </li>
                     ))}
@@ -495,10 +496,10 @@ export const DormitoryManager: React.FC = () => {
               </div>
             </div>
             
-            <div className="px-6 py-5 border-t border-[rgb(var(--border)/0.2)] bg-[rgb(var(--surface-2))] flex justify-end">
+            <div className={styles.modalFooter}>
               <button
                 onClick={() => setIsRoomModalOpen(false)}
-                className="ui-button ui-button-outline px-8"
+                className={`ui-button ui-button-outline ${styles.btnClose}`}
               >
                 Закрити
               </button>
@@ -511,3 +512,4 @@ export const DormitoryManager: React.FC = () => {
 };
 
 export default DormitoryManager;
+
