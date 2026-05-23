@@ -453,6 +453,8 @@ export class AllocationService {
 
     const allocatedStudents: Array<{ studentId: string; dormitoryName: string; roomNumber: string }> = [];
 
+    const dormitoryIdsToUpdate = new Set<string>();
+
     await prisma.$transaction(async (tx) => {
       for (const roomPlan of plan) {
         const room = await tx.room.findUnique({
@@ -503,18 +505,26 @@ export class AllocationService {
           }
         });
 
-        const dormOccupancy = await tx.studentProfile.count({
-          where: { dormitoryId: room.floor.dormitoryId, roomId: { not: null } }
-        });
-        await tx.dormitory.update({
-          where: { id: room.floor.dormitoryId },
-          data: {
-            currentOccupancy: dormOccupancy,
-            occupancyStatus: getOccupancyStatus(dormOccupancy, room.floor.dormitory.totalCapacity)
-          }
-        });
+        dormitoryIdsToUpdate.add(room.floor.dormitoryId);
       }
-    });
+
+      // Update dormitory occupancy once per dormitory
+      for (const dormId of dormitoryIdsToUpdate) {
+        const dorm = await tx.dormitory.findUnique({ where: { id: dormId } });
+        if (dorm) {
+          const dormOccupancy = await tx.studentProfile.count({
+            where: { dormitoryId: dormId, roomId: { not: null } }
+          });
+          await tx.dormitory.update({
+            where: { id: dormId },
+            data: {
+              currentOccupancy: dormOccupancy,
+              occupancyStatus: getOccupancyStatus(dormOccupancy, dorm.totalCapacity)
+            }
+          });
+        }
+      }
+    }, { timeout: 30000 });
 
     const { NotificationService } = await import('./notification.service');
     await Promise.all(allocatedStudents.map(student =>
