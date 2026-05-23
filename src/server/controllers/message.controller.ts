@@ -96,7 +96,7 @@ export class MessageController {
 
       const conversationMap = new Map<string, {
         contact: any;
-        lastMessage: typeof messages[0];
+        lastMessage: any;
         firstMessageAt: Date;
         unreadCount: number;
       }>();
@@ -122,6 +122,25 @@ export class MessageController {
 
       const conversations = Array.from(conversationMap.values())
         .sort((a, b) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime());
+
+      // If student, ensure all admins are in the list
+      if (req.user!.role === Role.STUDENT) {
+        const admins = await prisma.user.findMany({
+          where: { role: { in: [Role.ADMIN, Role.ADMIN_CAMPUS, Role.ADMIN_COMMANDANT] } },
+          select: { id: true, firstName: true, lastName: true, role: true, email: true }
+        });
+
+        for (const admin of admins) {
+          if (!conversationMap.has(admin.id)) {
+            conversations.push({
+              contact: admin,
+              lastMessage: { content: 'Напишіть перше повідомлення...', createdAt: new Date() },
+              firstMessageAt: new Date(),
+              unreadCount: 0
+            });
+          }
+        }
+      }
 
       res.json(conversations);
     } catch (error) {

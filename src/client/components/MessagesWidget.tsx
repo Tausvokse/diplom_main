@@ -134,14 +134,18 @@ export const MessagesWidget: React.FC = () => {
     return 'Студент';
   };
 
-  const filteredMessages = messages
-    .filter(
-      m => (m.senderId === selectedContact?.id && m.receiverId === user?.id) || 
-           (m.senderId === user?.id && m.receiverId === selectedContact?.id)
-    )
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  const filteredMessages = React.useMemo(() => {
+    return messages
+      .filter(
+        m => (m.senderId === selectedContact?.id && m.receiverId === user?.id) || 
+             (m.senderId === user?.id && m.receiverId === selectedContact?.id)
+      )
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+  }, [messages, selectedContact?.id, user?.id]);
 
-  const totalUnread = conversations.reduce((acc, curr) => acc + (curr.unreadCount || 0), 0);
+  const totalUnread = React.useMemo(() => {
+    return conversations.reduce((acc, curr) => acc + (curr.unreadCount || 0), 0);
+  }, [conversations]);
 
   if (user?.role !== 'STUDENT') {
     return null;

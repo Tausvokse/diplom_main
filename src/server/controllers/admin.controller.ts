@@ -1,308 +1,192 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import { ComplaintStatus } from '@prisma/client';
 import { AdminService } from '../services/admin.service';
 import { AuthService } from '../services/auth.service';
-import { AuthRequest } from '../middlewares/auth.middleware';
+import { DormitoryService } from '../services/dormitory.service';
+import { StudentService } from '../services/student.service';
+import { ComplaintService } from '../services/complaint.service';
+import { FinancialService } from '../services/financial.service';
+import { asyncHandler } from '../utils/asyncHandler';
 
 export class AdminController {
-  static async getDormitories(req: Request, res: Response, next: NextFunction) {
-    try {
-      const dorms = await AdminService.getDormitories();
-      res.json(dorms);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static getDormitories = asyncHandler(async (req: Request, res: Response) => {
+    const dorms = await DormitoryService.getDormitories();
+    res.json(dorms);
+  });
 
-  static async getAuditLogs(req: Request, res: Response, next: NextFunction) {
-    try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 50;
-      const logs = await AdminService.getAuditLogs(page, limit);
-      res.json(logs);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static getAuditLogs = asyncHandler(async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const logs = await AdminService.getAuditLogs(page, limit);
+    res.json(logs);
+  });
 
-  static async createDormitory(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { name, address, universityId } = req.body;
-      const dorm = await AdminService.createDormitory(name, address, universityId);
-      res.status(201).json(dorm);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static createDormitory = asyncHandler(async (req: Request, res: Response) => {
+    const { name, address, universityId } = req.body;
+    const dorm = await DormitoryService.createDormitory(name, address, universityId);
+    res.status(201).json(dorm);
+  });
 
-  static async updateDormitory(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const dorm = await AdminService.updateDormitory(id, req.body);
-      res.json(dorm);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static updateDormitory = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const dorm = await DormitoryService.updateDormitory(id, req.body);
+    res.json(dorm);
+  });
 
-  static async deleteDormitory(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      await AdminService.deleteDormitory(id);
-      res.status(204).send();
-    } catch (error) {
-      next(error);
-    }
-  }
+  static deleteDormitory = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    await DormitoryService.deleteDormitory(id);
+    res.status(204).send();
+  });
 
-  static async createFloor(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { dormitoryId, floorNumber } = req.body;
-      const floor = await AdminService.createFloor(dormitoryId, floorNumber);
-      res.status(201).json(floor);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static createFloor = asyncHandler(async (req: Request, res: Response) => {
+    const { dormitoryId, floorNumber } = req.body;
+    const floor = await DormitoryService.createFloor(dormitoryId, floorNumber);
+    res.status(201).json(floor);
+  });
 
-  static async updateFloor(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const { floorNumber } = req.body;
-      const floor = await AdminService.updateFloor(id, floorNumber);
-      res.json(floor);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static updateFloor = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { floorNumber } = req.body;
+    const floor = await DormitoryService.updateFloor(id, floorNumber);
+    res.json(floor);
+  });
 
-  static async deleteFloor(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      await AdminService.deleteFloor(id);
-      res.status(204).send();
-    } catch (error) {
-      next(error);
-    }
-  }
+  static deleteFloor = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    await DormitoryService.deleteFloor(id);
+    res.status(204).send();
+  });
 
-  static async createRoom(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { floorId, roomNumber, capacity } = req.body;
-      const room = await AdminService.createRoom(floorId, roomNumber, capacity);
-      res.status(201).json(room);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static createRoom = asyncHandler(async (req: Request, res: Response) => {
+    const { floorId, roomNumber, capacity } = req.body;
+    const room = await DormitoryService.createRoom(floorId, roomNumber, capacity);
+    res.status(201).json(room);
+  });
 
-  static async updateRoom(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { roomId } = req.params;
-      const room = await AdminService.updateRoom(roomId, req.body);
-      res.json(room);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static updateRoom = asyncHandler(async (req: Request, res: Response) => {
+    const { roomId } = req.params;
+    const room = await DormitoryService.updateRoom(roomId, req.body);
+    res.json(room);
+  });
 
-  static async deleteRoom(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { roomId } = req.params;
-      await AdminService.deleteRoom(roomId);
-      res.status(204).send();
-    } catch (error) {
-      next(error);
-    }
-  }
+  static deleteRoom = asyncHandler(async (req: Request, res: Response) => {
+    const { roomId } = req.params;
+    await DormitoryService.deleteRoom(roomId);
+    res.status(204).send();
+  });
 
-  static async updateRoomStatus(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { roomId } = req.params;
-      const { status } = req.body;
-      const room = await AdminService.updateRoomStatus(roomId, status);
-      res.json(room);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static updateRoomStatus = asyncHandler(async (req: Request, res: Response) => {
+    const { roomId } = req.params;
+    const { status } = req.body;
+    const room = await DormitoryService.updateRoomStatus(roomId, status);
+    res.json(room);
+  });
 
-  static async getRoomStudents(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { roomId } = req.params;
-      const students = await AdminService.getRoomStudents(roomId);
-      res.json(students);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static getRoomStudents = asyncHandler(async (req: Request, res: Response) => {
+    const { roomId } = req.params;
+    const students = await DormitoryService.getRoomStudents(roomId);
+    res.json(students);
+  });
 
-  static async getApplications(req: Request, res: Response, next: NextFunction) {
-    try {
-      const apps = await AdminService.getApplications();
-      res.json(apps);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static getApplications = asyncHandler(async (req: Request, res: Response) => {
+    const apps = await StudentService.getApplications();
+    res.json(apps);
+  });
 
-  static async approveApplication(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const app = await AdminService.approveApplication(id);
-      res.json(app);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static approveApplication = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const app = await StudentService.approveApplication(id);
+    res.json(app);
+  });
 
-  static async updateApplicationStatus(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const { status } = req.body;
-      const app = await AdminService.updateApplicationStatus(id, status);
-      res.json(app);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static updateApplicationStatus = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    const app = await StudentService.updateApplicationStatus(id, status);
+    res.json(app);
+  });
 
-  static async rejectApplication(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const { reason } = req.body;
-      const app = await AdminService.rejectApplication(id, reason);
-      res.json(app);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static rejectApplication = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { reason } = req.body;
+    const app = await StudentService.rejectApplication(id, reason);
+    res.json(app);
+  });
 
-  static async getAdmins(req: Request, res: Response, next: NextFunction) {
-    try {
-      const admins = await AdminService.getAdmins();
-      res.json(admins);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static getAdmins = asyncHandler(async (req: Request, res: Response) => {
+    const admins = await AdminService.getAdmins();
+    res.json(admins);
+  });
 
-  static async getAllStudents(req: Request, res: Response, next: NextFunction) {
-    try {
-      const page = parseInt(req.query.page as string) || 1;
-      const limit = parseInt(req.query.limit as string) || 50;
-      const studentsData = await AdminService.getAllStudents(page, limit);
-      res.json(studentsData);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static getAllStudents = asyncHandler(async (req: Request, res: Response) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const studentsData = await StudentService.getAllStudents(page, limit);
+    res.json(studentsData);
+  });
 
-  static async getAnalytics(req: Request, res: Response, next: NextFunction) {
-    try {
-      const stats = await AdminService.getAnalytics();
-      res.json(stats);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static getAnalytics = asyncHandler(async (req: Request, res: Response) => {
+    const stats = await AdminService.getAnalytics();
+    res.json(stats);
+  });
 
-  static async getComplaints(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const complaints = await AdminService.getComplaints(req.user!.id);
-      res.json(complaints);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static getComplaints = asyncHandler(async (req: Request, res: Response) => {
+    const complaints = await ComplaintService.getComplaints((req as any).user!.id);
+    res.json(complaints);
+  });
 
-  static async updateComplaintStatus(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const { status } = req.body;
-      const complaint = await AdminService.updateComplaintStatus(req.user!.id, id, status as ComplaintStatus);
-      res.json(complaint);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static updateComplaintStatus = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    const complaint = await ComplaintService.updateComplaintStatus((req as any).user!.id, id, status as ComplaintStatus);
+    res.json(complaint);
+  });
 
-  static async createAdmin(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { email, password, firstName, lastName, role, dormitoryId } = req.body;
-      const admin = await AuthService.createAdmin(email, password, firstName, lastName, role, dormitoryId);
-      res.json(admin);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static createAdmin = asyncHandler(async (req: Request, res: Response) => {
+    const { email, password, firstName, lastName, role, dormitoryId } = req.body;
+    const admin = await AuthService.createAdmin(email, password, firstName, lastName, role, dormitoryId);
+    res.json(admin);
+  });
 
-  static async getStudentDetails(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const details = await AdminService.getStudentDetails(id);
-      res.json(details);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static getStudentDetails = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const details = await StudentService.getStudentDetails(id);
+    res.json(details);
+  });
 
-  static async createInvoice(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const { amount, dueDate, description } = req.body;
-      const invoice = await AdminService.createInvoice(id, amount, new Date(dueDate), description);
-      res.json(invoice);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static createInvoice = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const { amount, dueDate, description } = req.body;
+    const invoice = await FinancialService.createInvoice(id, amount, new Date(dueDate), description);
+    res.json(invoice);
+  });
 
-  static async getDebts(req: Request, res: Response, next: NextFunction) {
-    try {
-      const debts = await AdminService.getDebts();
-      res.json(debts);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static getDebts = asyncHandler(async (req: Request, res: Response) => {
+    const debts = await FinancialService.getDebts();
+    res.json(debts);
+  });
 
-  static async createMassNotification(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { title, message } = req.body;
-      await AdminService.createMassNotification(title, message);
-      res.json({ success: true });
-    } catch (error) {
-      next(error);
-    }
-  }
+  static createMassNotification = asyncHandler(async (req: Request, res: Response) => {
+    const { title, message } = req.body;
+    await AdminService.createMassNotification(title, message);
+    res.json({ success: true });
+  });
 
-  static async createJar(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { title, goalAmount, description, dormitoryId, monobankUrl } = req.body;
-      const jar = await AdminService.createJar(title, goalAmount, description, dormitoryId, monobankUrl);
-      res.json(jar);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static createJar = asyncHandler(async (req: Request, res: Response) => {
+    const { title, goalAmount, description, dormitoryId, monobankUrl } = req.body;
+    const jar = await FinancialService.createJar(title, goalAmount, description, dormitoryId, monobankUrl);
+    res.json(jar);
+  });
 
-  static async getJars(req: Request, res: Response, next: NextFunction) {
-    try {
-      const jars = await AdminService.getJars();
-      res.json(jars);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static getJars = asyncHandler(async (req: Request, res: Response) => {
+    const jars = await FinancialService.getJars();
+    res.json(jars);
+  });
 
-  static async deleteJar(req: Request, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      await AdminService.deleteJar(id);
-      res.json({ success: true });
-    } catch (error) {
-      next(error);
-    }
-  }
+  static deleteJar = asyncHandler(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    await FinancialService.deleteJar(id);
+    res.json({ success: true });
+  });
 }

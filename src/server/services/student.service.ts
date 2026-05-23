@@ -1,496 +1,174 @@
-import fs from 'fs';
-import path from 'path';
-import crypto from 'crypto';
-import { RepairStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../utils/AppError';
-import { MonobankService } from './monobank.service';
 
 export class StudentService {
-  static async getApplication(userId: string) {
-    const profile = await prisma.studentProfile.findUnique({
-      where: { userId },
-      include: { 
-        applications: { include: { student: { include: { room: true } } } }, 
-        group: { include: { members: { include: { user: true } } } } 
-      }
-    });
-
-    if (!profile) return { application: null, group: null };
-
-    const activeApp = profile.applications.length > 0 
-      ? profile.applications.sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime())[0]
-      : null;
-      
-    return { application: activeApp, group: profile.group };
-  }
-
-  static async submitApplication(
-    userId: string,
-    course: number,
-    faculty: string,
-    privilegeCategoryId: string | null,
-    clusteringVectorRaw: any,
-    filesInput: { [fieldname: string]: Express.Multer.File[] } | Express.Multer.File[] | undefined,
-    type: string = 'CHECK_IN',
-    previousRoom?: string,
-    checkoutReason?: string
-  ) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new AppError('Користувача не знайдено', 404);
-
-    let profile = await prisma.studentProfile.findUnique({ where: { userId }, include: { room: true } });
-
-    const clusteringVectorString = typeof clusteringVectorRaw === 'string'
-      ? clusteringVectorRaw
-      : JSON.stringify(clusteringVectorRaw);
-
-    const parsedPrivilegeId = (privilegeCategoryId === 'null' || privilegeCategoryId === 'undefined' || !privilegeCategoryId) ? null : privilegeCategoryId;
-
-    if (!profile) {
-      const studentIdNumber = `KB-${Math.floor(100000 + Math.random() * 900000)}`;
-      profile = await prisma.studentProfile.create({
-        data: {
-          userId,
-          studentIdNumber,
-          fullName: `${user.lastName} ${user.firstName}`,
-          email: user.email,
-          phone: '+380000000000',
-          course: Number(course),
-          faculty: faculty || 'Unknown',
-          privilegeCategoryId: parsedPrivilegeId,
-          clusteringVector: clusteringVectorString,
-          isVerifiedByDiia: false
-        },
-        include: { room: true }
-      });
-    } else {
-      profile = await prisma.studentProfile.update({
-        where: { id: profile.id },
-        data: {
-          course: course ? Number(course) : profile.course,
-          faculty: faculty || profile.faculty,
-          privilegeCategoryId: parsedPrivilegeId !== undefined ? parsedPrivilegeId : profile.privilegeCategoryId,
-          clusteringVector: clusteringVectorString
-        },
-        include: { room: true }
-      });
-    }
-
-    if (type === 'CHECK_OUT') {
-      if (!profile.roomId) {
-        throw new AppError('Ви повинні бути поселені для подачі заяви на виселення', 400);
-      }
-    } else if (type === 'CHECK_IN') {
-      if (profile.roomId) {
-        throw new AppError('Ви вже поселені в гуртожиток. Подача нової заяви на поселення неможлива.', 400);
-      }
-    }
-
-    let allFiles: { file: Express.Multer.File, category: string }[] = [];
-    if (filesInput) {
-      if (Array.isArray(filesInput)) {
-        allFiles = filesInput.map(f => ({ file: f, category: 'documents' }));
-      } else {
-        Object.entries(filesInput).forEach(([category, fileArray]) => {
-          fileArray.forEach(file => {
-            allFiles.push({ file, category });
-          });
-        });
-      }
-    }
-
-    const fileUrls = allFiles.map(({ file, category }, index) => {
-      const ext = path.extname(file.originalname) || '.png';
-      const cleanName = encodeURIComponent(profile!.fullName.replace(/\s+/g, '_'));
-      const studentId = profile!.studentIdNumber;
-
-      const newFilename = `${category}_${cleanName}_${studentId}${index > 0 ? `_${index}` : ''}${ext}`;
-      const oldPath = file.path;
-      const newPath = path.join(path.dirname(file.path), newFilename);
-
-      let finalPath = newPath;
-      let finalUrl = newFilename;
-      if (fs.existsSync(newPath)) {
-        const timestamp = Date.now();
-        finalUrl = `${category}_${cleanName}_${studentId}_${timestamp}${ext}`;
-        finalPath = path.join(path.dirname(file.path), finalUrl);
-      }
-
-      try {
-        fs.renameSync(oldPath, finalPath);
-      } catch (e) {
-        console.error('File rename error:', e);
-        return `/uploads/${file.filename}`;
-      }
-      return `/uploads/${finalUrl}`;
-    });
-
-    const application = await prisma.application.create({
-      data: {
-        studentId: profile.id,
-        type: type as any,
-        status: 'SUBMITTED',
-        scanDocumentsUrl: fileUrls.join(','),
-        previousRoom,
-        checkoutReason
-      }
-    });
-
-    return application;
-  }
-
-  static async createGroup(userId: string) {
-    const profile = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!profile) throw new AppError('Профіль студента не знайдено', 404);
-    if (profile.groupId) throw new AppError('Ви вже є учасником групи', 409);
-
-    const code = crypto.randomBytes(3).toString('hex').toUpperCase();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + 7);
-
-    const group = await prisma.groupReferral.create({
-      data: {
-        code,
-        creatorId: profile.id,
-        expiresAt,
-        maxMembers: 4,
-        currentMembers: 1,
-      }
-    });
-
-    await prisma.studentProfile.update({
-      where: { id: profile.id },
-      data: { groupId: group.id }
-    });
-
-    return prisma.groupReferral.findUnique({
-      where: { id: group.id },
-      include: { members: { include: { user: true } } }
-    });
-  }
-
-  static async joinGroup(userId: string, code: string) {
-    const profile = await prisma.studentProfile.findUnique({ where: { userId }, include: { user: true } });
-    if (!profile) throw new AppError('Профіль студента не знайдено', 404);
-    if (profile.groupId) throw new AppError('Ви вже є учасником групи', 409);
-
-    const group = await prisma.groupReferral.findUnique({ where: { code } });
-    if (!group) throw new AppError('Групу не знайдено', 404);
-    if (group.currentMembers >= group.maxMembers) throw new AppError('Група вже заповнена', 409);
-    if (new Date() > group.expiresAt) throw new AppError('Термін дії коду минув', 400);
-
-    const creatorProfile = await prisma.studentProfile.findUnique({ where: { id: group.creatorId }, include: { user: true } });
-    if (creatorProfile && (creatorProfile.user as any).gender !== (profile.user as any).gender) {
-      throw new AppError('До групи можуть приєднуватися лише студенти тієї ж статі', 400);
-    }
-
-    await prisma.$transaction([
-      prisma.studentProfile.update({
-        where: { id: profile.id },
-        data: { groupId: group.id }
-      }),
-      prisma.groupReferral.update({
-        where: { id: group.id },
-        data: { currentMembers: group.currentMembers + 1 }
-      })
-    ]);
-
-    return prisma.groupReferral.findUnique({
-      where: { id: group.id },
-      include: { members: { include: { user: true } } }
-    });
-  }
-
-  static async submitComplaint(userId: string, accusedId: string, content: string, evidenceUrl?: string) {
-    const accuser = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!accuser) throw new AppError('Профіль не знайдено', 404);
-    if (!accuser.roomId) throw new AppError('Ви не поселені в кімнату', 400);
-
-    const neighbor = await prisma.studentProfile.findFirst({
-      where: { id: accusedId, roomId: accuser.roomId }
-    });
-    if (!neighbor) throw new AppError('Можна подати скаргу лише на сусіда по кімнаті', 400);
-
-    return prisma.complaint.create({
-      data: {
-        accuserId: accuser.id,
-        accusedId,
-        content,
-        evidenceUrl,
-        status: 'PENDING'
-      }
-    });
-  }
-
-  static async getComplaints(userId: string) {
-    const profile = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!profile) return [];
-
-    return prisma.complaint.findMany({
-      where: { accuserId: profile.id },
-      include: { accused: { select: { fullName: true } } },
-      orderBy: { createdAt: 'desc' }
-    });
-  }
-
-  static async submitRepairRequest(userId: string, description: string, masterId?: string) {
-    const profile = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!profile) throw new AppError('Профіль не знайдено', 404);
-    if (!profile.roomId) throw new AppError('Ви не поселені в кімнату', 400);
-
-    return prisma.repairRequest.create({
-      data: {
-        roomId: profile.roomId,
-        description,
-        status: 'PENDING',
-        masterId: masterId || null
-      }
-    });
-  }
-
-  static async getRepairRequests(userId: string) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) return [];
-
-    if (user.role.startsWith('MASTER_')) {
-      return prisma.repairRequest.findMany({
-        where: { masterId: user.id },
-        include: {
-          room: {
-            include: {
-              floor: { include: { dormitory: { select: { name: true, address: true } } } }
-            }
-          }
-        },
-        orderBy: { createdAt: 'desc' }
-      });
-    }
-
-    const profile = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!profile || !profile.roomId) return [];
-
-    return prisma.repairRequest.findMany({
-      where: { roomId: profile.roomId },
-      include: { master: { select: { firstName: true, lastName: true, role: true } } },
-      orderBy: { createdAt: 'desc' }
-    });
-  }
-
-  static async updateRepairStatus(userId: string, repairId: string, status: RepairStatus) {
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user || !user.role.startsWith('MASTER_')) {
-      throw new AppError('Оновлювати ремонтні заявки може лише майстер', 403);
-    }
-
-    const repair = await prisma.repairRequest.findFirst({
-      where: { id: repairId, masterId: user.id },
-      include: { room: { include: { studentProfiles: { select: { id: true } } } } }
-    });
-    if (!repair) {
-      throw new AppError('Заявку не знайдено або вона не призначена вам', 404);
-    }
-
-    const updated = await prisma.repairRequest.update({
-      where: { id: repairId },
-      data: { status },
+  static async getApplications() {
+    const apps = await prisma.application.findMany({
       include: {
-        room: {
+        student: {
           include: {
-            floor: { include: { dormitory: { select: { name: true, address: true } } } }
+            user: { select: { firstName: true, lastName: true, email: true } },
+            privilege: true
           }
         }
+      },
+      orderBy: { submittedAt: 'desc' }
+    });
+    
+    return apps.map(app => ({
+      ...app,
+      scanDocumentsUrl: app.scanDocumentsUrl ? app.scanDocumentsUrl.split(',').filter(Boolean) : []
+    }));
+  }
+
+  static async approveApplication(appId: string) {
+    const app = await prisma.application.findUnique({
+      where: { id: appId },
+      include: { student: true }
+    });
+    if (!app) {
+      throw new AppError('Заяву не знайдено', 404);
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedApp = await tx.application.update({
+        where: { id: appId },
+        data: { status: 'APPROVED', reviewedAt: new Date() }
+      });
+
+      if (app.type === 'CHECK_IN' && app.student.roomId) {
+        await tx.studentProfile.update({
+          where: { id: app.studentId },
+          data: { roomId: null, dormitoryId: null }
+        });
       }
+
+      return updatedApp;
     });
 
+    if (app.type === 'CHECK_OUT' && app.student.roomId) {
+      const { AllocationService } = await import('./allocation.service');
+      await AllocationService.evictStudent(app.studentId);
+    }
+
     const { NotificationService } = await import('./notification.service');
-    await Promise.all(repair.room.studentProfiles.map(student =>
-      NotificationService.create(
-        student.id,
-        'Оновлено ремонтну заявку',
-        `Заявку для кімнати ${repair.room.roomNumber} змінено на статус: ${status}.`,
-        'REPAIR_UPDATE'
-      )
-    ));
+    await NotificationService.createApplicationStatusNotification(appId, 'APPROVED');
 
     return updated;
   }
 
-  static async getNeighbors(userId: string) {
-    const profile = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!profile || !profile.roomId) return [];
-
-    return prisma.studentProfile.findMany({
-      where: { 
-        roomId: profile.roomId,
-        id: { not: profile.id } 
-      },
-      select: { id: true, fullName: true, course: true, faculty: true }
-    });
-  }
-
-  static async getMasters() {
-    return prisma.user.findMany({
-      where: {
-        role: {
-          in: ['MASTER_SLESAR', 'MASTER_SANTEKHNIK', 'MASTER_ELECTRIC']
-        }
-      },
-      select: {
-        id: true,
-        firstName: true,
-        lastName: true,
-        role: true
-      }
-    });
-  }
-
-  static async getJars(userId: string) {
-    const profile = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!profile) return [];
-
-    // Show jars that are either:
-    // 1. Global (dormitoryId is null)
-    // 2. Specific to the student's dormitory
-    // If student is not yet settled (dormitoryId is null), they see all jars.
-    let jars = await prisma.jar.findMany({
-      where: profile.dormitoryId 
-        ? { OR: [{ dormitoryId: profile.dormitoryId }, { dormitoryId: null }] } 
-        : {}, // If not settled, show all as before, or we could limit to only global
-      include: {
-        transactions: {
-          include: { student: { select: { fullName: true } } },
-          orderBy: { createdAt: 'desc' },
-          take: 10
-        }
-      },
-      orderBy: { createdAt: 'desc' }
-    });
-
-    for (let jar of jars) {
-      if (jar.monobankUrl) {
-        try {
-          const monoJar = await MonobankService.getJarDetails(jar.monobankUrl);
-          if (monoJar) {
-            const updatedCurrent = monoJar.balance / 100;
-            const updatedGoal = monoJar.goal / 100;
-            
-            await prisma.jar.update({
-              where: { id: jar.id },
-              data: { currentAmount: updatedCurrent, goalAmount: updatedGoal }
-            });
-            
-            jar.currentAmount = updatedCurrent;
-            jar.goalAmount = updatedGoal;
-            
-            const statement = await MonobankService.getJarStatement(monoJar.id);
-            const monoTransactions = statement.map(item => ({
-              id: item.id,
-              amount: Math.abs(item.amount) / 100,
-              comment: item.comment || item.description,
-              createdAt: new Date(item.time * 1000).toISOString(),
-              student: { fullName: item.counterName || 'Зовнішній донат' }
-            }));
-            
-            (jar as any).transactions = [...monoTransactions, ...jar.transactions];
-          }
-        } catch (e) {
-          console.error(`Monobank sync failed for jar ${jar.id}:`, e);
-        }
-      }
+  static async updateApplicationStatus(appId: string, status: any) {
+    const app = await prisma.application.findUnique({ where: { id: appId } });
+    if (!app) {
+      throw new AppError('Заяву не знайдено', 404);
     }
 
-    return jars;
+    const updated = await prisma.application.update({
+      where: { id: appId },
+      data: { 
+        status, 
+        reviewedAt: (status === 'APPROVED' || status === 'REJECTED') ? new Date() : undefined 
+      }
+    });
+
+    const { NotificationService } = await import('./notification.service');
+    await NotificationService.createApplicationStatusNotification(appId, status);
+
+    return updated;
   }
 
-  static async donateToJar(userId: string, jarId: string, amount: number, comment?: string) {
-    if (amount <= 0) throw new AppError('Сума має бути більше 0', 400);
-    const profile = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!profile || !profile.dormitoryId) throw new AppError('Профіль не знайдено або ви не поселені', 404);
-
-    const jar = await prisma.jar.findFirst({ 
-      where: { 
-        id: jarId, 
-        OR: [{ dormitoryId: profile.dormitoryId }, { dormitoryId: null }] 
-      } 
+  static async rejectApplication(appId: string, reason: string) {
+    const app = await prisma.application.findUnique({ where: { id: appId } });
+    if (!app) {
+      throw new AppError('Заяву не знайдено', 404);
+    }
+    const updated = await prisma.application.update({
+      where: { id: appId },
+      data: { status: 'REJECTED', rejectionReason: reason, reviewedAt: new Date() }
     });
-    if (!jar) throw new AppError('Банку не знайдено у вашому гуртожитку або вона не доступна', 404);
 
-    await prisma.$transaction([
-      prisma.jarTransaction.create({
-        data: {
-          jarId,
-          studentId: profile.id,
-          amount,
-          comment
-        }
+    const { NotificationService } = await import('./notification.service');
+    await NotificationService.createApplicationStatusNotification(appId, 'REJECTED', reason);
+
+    return updated;
+  }
+
+  static async getAllStudents(page: number = 1, limit: number = 50) {
+    const skip = (page - 1) * limit;
+    const [data, total] = await Promise.all([
+      prisma.studentProfile.findMany({
+        skip,
+        take: limit,
+        include: {
+          dormitory: { select: { name: true } },
+          room: { select: { roomNumber: true } }
+        },
+        orderBy: { fullName: 'asc' }
       }),
-      prisma.jar.update({
-        where: { id: jarId },
-        data: { currentAmount: { increment: amount } }
-      })
+      prisma.studentProfile.count()
     ]);
 
-    return { success: true };
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit)
+      }
+    };
   }
 
-  static async getPayments(userId: string) {
-    const profile = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!profile) return [];
-
-    await prisma.payment.updateMany({
-      where: { 
-        studentId: profile.id, 
-        status: 'PENDING', 
-        dueDate: { lt: new Date() } 
-      },
-      data: { status: 'OVERDUE' }
+  static async getStudentDetails(studentId: string) {
+    const profile = await prisma.studentProfile.findUnique({
+      where: { id: studentId },
+      include: {
+        user: { select: { id: true, email: true, firstName: true, lastName: true, role: true, createdAt: true } },
+        dormitory: { select: { id: true, name: true, address: true } },
+        room: { select: { id: true, roomNumber: true, capacity: true, currentOccupancy: true } },
+        privilege: true,
+        group: { include: { members: { select: { id: true, fullName: true, studentIdNumber: true } } } },
+        applications: {
+          orderBy: { submittedAt: 'desc' },
+          select: {
+            id: true,
+            type: true,
+            status: true,
+            scanDocumentsUrl: true,
+            rejectionReason: true,
+            submittedAt: true,
+            reviewedAt: true
+          }
+        },
+        allocations: {
+          orderBy: { allocatedAt: 'desc' },
+          include: { room: { select: { roomNumber: true } } }
+        },
+        complaintsFiled: {
+          orderBy: { createdAt: 'desc' },
+          include: { accused: { select: { fullName: true } } }
+        },
+        complaintsAgainst: {
+          orderBy: { createdAt: 'desc' },
+          include: { accuser: { select: { fullName: true } } }
+        },
+        payments: { orderBy: { dueDate: 'desc' } },
+        notifications: { orderBy: { createdAt: 'desc' }, take: 20 }
+      }
     });
 
-    return prisma.payment.findMany({
-      where: { studentId: profile.id },
-      orderBy: { dueDate: 'asc' }
-    });
-  }
+    if (!profile) {
+      throw new AppError('Профіль студента не знайдено', 404);
+    }
 
-  static async payPayment(userId: string, paymentId: string) {
-    const profile = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!profile) throw new AppError('Профіль не знайдено', 404);
+    const formattedProfile = {
+      ...profile,
+      applications: profile.applications.map(app => ({
+        ...app,
+        scanDocumentsUrl: app.scanDocumentsUrl ? app.scanDocumentsUrl.split(',').filter(Boolean) : []
+      }))
+    };
 
-    const payment = await prisma.payment.findFirst({
-      where: { id: paymentId, studentId: profile.id }
-    });
-    
-    if (!payment) throw new AppError('Платіж не знайдено або не належить вам', 404);
-    if (payment.status === 'PAID') throw new AppError('Платіж вже оплачено', 409);
-
-    return prisma.payment.update({
-      where: { id: paymentId },
-      data: { status: 'PAID', paidAt: new Date() }
-    });
-  }
-
-  static async getNotifications(userId: string) {
-    const profile = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!profile) return [];
-
-    return prisma.notification.findMany({
-      where: { studentId: profile.id },
-      orderBy: { createdAt: 'desc' }
-    });
-  }
-
-  static async markNotificationRead(userId: string, notificationId: string) {
-    return prisma.notification.update({
-      where: { id: notificationId },
-      data: { isRead: true }
-    });
-  }
-
-  static async markAllNotificationsRead(userId: string) {
-    const profile = await prisma.studentProfile.findUnique({ where: { userId } });
-    if (!profile) return;
-    const { NotificationService } = await import('./notification.service');
-    return NotificationService.markAllRead(profile.id);
+    return formattedProfile;
   }
 }

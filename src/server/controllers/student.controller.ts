@@ -1,199 +1,144 @@
-import { Response, NextFunction } from 'express';
-import { StudentService } from '../services/student.service';
+import { Response } from 'express';
+import { ApplicationService } from '../services/application.service';
+import { ComplaintService } from '../services/complaint.service';
+import { RepairService } from '../services/repair.service';
+import { GroupService } from '../services/group.service';
+import { StudentProfileService } from '../services/student-profile.service';
+import { FinancialService } from '../services/financial.service';
 import { AuthRequest } from '../middlewares/auth.middleware';
+import { asyncHandler } from '../utils/asyncHandler';
+import { NotificationService } from '../services/notification.service';
+import { prisma } from '../lib/prisma';
 
 export class StudentController {
-  static async getDashboardData(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const { application, group } = await StudentService.getApplication(req.user!.id);
-      
-      // Розділяємо масив лінків для клієнта
-      const formattedApp = application ? {
-        ...application,
-        scanDocumentsUrl: application.scanDocumentsUrl ? application.scanDocumentsUrl.split(',').filter(Boolean) : []
-      } : null;
+  static getDashboardData = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { application, group } = await ApplicationService.getApplication(req.user!.id);
+    
+    const formattedApp = application ? {
+      ...application,
+      scanDocumentsUrl: application.scanDocumentsUrl ? application.scanDocumentsUrl.split(',').filter(Boolean) : []
+    } : null;
 
-      res.json({ application: formattedApp, group });
-    } catch (error) {
-      next(error);
-    }
-  }
+    res.json({ application: formattedApp, group });
+  });
 
-  static async submitApplication(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const { course, faculty, privilegeCategoryId, clusteringVector, type, previousRoom, checkoutReason } = req.body;
-      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | Express.Multer.File[] | undefined;
+  static submitApplication = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { course, faculty, privilegeCategoryId, clusteringVector, type, previousRoom, checkoutReason } = req.body;
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | Express.Multer.File[] | undefined;
 
-      const app = await StudentService.submitApplication(
-        req.user!.id, 
-        course, 
-        faculty, 
-        privilegeCategoryId, 
-        clusteringVector, 
-        files,
-        type || 'CHECK_IN',
-        previousRoom,
-        checkoutReason
-      );
-      
-      res.json(app);
-    } catch (error) {
-      next(error);
-    }
-  }
+    const app = await ApplicationService.submitApplication(
+      req.user!.id, 
+      course, 
+      faculty, 
+      privilegeCategoryId, 
+      clusteringVector, 
+      files,
+      type || 'CHECK_IN',
+      previousRoom,
+      checkoutReason
+    );
+    
+    res.json(app);
+  });
 
-  static async createGroup(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const group = await StudentService.createGroup(req.user!.id);
-      res.json(group);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static createGroup = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const group = await GroupService.createGroup(req.user!.id);
+    res.json(group);
+  });
 
-  static async joinGroup(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const { code } = req.body;
-      const group = await StudentService.joinGroup(req.user!.id, code);
-      res.json(group);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static joinGroup = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { code } = req.body;
+    const group = await GroupService.joinGroup(req.user!.id, code);
+    res.json(group);
+  });
 
-  static async getNeighbors(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const neighbors = await StudentService.getNeighbors(req.user!.id);
-      res.json(neighbors);
-    } catch (error: any) {
-      next(error);
-    }
-  }
+  static getNeighbors = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const neighbors = await StudentProfileService.getNeighbors(req.user!.id);
+    res.json(neighbors);
+  });
 
-  static async getMasters(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const masters = await StudentService.getMasters();
-      res.json(masters);
-    } catch (error: any) {
-      next(error);
-    }
-  }
+  static getMasters = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const masters = await StudentProfileService.getMasters();
+    res.json(masters);
+  });
 
-  static async submitComplaint(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const { accusedId, content } = req.body;
-      const file = req.file;
-      const evidenceUrl = file ? `/uploads/${file.filename}` : undefined;
+  static submitComplaint = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { accusedId, content } = req.body;
+    const file = req.file;
+    const evidenceUrl = file ? `/uploads/${file.filename}` : undefined;
 
-      const complaint = await StudentService.submitComplaint(req.user!.id, accusedId, content, evidenceUrl);
-      res.json(complaint);
-    } catch (error) {
-      next(error);
-    }
-  }
+    const complaint = await ComplaintService.submitComplaint(req.user!.id, accusedId, content, evidenceUrl);
+    res.json(complaint);
+  });
 
-  static async getComplaints(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const complaints = await StudentService.getComplaints(req.user!.id);
-      res.json(complaints);
-    } catch (error: any) {
-      next(error);
-    }
-  }
+  static getComplaints = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const complaints = await ComplaintService.getComplaints(req.user!.id);
+    res.json(complaints);
+  });
 
-  static async submitRepairRequest(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const { description, masterId } = req.body;
-      const request = await StudentService.submitRepairRequest(req.user!.id, description, masterId || undefined);
-      res.json(request);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static submitRepairRequest = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { description, masterId } = req.body;
+    const request = await RepairService.submitRepairRequest(req.user!.id, description, masterId || undefined);
+    res.json(request);
+  });
 
-  static async getRepairRequests(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const requests = await StudentService.getRepairRequests(req.user!.id);
-      res.json(requests);
-    } catch (error: any) {
-      next(error);
-    }
-  }
+  static getRepairRequests = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const requests = await RepairService.getRepairRequests(req.user!.id);
+    res.json(requests);
+  });
 
-  static async updateRepairStatus(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const { status } = req.body;
-      const request = await StudentService.updateRepairStatus(req.user!.id, id, status);
-      res.json(request);
-    } catch (error: any) {
-      next(error);
-    }
-  }
+  static updateRepairStatus = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    const request = await RepairService.updateRepairStatus(req.user!.id, id, status);
+    res.json(request);
+  });
 
-  static async getJars(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const jars = await StudentService.getJars(req.user!.id);
-      res.json(jars);
-    } catch (error: any) {
-      next(error);
-    }
-  }
+  static getJars = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const jars = await FinancialService.getJars(req.user!.id);
+    res.json(jars);
+  });
 
-  static async donateToJar(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const { jarId, amount, comment } = req.body;
-      const result = await StudentService.donateToJar(req.user!.id, jarId, Number(amount), comment);
-      res.json(result);
-    } catch (error) {
-      next(error);
-    }
-  }
+  static donateToJar = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { jarId, amount, comment } = req.body;
+    const result = await FinancialService.donateToJar(req.user!.id, jarId, Number(amount), comment);
+    res.json(result);
+  });
 
-  static async getPayments(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const payments = await StudentService.getPayments(req.user!.id);
-      res.json(payments);
-    } catch (error: any) {
-      next(error);
-    }
-  }
+  static getPayments = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const payments = await FinancialService.getPayments(req.user!.id);
+    res.json(payments);
+  });
 
-  static async payPayment(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const payment = await StudentService.payPayment(req.user!.id, id);
-      res.json(payment);
-    } catch (error: any) {
-      next(error);
-    }
-  }
+  static payPayment = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const payment = await FinancialService.payPayment(req.user!.id, id);
+    res.json(payment);
+  });
 
-  static async getNotifications(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const notifications = await StudentService.getNotifications(req.user!.id);
-      res.json(notifications);
-    } catch (error: any) {
-      next(error);
-    }
-  }
+  static getNotifications = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const profile = await prisma.studentProfile.findUnique({ where: { userId: req.user!.id } });
+    if (!profile) return res.json([]);
+    const notifications = await prisma.notification.findMany({
+      where: { studentId: profile.id },
+      orderBy: { createdAt: 'desc' }
+    });
+    res.json(notifications);
+  });
 
-  static async markNotificationRead(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      const { id } = req.params;
-      const notification = await StudentService.markNotificationRead(req.user!.id, id);
-      res.json(notification);
-    } catch (error: any) {
-      next(error);
-    }
-  }
+  static markNotificationRead = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const { id } = req.params;
+    const notification = await prisma.notification.update({
+      where: { id },
+      data: { isRead: true }
+    });
+    res.json(notification);
+  });
 
-  static async markAllNotificationsRead(req: AuthRequest, res: Response, next: NextFunction) {
-    try {
-      await StudentService.markAllNotificationsRead(req.user!.id);
-      res.json({ success: true });
-    } catch (error: any) {
-      next(error);
-    }
-  }
+  static markAllNotificationsRead = asyncHandler(async (req: AuthRequest, res: Response) => {
+    const profile = await prisma.studentProfile.findUnique({ where: { userId: req.user!.id } });
+    if (!profile) return res.json({ success: true });
+    await NotificationService.markAllRead(profile.id);
+    res.json({ success: true });
+  });
 }

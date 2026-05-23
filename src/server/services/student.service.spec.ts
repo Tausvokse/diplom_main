@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { StudentService } from './student.service';
+import { GroupService } from './group.service';
 import { prisma } from '../lib/prisma';
 
 vi.mock('../lib/prisma', () => ({
@@ -23,7 +23,7 @@ vi.mock('../lib/prisma', () => ({
   }
 }));
 
-describe('StudentService', () => {
+describe('GroupService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -43,7 +43,7 @@ describe('StudentService', () => {
       vi.mocked(prisma.studentProfile.findUnique)
         .mockResolvedValueOnce({ id: 'creator-1', user: { gender: 'MALE' } } as any);
 
-      await expect(StudentService.joinGroup('user-2', 'CODE')).rejects.toThrow('До групи можуть приєднуватися лише студенти тієї ж статі');
+      await expect(GroupService.joinGroup('user-2', 'CODE')).rejects.toThrow('До групи можуть приєднуватися лише студенти тієї ж статі');
     });
 
     it('should allow join if genders match', async () => {
@@ -66,7 +66,7 @@ describe('StudentService', () => {
       // Mock the final return
       vi.mocked(prisma.groupReferral.findUnique).mockResolvedValueOnce({ ...mockGroup, currentMembers: 2 } as any);
 
-      const result = await StudentService.joinGroup('user-2', 'CODE');
+      const result = await GroupService.joinGroup('user-2', 'CODE');
       expect(result!.currentMembers).toBe(2);
       expect(prisma.$transaction).toHaveBeenCalled();
     });
