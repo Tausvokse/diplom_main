@@ -14,8 +14,8 @@ router.use(authenticate);
 router.get('/', MessageController.getMessages);
 router.post('/', validate(sendMessageSchema), MessageController.sendMessage);
 
-// Conversations (for admin chat page)
-router.get('/conversations', requireRole([Role.ADMIN, Role.ADMIN_CAMPUS, Role.ADMIN_COMMANDANT]), MessageController.getConversations);
+// Conversations (for chat page and widget)
+router.get('/conversations', MessageController.getConversations);
 
 // Mark messages as read
 router.patch('/:id/read', MessageController.markMessageRead);
