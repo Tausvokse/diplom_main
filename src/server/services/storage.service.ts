@@ -3,6 +3,7 @@ import { config } from '../config';
 import { AppError } from '../utils/AppError';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
+import { transliterate } from '../utils/transliterate';
 
 export class StorageService {
   private static bucket = config.supabase.bucket.replace(/['"]/g, '');
@@ -16,7 +17,9 @@ export class StorageService {
    */
   static async uploadFile(file: Express.Multer.File, folder: string = 'general', customName?: string): Promise<string> {
     const fileExt = path.extname(file.originalname) || '.png';
-    const fileName = customName ? `${customName}${fileExt}` : `${uuidv4()}${fileExt}`;
+    const rawFileName = customName ? `${customName}${fileExt}` : `${uuidv4()}${fileExt}`;
+    // Transliterate and remove spaces to ensure a safe Supabase key
+    const fileName = transliterate(rawFileName).replace(/\s+/g, '');
     const filePath = `${folder}/${fileName}`;
 
     console.log(`Starting Supabase upload for bucket: ${this.bucket}, path: ${filePath}`);
