@@ -121,7 +121,7 @@ export class MessageController {
       }
 
       const conversations = Array.from(conversationMap.values())
-        .sort((a, b) => a.firstMessageAt.getTime() - b.firstMessageAt.getTime());
+        .sort((a, b) => new Date(b.lastMessage.createdAt).getTime() - new Date(a.lastMessage.createdAt).getTime());
 
       res.json(conversations);
     } catch (error) {

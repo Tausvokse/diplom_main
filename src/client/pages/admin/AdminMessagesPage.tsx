@@ -45,12 +45,8 @@ export const AdminMessagesPage: React.FC = () => {
   }, [activeContact]);
 
   useEffect(() => {
-    scrollToBottom();
+    // scroll not needed for newest first
   }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
 
   const fetchConversations = async () => {
     try {

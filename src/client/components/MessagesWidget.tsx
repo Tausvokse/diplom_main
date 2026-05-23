@@ -43,10 +43,6 @@ export const MessagesWidget: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, []);
-
   const fetchContacts = useCallback(async () => {
     try {
       const endpoint = user?.role === 'STUDENT' ? '/messages/admins' : '/messages/students';
@@ -77,10 +73,8 @@ export const MessagesWidget: React.FC = () => {
   }, [isOpen, fetchContacts, fetchMessages]);
 
   useEffect(() => {
-    if (isOpen) {
-      scrollToBottom();
-    }
-  }, [messages, isOpen, selectedContact, scrollToBottom]);
+    // With messages sorted newest first, we don't need to scroll to bottom.
+  }, [messages, isOpen, selectedContact]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -110,10 +104,12 @@ export const MessagesWidget: React.FC = () => {
     return 'Студент';
   };
 
-  const filteredMessages = messages.filter(
-    m => (m.senderId === selectedContact?.id && m.receiverId === user?.id) || 
-         (m.senderId === user?.id && m.receiverId === selectedContact?.id)
-  );
+  const filteredMessages = messages
+    .filter(
+      m => (m.senderId === selectedContact?.id && m.receiverId === user?.id) || 
+           (m.senderId === user?.id && m.receiverId === selectedContact?.id)
+    )
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   if (user?.role !== 'STUDENT') {
     return null;
