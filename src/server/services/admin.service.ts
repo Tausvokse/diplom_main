@@ -75,11 +75,51 @@ export class AdminService {
       };
     }));
 
-    const clusterStats = await prisma.studentProfile.groupBy({
-      by: ['clusterId'],
-      _count: { clusterId: true },
-      where: { clusterId: { not: null } }
+    const profilesWithVectors = await prisma.studentProfile.findMany({
+      where: { clusteringVector: { not: null } },
+      select: { clusteringVector: true }
     });
+
+    // 5 global psychotypes
+    const psychotypeCounts = [0, 0, 0, 0, 0];
+    
+    if (profilesWithVectors.length > 0) {
+      // Define 5 predefined centroids for stable analytics
+      const predefinedCentroids = [
+        [2, 5, 5, 5], // 0: Сови (Пізній хронотип)
+        [8, 5, 5, 5], // 1: Жайворонки (Ранній хронотип)
+        [5, 5, 5, 5], // 2: Збалансовані
+        [5, 2, 2, 8], // 3: Любителі тиші та чистоти
+        [5, 8, 8, 3]  // 4: Шумні екстраверти
+      ];
+
+      profilesWithVectors.forEach(p => {
+        try {
+          const vStr = p.clusteringVector as string;
+          const vec = JSON.parse(vStr);
+          const studentVec = [vec.chronotype || 5, vec.sociability || 5, vec.noiseTolerance || 5, vec.cleanliness || 5];
+          
+          let bestIdx = 0;
+          let minDistance = Infinity;
+          
+          for (let i = 0; i < 5; i++) {
+            const dist = predefinedCentroids[i].reduce((sum, val, idx) => sum + Math.pow(val - studentVec[idx], 2), 0);
+            if (dist < minDistance) {
+              minDistance = dist;
+              bestIdx = i;
+            }
+          }
+          psychotypeCounts[bestIdx]++;
+        } catch (e) {
+          // ignore parsing errors
+        }
+      });
+    }
+
+    const clusterStats = psychotypeCounts.map((count, index) => ({
+      clusterId: index,
+      _count: { clusterId: count }
+    })).filter(c => c._count.clusterId > 0);
 
     const complaintsStats = await prisma.complaint.groupBy({
       by: ['status'],
