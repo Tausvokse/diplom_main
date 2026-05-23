@@ -154,6 +154,7 @@
   position: relative;
   overflow: hidden;
   border: 1px solid transparent;
+  box-sizing: border-box;
 }
 
 .itemUnread {
@@ -230,7 +231,7 @@
   color: rgb(var(--muted));
   margin-bottom: 0.75rem;
   margin-left: 1.875rem;
-  word-wrap: break-word;
+  word-break: break-word;
   white-space: pre-wrap;
 }
 

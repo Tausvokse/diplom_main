@@ -290,6 +290,7 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   animation: slideUp 0.3s ease-out;
   padding: 1.5rem;
+  box-sizing: border-box;
 }
 
 @keyframes slideUp {
@@ -476,10 +477,12 @@
 
 .imgPreview {
   width: 100%;
-  max-height: 520px;
+  height: auto;
+  max-height: 70vh;
   object-fit: contain;
   border-radius: 1rem;
   box-shadow: var(--nm-inset);
+  display: block;
 }
 
 .pdfPreview {

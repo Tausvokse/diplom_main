@@ -36,34 +36,33 @@ export class AllocationService {
       where: { status: { not: 'MAINTENANCE' } },
       include: { 
         floor: { select: { dormitoryId: true } },
-        allocations: {
-          where: { status: 'ACTIVE' },
-          include: { student: { include: { user: true } } }
+        profiles: {
+          include: { user: true }
         }
       },
       orderBy: [{ floor: { floorNumber: 'asc' } }, { roomNumber: 'asc' }]
     });
 
-    const availableRooms = allRooms.filter((r: any) => r.allocations.length < r.capacity);
+    const availableRooms = allRooms.filter((r: any) => r.profiles.length < r.capacity);
 
     return availableRooms.map((r: any) => {
       let gender: string | null = null;
       let centroid: number[] | null = null;
       let primaryFaculty: string | null = null;
       
-      const actualOccupancy = r.allocations.length;
+      const actualOccupancy = r.profiles.length;
 
       if (actualOccupancy > 0) {
-        gender = r.allocations[0].student.user.gender;
+        gender = r.profiles[0].user.gender;
         
         const facultyCounts = new Map<string, number>();
-        const vectors = r.allocations.map((a: any) => {
-          const fac = a.student.faculty;
+        const vectors = r.profiles.map((p: any) => {
+          const fac = p.faculty;
           facultyCounts.set(fac, (facultyCounts.get(fac) || 0) + 1);
 
           let vec = { chronotype: 5, sociability: 5, noiseTolerance: 5, cleanliness: 5 };
-          if (a.student.clusteringVector) {
-            try { vec = JSON.parse(a.student.clusteringVector); } catch {}
+          if (p.clusteringVector) {
+            try { vec = JSON.parse(p.clusteringVector); } catch {}
           }
           return [vec.chronotype, vec.sociability, vec.noiseTolerance, vec.cleanliness];
         });
@@ -482,8 +481,8 @@ export class AllocationService {
         if (!room) throw new AppError('Кімнату з плану не знайдено', 404);
         if (room.status === 'MAINTENANCE') throw new AppError(`Кімната ${room.roomNumber} перебуває на ремонті`, 400);
 
-        const activeOccupancy = await tx.roomAllocation.count({
-          where: { roomId: room.id, status: 'ACTIVE' }
+        const activeOccupancy = await tx.studentProfile.count({
+          where: { roomId: room.id }
         });
         const freeBeds = room.capacity - activeOccupancy;
         if (roomPlan.students.length > freeBeds) throw new AppError(`У кімнаті ${room.roomNumber} недостатньо вільних місць (спроба додати ${roomPlan.students.length}, вільно ${freeBeds}, місткість ${room.capacity}, зайнято ${activeOccupancy})`, 400);
