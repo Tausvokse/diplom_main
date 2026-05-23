@@ -32,8 +32,8 @@ export class AllocationService {
 
   // Accepts transaction client for Race Condition prevention
   private static async getSmartRoomsState(txClient: any = prisma) {
-    const availableRooms = await txClient.room.findMany({
-      where: { status: 'AVAILABLE', currentOccupancy: { lt: prisma.room.fields.capacity } },
+    const allRooms = await txClient.room.findMany({
+      where: { status: { not: 'MAINTENANCE' } },
       include: { 
         floor: { select: { dormitoryId: true } },
         allocations: {
@@ -44,12 +44,16 @@ export class AllocationService {
       orderBy: [{ floor: { floorNumber: 'asc' } }, { roomNumber: 'asc' }]
     });
 
+    const availableRooms = allRooms.filter((r: any) => r.allocations.length < r.capacity);
+
     return availableRooms.map((r: any) => {
       let gender: string | null = null;
       let centroid: number[] | null = null;
       let primaryFaculty: string | null = null;
       
-      if (r.allocations.length > 0) {
+      const actualOccupancy = r.allocations.length;
+
+      if (actualOccupancy > 0) {
         gender = r.allocations[0].student.user.gender;
         
         const facultyCounts = new Map<string, number>();
@@ -80,7 +84,7 @@ export class AllocationService {
         id: r.id,
         roomNumber: r.roomNumber,
         capacity: r.capacity,
-        currentOccupancy: r.currentOccupancy,
+        currentOccupancy: actualOccupancy, // Fix: use dynamically calculated actualOccupancy
         dormitoryId: r.floor.dormitoryId,
         gender,
         centroid,
