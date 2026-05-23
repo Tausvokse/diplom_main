@@ -9,6 +9,7 @@ import { AuthRequest } from '../middlewares/auth.middleware';
 import { asyncHandler } from '../utils/asyncHandler';
 import { NotificationService } from '../services/notification.service';
 import { prisma } from '../lib/prisma';
+import { StorageService } from '../services/storage.service';
 
 export class StudentController {
   static getDashboardData = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -65,7 +66,11 @@ export class StudentController {
   static submitComplaint = asyncHandler(async (req: AuthRequest, res: Response) => {
     const { accusedId, content } = req.body;
     const file = req.file;
-    const evidenceUrl = file ? `/uploads/${file.filename}` : undefined;
+    let evidenceUrl: string | undefined = undefined;
+
+    if (file) {
+      evidenceUrl = await StorageService.uploadFile(file, 'complaints');
+    }
 
     const complaint = await ComplaintService.submitComplaint(req.user!.id, accusedId, content, evidenceUrl);
     res.json(complaint);

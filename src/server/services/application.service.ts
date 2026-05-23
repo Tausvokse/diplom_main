@@ -1,7 +1,6 @@
-import fs from 'fs';
-import path from 'path';
 import { prisma } from '../lib/prisma';
 import { AppError } from '../utils/AppError';
+import { StorageService } from './storage.service';
 
 export class ApplicationService {
   static async getApplication(userId: string) {
@@ -108,31 +107,11 @@ export class ApplicationService {
       }
     }
 
-    const fileUrls = allFiles.map(({ file, category }, index) => {
-      const ext = path.extname(file.originalname) || '.png';
-      const cleanName = encodeURIComponent(profile!.fullName.replace(/\s+/g, '_'));
-      const studentId = profile!.studentIdNumber;
-
-      const newFilename = `${category}_${cleanName}_${studentId}${index > 0 ? `_${index}` : ''}${ext}`;
-      const oldPath = file.path;
-      const newPath = path.join(path.dirname(file.path), newFilename);
-
-      let finalPath = newPath;
-      let finalUrl = newFilename;
-      if (fs.existsSync(newPath)) {
-        const timestamp = Date.now();
-        finalUrl = `${category}_${cleanName}_${studentId}_${timestamp}${ext}`;
-        finalPath = path.join(path.dirname(file.path), finalUrl);
-      }
-
-      try {
-        fs.renameSync(oldPath, finalPath);
-      } catch (e) {
-        console.error('File rename error:', e);
-        return `/uploads/${file.filename}`;
-      }
-      return `/uploads/${finalUrl}`;
-    });
+    // Upload files to Supabase
+    const fileUrls = await Promise.all(allFiles.map(async ({ file, category }) => {
+      const folder = `applications/${profile!.id}/${category}`;
+      return await StorageService.uploadFile(file, folder);
+    }));
 
     const application = await prisma.application.create({
       data: {

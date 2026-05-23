@@ -15,8 +15,9 @@ import {
 } from '../validators/student.schemas';
 
 const router = Router();
+const storage = multer.memoryStorage();
 const upload = multer({
-  dest: 'uploads/',
+  storage,
   limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png', 'application/pdf'];

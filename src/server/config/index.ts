@@ -6,6 +6,9 @@ const requiredSecrets = [
   'JWT_SECRET',
   'JWT_REFRESH_SECRET',
   'DATABASE_URL',
+  'SUPABASE_URL',
+  'SUPABASE_KEY',
+  'SUPABASE_BUCKET',
 ];
 
 if (process.env.NODE_ENV === 'production') {
@@ -35,5 +38,10 @@ export const config = {
   diiaWebhookSecret: process.env.DIIA_WEBHOOK_SECRET || 'dev_diia_webhook_secret',
   environment: process.env.NODE_ENV || 'development',
   corsOrigins: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:5173'],
-  monobankToken: process.env.MONOBANK_API_TOKEN || ''
+  monobankToken: process.env.MONOBANK_API_TOKEN || '',
+  supabase: {
+    url: process.env.SUPABASE_URL || '',
+    key: process.env.SUPABASE_KEY || '',
+    bucket: process.env.SUPABASE_BUCKET || 'dormitory-files'
+  }
 };
