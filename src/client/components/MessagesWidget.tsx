@@ -31,27 +31,31 @@ interface Contact {
   lastName: string;
   role?: string;
   email: string;
+  unreadCount?: number;
 }
 
 export const MessagesWidget: React.FC = () => {
   const { user } = useAuthStore();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [contacts, setContacts] = useState<Contact[]>([]);
+  const [conversations, setConversations] = useState<any[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [newMessage, setNewMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const fetchContacts = useCallback(async () => {
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, []);
+
+  const fetchConversations = useCallback(async () => {
     try {
-      const endpoint = user?.role === 'STUDENT' ? '/messages/admins' : '/messages/students';
-      const res = await api.get(endpoint);
-      setContacts(res.data);
+      const res = await api.get('/messages/conversations');
+      setConversations(res.data);
     } catch (error) {
-      console.error('Error fetching contacts:', error);
+      console.error('Error fetching conversations:', error);
     }
-  }, [user?.role]);
+  }, []);
 
   const fetchMessages = useCallback(async () => {
     try {
@@ -62,19 +66,45 @@ export const MessagesWidget: React.FC = () => {
     }
   }, []);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchContacts();
-      fetchMessages();
-      
-      const interval = setInterval(fetchMessages, 30000); // Polling every 30s
-      return () => clearInterval(interval);
+  const markRead = async (contactId: string) => {
+    try {
+      await api.patch(`/messages/conversation/${contactId}/read-all`);
+      fetchConversations();
+    } catch (error) {
+      console.error(error);
     }
-  }, [isOpen, fetchContacts, fetchMessages]);
+  };
 
   useEffect(() => {
-    // With messages sorted newest first, we don't need to scroll to bottom.
-  }, [messages, isOpen, selectedContact]);
+    if (isOpen) {
+      fetchConversations();
+      fetchMessages();
+
+      const interval = setInterval(() => {
+        fetchConversations();
+        fetchMessages();
+      }, 30000); // Polling every 30s
+      return () => clearInterval(interval);
+    } else {
+      fetchConversations();
+      const interval = setInterval(() => {
+        fetchConversations();
+      }, 60000); // Check for notifications every minute when closed
+      return () => clearInterval(interval);
+    }
+  }, [isOpen, fetchConversations, fetchMessages]);
+
+  useEffect(() => {
+    if (selectedContact) {
+      markRead(selectedContact.id);
+    }
+  }, [selectedContact]);
+
+  useEffect(() => {
+    if (isOpen) {
+      scrollToBottom();
+    }
+  }, [messages, isOpen, selectedContact, scrollToBottom]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -88,7 +118,7 @@ export const MessagesWidget: React.FC = () => {
       });
       setMessages(prev => [...prev, res.data]);
       setNewMessage('');
-      toast.success('Повідомлення відправлено');
+      fetchConversations();
     } catch (error) {
       toast.error('Помилка відправки повідомлення');
     } finally {
@@ -109,7 +139,9 @@ export const MessagesWidget: React.FC = () => {
       m => (m.senderId === selectedContact?.id && m.receiverId === user?.id) || 
            (m.senderId === user?.id && m.receiverId === selectedContact?.id)
     )
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+
+  const totalUnread = conversations.reduce((acc, curr) => acc + (curr.unreadCount || 0), 0);
 
   if (user?.role !== 'STUDENT') {
     return null;
@@ -123,6 +155,7 @@ export const MessagesWidget: React.FC = () => {
         className={styles.fab}
       >
         <MessageCircle className={styles.iconLarge} />
+        {totalUnread > 0 && <div className={styles.unreadBadgeFab} />}
       </button>
 
       {/* Chat Modal */}
@@ -144,19 +177,22 @@ export const MessagesWidget: React.FC = () => {
             <div className={styles.body}>
               {/* Sidebar (Contacts) */}
               <div className={`${styles.sidebar} ${selectedContact ? styles.sidebarHidden : styles.sidebarFull}`}>
-                {contacts.map(contact => (
+                {conversations.map(conv => (
                   <div 
-                    key={contact.id}
-                    onClick={() => setSelectedContact(contact)}
-                    className={`${styles.contactItem} ${selectedContact?.id === contact.id ? styles.contactItemActive : styles.contactItemInactive}`}
+                    key={conv.contact.id}
+                    onClick={() => setSelectedContact(conv.contact)}
+                    className={`${styles.contactItem} ${selectedContact?.id === conv.contact.id ? styles.contactItemActive : styles.contactItemInactive}`}
                   >
-                    <div className={`${styles.contactName} ${selectedContact?.id === contact.id ? styles.contactNameActive : styles.contactNameInactive}`}>
-                      {contact.firstName} {contact.lastName}
+                    <div style={{ position: 'relative', display: 'inline-block', width: '100%' }}>
+                      <div className={`${styles.contactName} ${selectedContact?.id === conv.contact.id ? styles.contactNameActive : styles.contactNameInactive}`}>
+                        {conv.contact.firstName} {conv.contact.lastName}
+                      </div>
+                      {conv.unreadCount > 0 && <div className={styles.unreadBadgeContact} />}
                     </div>
-                    <div className={styles.contactRole}>{getRoleLabel(contact.role)}</div>
+                    <div className={styles.contactRole}>{getRoleLabel(conv.contact.role)}</div>
                   </div>
                 ))}
-                {contacts.length === 0 && (
+                {conversations.length === 0 && (
                   <div className={styles.noContacts}>Немає контактів</div>
                 )}
               </div>
