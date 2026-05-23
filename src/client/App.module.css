@@ -248,13 +248,15 @@
 }
 
 .userName {
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.9rem;
+  font-weight: 700;
   color: rgb(var(--text));
-  white-space: nowrap;
+  line-height: 1.25;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: block;
 }
 
 .userRoleWrapper {

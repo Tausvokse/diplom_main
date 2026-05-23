@@ -297,6 +297,7 @@
   text-align: center;
   background-color: rgb(var(--surface-2));
   border-radius: 1.5rem;
+  box-sizing: border-box;
 }
 
 .emptyListIcon {

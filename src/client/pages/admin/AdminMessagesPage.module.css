@@ -90,6 +90,7 @@
   transition-duration: 150ms;
   display: flex;
   align-items: flex-start;
+  box-sizing: border-box;
 }
 .contactButtonActive {
   background-color: rgb(var(--surface));

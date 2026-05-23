@@ -100,8 +100,8 @@ export class AuthService {
       throw new AppError('Користувач з таким email вже існує', 409);
     }
 
-    if (!['ADMIN', 'ADMIN_CAMPUS', 'ADMIN_COMMANDANT'].includes(role)) {
-      throw new AppError('Невірна роль адміністратора', 400);
+    if (!['ADMIN', 'ADMIN_CAMPUS', 'ADMIN_COMMANDANT', 'MASTER_SLESAR', 'MASTER_SANTEKHNIK', 'MASTER_ELECTRIC'].includes(role)) {
+      throw new AppError('Невірна роль адміністратора або майстра', 400);
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
