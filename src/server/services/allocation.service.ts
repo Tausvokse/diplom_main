@@ -36,27 +36,27 @@ export class AllocationService {
       where: { status: { not: 'MAINTENANCE' } },
       include: { 
         floor: { select: { dormitoryId: true } },
-        profiles: {
+        studentProfiles: {
           include: { user: true }
         }
       },
       orderBy: [{ floor: { floorNumber: 'asc' } }, { roomNumber: 'asc' }]
     });
 
-    const availableRooms = allRooms.filter((r: any) => r.profiles.length < r.capacity);
+    const availableRooms = allRooms.filter((r: any) => r.studentProfiles.length < r.capacity);
 
     return availableRooms.map((r: any) => {
       let gender: string | null = null;
       let centroid: number[] | null = null;
       let primaryFaculty: string | null = null;
       
-      const actualOccupancy = r.profiles.length;
+      const actualOccupancy = r.studentProfiles.length;
 
       if (actualOccupancy > 0) {
-        gender = r.profiles[0].user.gender;
+        gender = r.studentProfiles[0].user?.gender || r.studentProfiles[0].gender;
         
         const facultyCounts = new Map<string, number>();
-        const vectors = r.profiles.map((p: any) => {
+        const vectors = r.studentProfiles.map((p: any) => {
           const fac = p.faculty;
           facultyCounts.set(fac, (facultyCounts.get(fac) || 0) + 1);
 
