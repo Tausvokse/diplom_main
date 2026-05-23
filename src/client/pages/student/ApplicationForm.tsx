@@ -722,8 +722,3 @@ export const ApplicationForm: React.FC = () => {
 };
 
 export default ApplicationForm;
-</div>
-  );
-};
-
-export default ApplicationForm;
