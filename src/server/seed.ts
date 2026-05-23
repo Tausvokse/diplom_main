@@ -3,7 +3,7 @@ import { PrismaClient, Role, ApplicationStatus, ApplicationType } from '@prisma/
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('--- Starting Production-Grade Seeding ---');
+  console.log('--- Starting Production-Grade Seeding (KAI) ---');
 
   // 1. Clean up (Order matters due to Foreign Keys)
   console.log('Cleaning up database...');
@@ -28,13 +28,13 @@ async function main() {
 
   // 2. Create University & Dormitories
   const uni = await prisma.university.create({
-    data: { name: 'Київський Політехнічний Інститут', city: 'Київ' }
+    data: { name: 'Київський авіаційний інститут', city: 'Київ' }
   });
 
   const dorm = await prisma.dormitory.create({
     data: {
-      name: 'Гуртожиток №15',
-      address: 'вул. Металістів, 5',
+      name: 'Гуртожиток №1',
+      address: 'вул. Ніжинська, 29',
       universityId: uni.id,
       totalCapacity: 150
     }
@@ -77,7 +77,7 @@ async function main() {
 
   // 5. Create Students (Stress Test: 120 students)
   console.log('Generating 120 realistic students...');
-  const faculties = ['ФІОТ', 'ІПСА', 'ФЕА', 'ТЕФ', 'РТФ', 'ФПМ', 'ІТС'];
+  const faculties = ['АКФ', 'ФКНТ', 'ФЕБА', 'ФЛСК', 'ЮФ', 'ФНСА', 'ФЕБ'];
   const genders = ['MALE', 'FEMALE'];
   
   const maleFirstNames = ['Олександр', 'Максим', 'Артем', 'Дмитро', 'Іван', 'Андрій', 'Михайло', 'Ярослав', 'Сергій', 'Владислав'];
@@ -98,13 +98,13 @@ async function main() {
 
     const user = await prisma.user.create({
       data: {
-        email: `student${i + 100}@kpi.ua`,
+        email: `student${i + 100}@kai.edu.ua`,
         password: 'password123',
         role: Role.STUDENT,
         gender: gender as any,
         firstName,
         lastName,
-      } as any
+      }
     });
 
     const vector = {
@@ -129,7 +129,7 @@ async function main() {
         fullName: `${lastName} ${firstName}`,
         email: user.email,
         phone: `+38067${Math.floor(1000000 + Math.random() * 9000000)}`,
-        studentIdNumber: `KB${20000000 + i}`,
+        studentIdNumber: `KA${20000000 + i}`,
         course,
         faculty: faculty,
         clusteringVector: JSON.stringify(vector),
@@ -159,7 +159,7 @@ async function main() {
       gender: 'OTHER' as any,
       firstName: 'Головний',
       lastName: 'Адміністратор'
-    } as any
+    }
   });
 
   console.log('--- Seeding Complete: 120 Students, 50 Rooms, 1 Admin ---');
@@ -173,4 +173,3 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
-

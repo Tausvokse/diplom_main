@@ -269,7 +269,7 @@ export class AllocationService {
       const kmeansInput: KmeansStudent[] = blockStudents.map(student => {
         let vector = { chronotype: 5, sociability: 5, noiseTolerance: 5, cleanliness: 5 };
         if (student.clusteringVector) {
-          try { vector = JSON.parse(student.clusteringVector); } catch {}
+          try { vector = JSON.parse(student.clusteringVector); } catch { /* ignore parse error */ }
         }
         return { id: student.id, vector, groupId: student.groupId, faculty: student.faculty };
       });
