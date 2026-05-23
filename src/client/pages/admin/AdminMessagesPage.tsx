@@ -75,7 +75,7 @@ export const AdminMessagesPage: React.FC = () => {
 
     socket.on('new_message', (message: any) => {
       fetchConversations();
-      if (activeContact?.id === message.senderId) {
+      if (activeContact && activeContact.id === message.senderId) {
         setMessages(prev => [...prev, message]);
         markConversationRead(activeContact.id);
       }
