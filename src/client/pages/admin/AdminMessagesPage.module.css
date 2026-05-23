@@ -91,12 +91,17 @@
   display: flex;
   align-items: flex-start;
   box-sizing: border-box;
+  background: transparent;
+  border: none;
+  cursor: pointer;
 }
 .contactButtonActive {
-  background-color: rgb(var(--surface));
+  background-color: rgb(var(--surface-2));
+  box-shadow: var(--nm-inset-sm);
 }
 .contactButtonInactive:hover {
   background-color: rgb(var(--surface));
+  box-shadow: var(--nm-raised-sm);
 }
 .avatarWrapper {
   position: relative;

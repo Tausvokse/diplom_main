@@ -540,7 +540,7 @@
 }
 @media (min-width: 768px) {
   .invoiceForm {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 .formLabel {
@@ -552,6 +552,7 @@
 }
 .formInput {
   width: 100%;
+  box-sizing: border-box;
   padding: 0.65rem 0.9rem;
   border-radius: 14px;
   border: 1px solid rgb(var(--border) / 0.15);
