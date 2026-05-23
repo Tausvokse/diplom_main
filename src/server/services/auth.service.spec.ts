@@ -61,7 +61,7 @@ describe('AuthService', () => {
   describe('register', () => {
     it('should throw error if email exists', async () => {
       vi.mocked(prisma.user.findUnique).mockResolvedValue({ id: '1' } as any);
-      await expect(AuthService.register('test@kai.edu.ua', 'pass', 'John', 'Doe', '123', 'KA123', 1, 'ФКНТ')).rejects.toThrow('Користувач з таким email вже існує');
+      await expect(AuthService.register('test@kai.edu.ua', 'pass', 'John', 'Doe', '123', 'KA123', 1, 'ФКНТ', 'MALE')).rejects.toThrow('Користувач з таким email вже існує');
     });
 
     it('should successfully register a student', async () => {
@@ -72,7 +72,7 @@ describe('AuthService', () => {
       vi.mocked(prisma.$transaction).mockResolvedValue(mockUser as any);
       vi.mocked(jwt.sign).mockReturnValue('mock-token' as never);
 
-      const result = await AuthService.register('test@kai.edu.ua', 'pass', 'John', 'Doe', '123', 'KA123', 1, 'ФКНТ');
+      const result = await AuthService.register('test@kai.edu.ua', 'pass', 'John', 'Doe', '123', 'KA123', 1, 'ФКНТ', 'MALE');
       expect(result.user.email).toBe('test@kai.edu.ua');
       expect(result.accessToken).toBe('mock-token');
     });

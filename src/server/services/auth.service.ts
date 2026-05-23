@@ -6,7 +6,7 @@ import { prisma } from '../lib/prisma';
 import { AppError } from '../utils/AppError';
 
 export class AuthService {
-  static async register(email: string, password: string, firstName: string, lastName: string, phone: string, studentIdNumber: string, course: number, faculty: string, isTeacher: boolean = false) {
+  static async register(email: string, password: string, firstName: string, lastName: string, phone: string, studentIdNumber: string, course: number, faculty: string, gender: string, isTeacher: boolean = false) {
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       throw new AppError('Користувач з таким email вже існує', 409);
@@ -21,6 +21,7 @@ export class AuthService {
           email,
           password: hashedPassword,
           role: isTeacher ? 'ADMIN' : 'STUDENT',
+          gender: gender as any,
           firstName,
           lastName
         }

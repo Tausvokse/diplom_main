@@ -20,7 +20,8 @@ const Register: React.FC = () => {
     confirmPassword: '',
     studentIdNumber: '',
     course: '1',
-    faculty: ''
+    faculty: '',
+    gender: 'MALE'
   });
 
   const [verificationCode, setVerificationCode] = useState('');
@@ -91,6 +92,7 @@ const Register: React.FC = () => {
         studentIdNumber: formData.studentIdNumber,
         course: parseInt(formData.course, 10),
         faculty: formData.faculty,
+        gender: formData.gender,
         verificationCode
       });
       
@@ -201,10 +203,38 @@ const Register: React.FC = () => {
                       name="faculty"
                       value={formData.faculty}
                       onChange={handleChange}
-                      placeholder="ФІОТ"
+                      placeholder="АКФ"
                       className="ui-input"
                     />
                   </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium ui-muted mb-1.5">Стать</label>
+                <div className="flex gap-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="gender" 
+                      value="MALE" 
+                      checked={formData.gender === 'MALE'} 
+                      onChange={handleChange} 
+                      className="text-[rgb(var(--accent))] focus:ring-[rgb(var(--accent))]"
+                    />
+                    <span className="text-sm text-[rgb(var(--text))]">Чоловіча</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input 
+                      type="radio" 
+                      name="gender" 
+                      value="FEMALE" 
+                      checked={formData.gender === 'FEMALE'} 
+                      onChange={handleChange} 
+                      className="text-[rgb(var(--accent))] focus:ring-[rgb(var(--accent))]"
+                    />
+                    <span className="text-sm text-[rgb(var(--text))]">Жіноча</span>
+                  </label>
                 </div>
               </div>
 

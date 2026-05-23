@@ -37,10 +37,14 @@ export class AuthController {
 
   static async register(req: Request, res: Response, next: NextFunction) {
     try {
-      const { email, password, firstName, lastName, phone, studentIdNumber, course, faculty, verificationCode } = req.body;
+      const { email, password, firstName, lastName, phone, studentIdNumber, course, faculty, gender, verificationCode } = req.body;
       
-      if (!email || !password || !firstName || !lastName || !phone || !studentIdNumber || !course || !faculty || !verificationCode) {
+      if (!email || !password || !firstName || !lastName || !phone || !studentIdNumber || !course || !faculty || !gender || !verificationCode) {
         return res.status(400).json({ error: 'Відсутні обов\'язкові поля.' });
+      }
+
+      if (gender !== 'MALE' && gender !== 'FEMALE') {
+        return res.status(400).json({ error: 'Некоректне значення статі.' });
       }
 
       // Verify code
@@ -61,10 +65,10 @@ export class AuthController {
       // Code is valid, remove it
       verificationCodes.delete(email);
 
-      // Determine role based on domain
-      const isTeacher = email.endsWith('@npp.kai.edu.ua');
+      // Security Fix: Do not grant ADMIN role automatically upon public registration
+      const isTeacher = false; 
       
-      const result = await AuthService.register(email, password, firstName, lastName, phone, studentIdNumber, course, faculty, isTeacher);
+      const result = await AuthService.register(email, password, firstName, lastName, phone, studentIdNumber, course, faculty, gender, isTeacher);
       res.json(result);
     } catch (error) {
       next(error);
