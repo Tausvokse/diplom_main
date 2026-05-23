@@ -163,23 +163,39 @@ export const AllocationDashboard: React.FC = () => {
 
       {/* Progress Bar Overlay / Section */}
       {isRunningAlgorithm && (
-        <div className="ui-card p-8 md:p-10 mb-8 border-2 border-indigo-500/30 shadow-[0_0_30px_rgba(99,102,241,0.1)]">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-xl font-bold text-[rgb(var(--text))] flex items-center">
-              <Loader2 className="w-6 h-6 mr-3 animate-spin text-indigo-500" />
+        <div className="relative ui-card p-10 md:p-14 mb-8 overflow-hidden rounded-3xl border-0 shadow-[0_8px_32px_rgba(99,102,241,0.15)] bg-gradient-to-b from-[rgb(var(--surface))] to-[rgb(var(--surface-2))]">
+          {/* Animated Background Glow */}
+          <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/20 rounded-full blur-[80px] animate-pulse"></div>
+          <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-purple-500/20 rounded-full blur-[80px] animate-pulse" style={{ animationDelay: '1s' }}></div>
+          
+          <div className="relative z-10 flex flex-col items-center text-center">
+            <div className="relative mb-6">
+              <div className="absolute inset-0 bg-indigo-500 rounded-full blur-md opacity-30 animate-pulse"></div>
+              <Loader2 className="w-12 h-12 animate-spin text-indigo-500 relative z-10" />
+            </div>
+            
+            <h3 className="text-2xl font-black text-[rgb(var(--text))] mb-2 tracking-tight">
               Робота AI алгоритму
             </h3>
-            <span className="text-indigo-500 font-mono font-bold text-2xl">{progress}%</span>
-          </div>
-          <div className="h-4 w-full bg-[rgb(var(--surface-2))] nm-inset rounded-full overflow-hidden mb-4">
-            <div 
-              className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500 ease-out relative shadow-[inset_0_2px_4px_rgba(255,255,255,0.3)]"
-              style={{ width: `${progress}%` }}
-            >
-              <div className="absolute inset-0 bg-white/20 animate-[shimmer_1s_infinite]"></div>
+            <p className="text-[rgb(var(--muted))] text-sm font-medium max-w-sm mb-8">
+              Аналізуємо психометричні профілі та формуємо ідеальні кластери...
+            </p>
+            
+            <div className="w-full max-w-md">
+              <div className="flex justify-between items-end mb-3 px-1">
+                <span className="text-xs font-bold uppercase tracking-wider text-indigo-500">{progressStatus}</span>
+                <span className="text-indigo-500 font-mono font-bold text-xl">{progress}%</span>
+              </div>
+              <div className="h-3 w-full bg-[rgb(var(--border)/0.2)] rounded-full overflow-hidden backdrop-blur-sm">
+                <div 
+                  className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-indigo-500 transition-all duration-700 ease-out relative rounded-full bg-[length:200%_100%] animate-[gradient_2s_linear_infinite]"
+                  style={{ width: `${progress}%` }}
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-[shimmer_1.5s_infinite]"></div>
+                </div>
+              </div>
             </div>
           </div>
-          <p className="text-sm font-bold uppercase tracking-wider text-[rgb(var(--muted))] text-center">{progressStatus}</p>
         </div>
       )}
 

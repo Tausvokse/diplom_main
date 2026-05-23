@@ -30,9 +30,9 @@ export class AllocationService {
     return this.filterValidPool(rawProfiles);
   }
 
-  // Helper to build smart room state including existing residents' vectors
-  private static async getSmartRoomsState() {
-    const availableRooms = await prisma.room.findMany({
+  // Accepts transaction client for Race Condition prevention
+  private static async getSmartRoomsState(txClient: any = prisma) {
+    const availableRooms = await txClient.room.findMany({
       where: { status: 'AVAILABLE', currentOccupancy: { lt: prisma.room.fields.capacity } },
       include: { 
         floor: { select: { dormitoryId: true } },
@@ -44,7 +44,7 @@ export class AllocationService {
       orderBy: [{ floor: { floorNumber: 'asc' } }, { roomNumber: 'asc' }]
     });
 
-    return availableRooms.map(r => {
+    return availableRooms.map((r: any) => {
       let gender: string | null = null;
       let centroid: number[] | null = null;
       let primaryFaculty: string | null = null;
@@ -53,7 +53,7 @@ export class AllocationService {
         gender = r.allocations[0].student.user.gender;
         
         const facultyCounts = new Map<string, number>();
-        const vectors = r.allocations.map(a => {
+        const vectors = r.allocations.map((a: any) => {
           const fac = a.student.faculty;
           facultyCounts.set(fac, (facultyCounts.get(fac) || 0) + 1);
 
@@ -64,14 +64,13 @@ export class AllocationService {
           return [vec.chronotype, vec.sociability, vec.noiseTolerance, vec.cleanliness];
         });
 
-        // Most common faculty in the room
         let maxCount = 0;
         facultyCounts.forEach((count, fac) => {
           if (count > maxCount) { maxCount = count; primaryFaculty = fac; }
         });
 
         centroid = [0, 0, 0, 0];
-        vectors.forEach(v => {
+        vectors.forEach((v: any) => {
           for (let i = 0; i < 4; i++) centroid![i] += v[i];
         });
         for (let i = 0; i < 4; i++) centroid![i] /= vectors.length;
@@ -90,14 +89,12 @@ export class AllocationService {
     });
   }
 
-  // Calculate Euclidean Distance including Faculty Penalty (2.0)
   private static calculateDistance(c1: number[], fac1: string, c2: number[], fac2: string | null) {
     let dist = c1.reduce((sum, val, i) => sum + Math.pow(val - c2[i], 2), 0);
     if (fac2 && fac1 !== fac2) dist += 2.0; 
     return Math.sqrt(dist);
   }
 
-  // Recalculate room centroid after adding students
   private static updateRoomState(room: any, newStudents: KmeansStudent[]) {
     room.currentOccupancy += newStudents.length;
     
@@ -109,9 +106,8 @@ export class AllocationService {
       room.centroid = [0, 0, 0, 0];
       newVectors.forEach(v => { for (let i = 0; i < 4; i++) room.centroid[i] += v[i]; });
       for (let i = 0; i < 4; i++) room.centroid[i] /= newVectors.length;
-      room.primaryFaculty = newStudents[0].faculty; // rough approximation
+      room.primaryFaculty = newStudents[0].faculty;
     } else {
-      // Weighted average
       const oldWeight = room.currentOccupancy - newStudents.length;
       const totalWeight = room.currentOccupancy;
       
@@ -145,29 +141,32 @@ export class AllocationService {
       await prisma.studentProfile.update({ where: { id: res.id }, data: { priorityScore: res.priorityScore } });
     }
 
-    const roomsState = await this.getSmartRoomsState();
-    const totalAvailableBeds = roomsState.reduce((sum, room) => sum + (room.capacity - room.currentOccupancy), 0);
-    const sortedStudentIds = ahpResults.map(result => result.id);
-    const topStudentIds = sortedStudentIds.slice(0, totalAvailableBeds);
-
-    if (topStudentIds.length === 0) throw new AppError('Немає вільних місць у гуртожитках', 400);
-
-    const students = validProfiles.filter(p => topStudentIds.includes(p.id));
-
-    const genderBlocks = {
-      MALE: students.filter(s => s.user.gender === 'MALE'),
-      FEMALE: students.filter(s => s.user.gender === 'FEMALE'),
-      OTHER: students.filter(s => s.user.gender === 'OTHER')
-    };
-
     const results: any[] = [];
     
     await prisma.$transaction(async (tx) => {
+      // 1. Race Condition Fix: Read state INSIDE transaction
+      const roomsState = await this.getSmartRoomsState(tx);
+      const totalAvailableBeds = roomsState.reduce((sum: number, room: any) => sum + (room.capacity - room.currentOccupancy), 0);
+      
+      const sortedStudentIds = ahpResults.map(result => result.id);
+      const topStudentIds = sortedStudentIds.slice(0, totalAvailableBeds);
+
+      if (topStudentIds.length === 0) throw new AppError('Немає вільних місць у гуртожитках', 400);
+
+      const students = validProfiles.filter(p => topStudentIds.includes(p.id));
+
+      const genderBlocks = {
+        MALE: students.filter(s => s.user.gender === 'MALE'),
+        FEMALE: students.filter(s => s.user.gender === 'FEMALE'),
+        OTHER: students.filter(s => s.user.gender === 'OTHER')
+      };
+
       for (const gender of ['MALE', 'FEMALE', 'OTHER'] as const) {
         const blockStudents = genderBlocks[gender];
         if (blockStudents.length === 0) continue;
 
-        let availableGenderRooms = roomsState.filter(r => r.gender === gender || r.gender === null);
+        let availableGenderRooms = roomsState.filter((r: any) => r.gender === gender || r.gender === null);
+        if (availableGenderRooms.length === 0) continue;
 
         const kmeansInput: KmeansStudent[] = blockStudents.map(student => {
           let vector = { chronotype: 5, sociability: 5, noiseTolerance: 5, cleanliness: 5 };
@@ -177,7 +176,9 @@ export class AllocationService {
           return { id: student.id, vector, groupId: student.groupId, faculty: student.faculty };
         });
 
-        const k = Math.min(Math.ceil(blockStudents.length / 3), availableGenderRooms.length);
+        // 2. Dynamic K Fix: Based on actual average capacity of available rooms for this gender
+        const avgCapacity = Math.max(2, Math.round(availableGenderRooms.reduce((s: number, r: any) => s + r.capacity, 0) / availableGenderRooms.length));
+        const k = Math.min(Math.ceil(blockStudents.length / avgCapacity), availableGenderRooms.length);
         if (k <= 0) break;
         
         const clusters = KMeansAlgorithm.clusterize(kmeansInput, k);
@@ -186,27 +187,49 @@ export class AllocationService {
           let unassignedStudents = [...cluster.students];
 
           while (unassignedStudents.length > 0 && availableGenderRooms.length > 0) {
-            // Find best room
+            // 3. Bin Packing Fix: Exact Match priority
             let bestRoomIdx = -1;
             let minDistance = Infinity;
 
+            // Try to find the best room that can fit ALL remaining unassigned students (No cluster tearing)
             for (let i = 0; i < availableGenderRooms.length; i++) {
               const room = availableGenderRooms[i];
-              if (room.currentOccupancy >= room.capacity) continue;
-
-              if (room.centroid) {
-                const dist = this.calculateDistance(cluster.centroid, cluster.students[0].faculty, room.centroid, room.primaryFaculty);
-                if (dist < minDistance) {
-                  minDistance = dist;
+              const space = room.capacity - room.currentOccupancy;
+              
+              if (space >= unassignedStudents.length) {
+                if (room.centroid) {
+                  const dist = this.calculateDistance(cluster.centroid, cluster.students[0].faculty, room.centroid, room.primaryFaculty);
+                  if (dist < minDistance) {
+                    minDistance = dist;
+                    bestRoomIdx = i;
+                  }
+                } else if (bestRoomIdx === -1 || minDistance === Infinity) {
+                  // Fallback to empty room if no partially filled room found yet
                   bestRoomIdx = i;
                 }
-              } else if (bestRoomIdx === -1) {
-                // Pick the first empty room if no partially filled match found yet
-                bestRoomIdx = i;
               }
             }
 
-            if (bestRoomIdx === -1) break; // No rooms left with space
+            // If no room can fit the ENTIRE cluster, fallback to best partial fit (Forced split)
+            if (bestRoomIdx === -1) {
+              minDistance = Infinity;
+              for (let i = 0; i < availableGenderRooms.length; i++) {
+                const room = availableGenderRooms[i];
+                if (room.currentOccupancy >= room.capacity) continue;
+
+                if (room.centroid) {
+                  const dist = this.calculateDistance(cluster.centroid, cluster.students[0].faculty, room.centroid, room.primaryFaculty);
+                  if (dist < minDistance) {
+                    minDistance = dist;
+                    bestRoomIdx = i;
+                  }
+                } else if (bestRoomIdx === -1 || minDistance === Infinity) {
+                  bestRoomIdx = i;
+                }
+              }
+            }
+
+            if (bestRoomIdx === -1) break; // No rooms with any space left
 
             const targetRoom = availableGenderRooms[bestRoomIdx];
             const availableSpace = targetRoom.capacity - targetRoom.currentOccupancy;
@@ -233,7 +256,6 @@ export class AllocationService {
               }
             });
 
-            // Update dormitory stats
             const dormitory = await tx.dormitory.findUnique({
               where: { id: targetRoom.dormitoryId },
               select: { currentOccupancy: true, totalCapacity: true }
@@ -249,9 +271,8 @@ export class AllocationService {
               });
             }
 
-            // Update local state
             this.updateRoomState(targetRoom, studentsToAllocate);
-            targetRoom.gender = gender; // Ensure gender is locked
+            targetRoom.gender = gender;
 
             if (targetRoom.currentOccupancy >= targetRoom.capacity) {
               availableGenderRooms.splice(bestRoomIdx, 1);
@@ -312,8 +333,8 @@ export class AllocationService {
     }));
     const ahpResults = AhpAlgorithm.calculatePriorityScores(ahpInput, DEFAULT_CRITERIA_MATRIX);
 
-    const roomsState = await this.getSmartRoomsState();
-    const totalAvailableBeds = roomsState.reduce((sum, room) => sum + (room.capacity - room.currentOccupancy), 0);
+    const roomsState = await this.getSmartRoomsState(prisma);
+    const totalAvailableBeds = roomsState.reduce((sum: number, room: any) => sum + (room.capacity - room.currentOccupancy), 0);
     const topStudentIds = ahpResults.map(result => result.id).slice(0, totalAvailableBeds);
     const students = applications.filter(p => topStudentIds.includes(p.id));
 
@@ -329,7 +350,8 @@ export class AllocationService {
       const blockStudents = genderBlocks[gender];
       if (blockStudents.length === 0) continue;
 
-      let availableGenderRooms = roomsState.filter(r => r.gender === gender || r.gender === null);
+      let availableGenderRooms = roomsState.filter((r: any) => r.gender === gender || r.gender === null);
+      if (availableGenderRooms.length === 0) continue;
 
       const kmeansInput: KmeansStudent[] = blockStudents.map(student => {
         let vector = { chronotype: 5, sociability: 5, noiseTolerance: 5, cleanliness: 5 };
@@ -339,7 +361,9 @@ export class AllocationService {
         return { id: student.id, vector, groupId: student.groupId, faculty: student.faculty };
       });
 
-      const k = Math.min(Math.ceil(blockStudents.length / 3), availableGenderRooms.length);
+      const avgCapacity = Math.max(2, Math.round(availableGenderRooms.reduce((s: number, r: any) => s + r.capacity, 0) / availableGenderRooms.length));
+      const k = Math.min(Math.ceil(blockStudents.length / avgCapacity), availableGenderRooms.length);
+      
       if (k <= 0 && blockStudents.length > 0) {
         throw new AppError(`Недостатньо вільних кімнат для розселення студентів статі: ${gender}`, 400);
       }
@@ -355,16 +379,36 @@ export class AllocationService {
 
           for (let i = 0; i < availableGenderRooms.length; i++) {
             const room = availableGenderRooms[i];
-            if (room.currentOccupancy >= room.capacity) continue;
-
-            if (room.centroid) {
-              const dist = this.calculateDistance(cluster.centroid, cluster.students[0].faculty, room.centroid, room.primaryFaculty);
-              if (dist < minDistance) {
-                minDistance = dist;
+            const space = room.capacity - room.currentOccupancy;
+            
+            if (space >= unassignedStudents.length) {
+              if (room.centroid) {
+                const dist = this.calculateDistance(cluster.centroid, cluster.students[0].faculty, room.centroid, room.primaryFaculty);
+                if (dist < minDistance) {
+                  minDistance = dist;
+                  bestRoomIdx = i;
+                }
+              } else if (bestRoomIdx === -1 || minDistance === Infinity) {
                 bestRoomIdx = i;
               }
-            } else if (bestRoomIdx === -1) {
-              bestRoomIdx = i;
+            }
+          }
+
+          if (bestRoomIdx === -1) {
+            minDistance = Infinity;
+            for (let i = 0; i < availableGenderRooms.length; i++) {
+              const room = availableGenderRooms[i];
+              if (room.currentOccupancy >= room.capacity) continue;
+
+              if (room.centroid) {
+                const dist = this.calculateDistance(cluster.centroid, cluster.students[0].faculty, room.centroid, room.primaryFaculty);
+                if (dist < minDistance) {
+                  minDistance = dist;
+                  bestRoomIdx = i;
+                }
+              } else if (bestRoomIdx === -1 || minDistance === Infinity) {
+                bestRoomIdx = i;
+              }
             }
           }
 
