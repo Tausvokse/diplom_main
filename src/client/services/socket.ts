@@ -5,6 +5,33 @@ const SOCKET_URL = import.meta.env.VITE_SOCKET_URL || (import.meta.env.PROD ? ''
 
 class SocketService {
   private socket: Socket | null = null;
+  private listeners: Record<string, Function[]> = {};
+
+  on(event: string, callback: Function) {
+    if (!this.listeners[event]) this.listeners[event] = [];
+    this.listeners[event].push(callback);
+
+    if (this.socket) {
+      this.socket.on(event, callback as any);
+    }
+  }
+
+  off(event: string, callback?: Function) {
+    if (this.listeners[event]) {
+      if (callback) {
+        this.listeners[event] = this.listeners[event].filter(cb => cb !== callback);
+      } else {
+        delete this.listeners[event];
+      }
+    }
+    if (this.socket) {
+      if (callback) {
+        this.socket.off(event, callback as any);
+      } else {
+        this.socket.off(event);
+      }
+    }
+  }
 
   connect() {
     const token = useAuthStore.getState().accessToken;
@@ -21,6 +48,13 @@ class SocketService {
 
       this.socket.on('disconnect', () => {
         console.log('Socket disconnected');
+      });
+
+      // Attach any pre-registered listeners
+      Object.keys(this.listeners).forEach(event => {
+        this.listeners[event].forEach(cb => {
+          this.socket!.on(event, cb as any);
+        });
       });
     }
   }

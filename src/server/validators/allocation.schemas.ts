@@ -20,7 +20,8 @@ export const confirmAllocationPlanSchema = z.object({
     plan: z.array(z.object({
       roomId: z.string().uuid(),
       students: z.array(z.object({
-        id: z.string().uuid()
+        id: z.string().uuid(),
+        clusterId: z.number().optional().nullable()
       })).min(1)
     })).min(1)
   })

@@ -440,9 +440,14 @@ export class AllocationService {
             availableGenderRooms.splice(bestRoomIdx, 1);
           }
 
+          const allocatedDetailsWithCluster = allocatedDetails.map(s => ({
+            ...s,
+            clusterId: clusterIdx
+          }));
+
           let existingResult = results.find(r => r.roomId === targetRoom.id);
           if (existingResult) {
-            existingResult.students.push(...allocatedDetails);
+            existingResult.students.push(...allocatedDetailsWithCluster);
           } else {
             results.push({
               roomId: targetRoom.id,
@@ -451,7 +456,7 @@ export class AllocationService {
               currentOccupancy: preUpdateOccupancy,
               gender, 
               compatibilityScore: cluster.score,
-              students: allocatedDetails
+              students: allocatedDetailsWithCluster
             });
           }
         }

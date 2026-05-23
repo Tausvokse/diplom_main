@@ -33,17 +33,14 @@ export const NotificationBell: React.FC = () => {
   useEffect(() => {
     fetchNotifications();
 
-    const socket = socketService.getSocket();
-    if (socket) {
-      socket.on('new_notification', (notif: Notification) => {
-        setNotifications(prev => [notif, ...prev]);
-      });
-    }
+    const handleNewNotification = (notif: Notification) => {
+      setNotifications(prev => [notif, ...prev]);
+    };
+
+    socketService.on('new_notification', handleNewNotification);
 
     return () => {
-      if (socket) {
-        socket.off('new_notification');
-      }
+      socketService.off('new_notification', handleNewNotification);
     };
   }, []);
 

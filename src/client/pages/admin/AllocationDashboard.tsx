@@ -119,12 +119,14 @@ export const AllocationDashboard: React.FC = () => {
     if (!results) return;
     setIsConfirming(true);
     try {
-      await api.post('/admin/allocation/confirm', {
-        plan: results.map(result => ({
-          roomId: result.roomId,
-          students: result.students.map(student => ({ id: student.id }))
+      const plan = results.map(r => ({
+        roomId: r.roomId,
+        students: r.students.map(s => ({ 
+          id: s.id,
+          clusterId: (s as any).clusterId
         }))
-      });
+      }));
+      await api.post('/admin/allocation/confirm', { plan });
       toast.success('Наказ на поселення затверджено');
       setResults(null);
       fetchAllocationPool();
