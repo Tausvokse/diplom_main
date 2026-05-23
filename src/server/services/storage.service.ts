@@ -5,17 +5,18 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 export class StorageService {
-  private static bucket = config.supabase.bucket;
+  private static bucket = config.supabase.bucket.replace(/['"]/g, '');
 
   /**
    * Uploads a file to Supabase Storage
    * @param file The file object from Multer (memoryStorage)
    * @param folder The folder path within the bucket
+   * @param customName Optional custom filename without extension
    * @returns The public URL of the uploaded file
    */
-  static async uploadFile(file: Express.Multer.File, folder: string = 'general'): Promise<string> {
-    const fileExt = path.extname(file.originalname);
-    const fileName = `${uuidv4()}${fileExt}`;
+  static async uploadFile(file: Express.Multer.File, folder: string = 'general', customName?: string): Promise<string> {
+    const fileExt = path.extname(file.originalname) || '.png';
+    const fileName = customName ? `${customName}${fileExt}` : `${uuidv4()}${fileExt}`;
     const filePath = `${folder}/${fileName}`;
 
     console.log(`Starting Supabase upload for bucket: ${this.bucket}, path: ${filePath}`);
@@ -28,7 +29,7 @@ export class StorageService {
       .from(this.bucket)
       .upload(filePath, file.buffer, {
         contentType: file.mimetype,
-        upsert: false
+        upsert: true
       });
 
     if (error) {
@@ -41,8 +42,11 @@ export class StorageService {
       .from(this.bucket)
       .getPublicUrl(filePath);
 
-    console.log(`Upload successful, public URL: ${publicUrl}`);
-    return publicUrl;
+    // Ensure URL doesn't contain literal quotes if they somehow got in
+    const cleanPublicUrl = publicUrl.replace(/%22/g, '').replace(/"/g, '');
+
+    console.log(`Upload successful, public URL: ${cleanPublicUrl}`);
+    return cleanPublicUrl;
   }
 
   /**

@@ -761,3 +761,81 @@
   font-size: 0.875rem;
   font-weight: 500;
 }
+
+.previewList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.previewItem {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  aspect-ratio: 4/3;
+  background-color: rgb(var(--surface));
+  border: 1px solid rgba(var(--border), 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.previewImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.previewPdf {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.75rem;
+  text-align: center;
+  background-color: rgb(var(--surface-2));
+}
+
+.previewPdfIcon {
+  width: 2rem;
+  height: 2rem;
+  color: rgb(var(--accent));
+  margin-bottom: 0.5rem;
+}
+
+.previewName {
+  font-size: 0.625rem;
+  font-weight: 600;
+  color: rgb(var(--text));
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previewRemove {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 1.75rem;
+  height: 1.75rem;
+  background-color: rgba(239, 68, 68, 0.9);
+  color: white;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: all 200ms;
+  z-index: 10;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.previewRemove:hover {
+  transform: scale(1.1);
+  background-color: rgb(239, 68, 68);
+}

@@ -118,12 +118,22 @@ export class ApplicationService {
       }
     }
 
-    // Upload files to Supabase
-    console.log(`Uploading ${allFiles.length} files to Supabase bucket: ${StorageService['bucket']}`);
-    const fileUrls = await Promise.all(allFiles.map(async ({ file, category }) => {
-      const folder = `applications/${profile!.id}/${category}`;
-      console.log(`Uploading file ${file.originalname} to ${folder}`);
-      return await StorageService.uploadFile(file, folder);
+    // Upload files to Supabase with specific naming convention
+    const fileUrls = await Promise.all(allFiles.map(async ({ file, category }, index) => {
+      const studentId = profile!.studentIdNumber;
+      // Use lastName or fallback to part of fullName
+      const lastName = user.lastName || profile!.fullName.split(' ')[0] || 'Unknown';
+      const cleanLastName = lastName.replace(/\s+/g, '_');
+      
+      // Determine if we need an index (only if multiple files in same category)
+      const sameCategoryFiles = allFiles.filter(f => f.category === category);
+      const nameIndex = sameCategoryFiles.length > 1 ? `_${index}` : '';
+      
+      const customFileName = `${studentId}_${cleanLastName}_${category}${nameIndex}`;
+      const folder = `applications/${profile!.id}`;
+      
+      console.log(`Uploading file ${file.originalname} as ${customFileName} to ${folder}`);
+      return await StorageService.uploadFile(file, folder, customFileName);
     }));
 
     console.log('Files uploaded successfully, creating database record...');

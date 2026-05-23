@@ -62,6 +62,8 @@ export const ApplicationForm: React.FC = () => {
     consent: false,
   });
 
+  const [previews, setPreviews] = useState<{ [key: string]: string[] }>({});
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -137,12 +139,25 @@ export const ApplicationForm: React.FC = () => {
     const validFiles = validateFiles(droppedFiles);
     
     if (validFiles.length > 0) {
+      // Limit to 1 file: cleanup old preview if replacing
+      if (previews[category as string]?.length > 0) {
+        URL.revokeObjectURL(previews[category as string][0]);
+      }
+
+      const newFile = validFiles[0];
+      const previewUrl = URL.createObjectURL(newFile);
+
       setFormData(prev => ({
         ...prev,
-        [category]: [...(prev[category] as File[]), ...validFiles]
+        [category]: [newFile]
+      }));
+
+      setPreviews(prev => ({
+        ...prev,
+        [category as string]: [previewUrl]
       }));
     }
-  }, []);
+  }, [previews]);
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>, category: keyof FormData) => {
     if (e.target.files) {
@@ -150,21 +165,49 @@ export const ApplicationForm: React.FC = () => {
       const validFiles = validateFiles(selectedFiles);
       
       if (validFiles.length > 0) {
+        // Limit to 1 file: cleanup old preview if replacing
+        if (previews[category as string]?.length > 0) {
+          URL.revokeObjectURL(previews[category as string][0]);
+        }
+
+        const newFile = validFiles[0];
+        const previewUrl = URL.createObjectURL(newFile);
+        
         setFormData(prev => ({
           ...prev,
-          [category]: [...(prev[category] as File[]), ...validFiles]
+          [category]: [newFile]
+        }));
+
+        setPreviews(prev => ({
+          ...prev,
+          [category as string]: [previewUrl]
         }));
       }
     }
   };
 
   const removeFile = (index: number, category: keyof FormData) => {
+    if (previews[category as string]?.[index]) {
+      URL.revokeObjectURL(previews[category as string][index]);
+    }
+
     setFormData(prev => ({
       ...prev,
       [category]: (prev[category] as File[]).filter((_, i) => i !== index)
     }));
+
+    setPreviews(prev => ({
+      ...prev,
+      [category as string]: (prev[category as string] || []).filter((_, i) => i !== index)
+    }));
   };
-  // -----------------------------
+
+  // Cleanup object URLs on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(previews).flat().forEach(url => URL.revokeObjectURL(url));
+    };
+  }, []);
 
   const nextStep = () => {
     if (currentStep === 1) {
@@ -257,6 +300,7 @@ export const ApplicationForm: React.FC = () => {
   const renderDropZone = (category: keyof FormData, title: string, description: string) => {
     const isDragActive = draggingCategory === category;
     const files = formData[category] as File[];
+    const categoryPreviews = previews[category as string] || [];
     
     return (
       <div className={styles.dropzoneWrapper}>
@@ -273,29 +317,46 @@ export const ApplicationForm: React.FC = () => {
           <div className={`${styles.dropzoneIconBox} nm-raised-sm`}>
             <UploadCloud className={styles.dropzoneIconSvg} />
           </div>
-          <p className={styles.dropzoneText}>Перетягніть файли сюди або</p>
+          <p className={styles.dropzoneText}>Перетягніть файл сюди або</p>
           <label className={styles.dropzoneLink}>
             оберіть на комп'ютері
-            <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" className="hidden" onChange={(e) => handleFileInput(e, category)} />
+            <input type="file" accept=".pdf,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png" className="hidden" onChange={(e) => handleFileInput(e, category)} />
           </label>
         </div>
         
         {files.length > 0 && (
-          <ul className={styles.fileList}>
-            {files.map((file, idx) => (
-              <li key={idx} className={`${styles.fileItem} nm-flat`}>
-                <div className={styles.fileInfo}>
-                  <div className={`${styles.fileIconBox} nm-inset-sm`}>
-                    <FileText className={styles.fileIconSvg} />
-                  </div>
-                  <span className={styles.fileName}>{file.name}</span>
+          <div className={styles.previewList}>
+            {files.map((file, idx) => {
+              const isImage = file.type.startsWith('image/');
+              const isPdf = file.type === 'application/pdf';
+              const previewUrl = categoryPreviews[idx];
+
+              return (
+                <div key={idx} className={`${styles.previewItem} nm-flat`}>
+                  <button 
+                    type="button" 
+                    onClick={() => removeFile(idx, category)} 
+                    className={styles.previewRemove}
+                  >
+                    <X size={14} />
+                  </button>
+
+                  {isImage && previewUrl ? (
+                    <img 
+                      src={previewUrl} 
+                      alt={file.name} 
+                      className={styles.previewImg} 
+                    />
+                  ) : (
+                    <div className={styles.previewPdf}>
+                      <FileText className={styles.previewPdfIcon} />
+                      <span className={styles.previewName}>{file.name}</span>
+                    </div>
+                  )}
                 </div>
-                <button type="button" onClick={() => removeFile(idx, category)} className={`${styles.removeButton} nm-flat hover:nm-inset-sm`}>
-                  <X className={styles.removeIconSvg} />
-                </button>
-              </li>
-            ))}
-          </ul>
+              );
+            })}
+          </div>
         )}
       </div>
     );
