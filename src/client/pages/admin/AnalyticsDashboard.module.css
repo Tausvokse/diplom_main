@@ -223,5 +223,3 @@
 .fillAccent {
   background-color: rgb(var(--accent));
 }
-b(var(--accent));
-}
