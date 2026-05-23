@@ -549,4 +549,21 @@ export class AdminService {
       }
     });
   }
+
+  static async getJars() {
+    return prisma.jar.findMany({
+      include: {
+        dormitory: {
+          select: { name: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+  }
+
+  static async deleteJar(id: string) {
+    return prisma.jar.delete({
+      where: { id }
+    });
+  }
 }

@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { api } from '../../services/api';
-import { Megaphone, PiggyBank, Send } from 'lucide-react';
+import { Megaphone, PiggyBank, Send, Trash2 } from 'lucide-react';
 import styles from './AdminAnnouncementsPage.module.css';
 
 export default function AdminAnnouncementsPage() {
@@ -13,6 +13,16 @@ export default function AdminAnnouncementsPage() {
   const [monobankUrl, setMonobankUrl] = useState('');
   const [dormitoryId, setDormitoryId] = useState('');
   const [dormitories, setDormitories] = useState<any[]>([]);
+  const [jars, setJars] = useState<any[]>([]);
+
+  const fetchJars = useCallback(async () => {
+    try {
+      const res = await api.get('/admin/jars');
+      setJars(res.data);
+    } catch (err) {
+      console.error('Error fetching jars:', err);
+    }
+  }, []);
 
   useEffect(() => {
     const fetchDormitories = async () => {
@@ -24,7 +34,8 @@ export default function AdminAnnouncementsPage() {
       }
     };
     fetchDormitories();
-  }, []);
+    fetchJars();
+  }, [fetchJars]);
 
   const handleSendMassNotification = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,8 +65,20 @@ export default function AdminAnnouncementsPage() {
       setJarDesc('');
       setMonobankUrl('');
       setDormitoryId('');
+      fetchJars();
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Помилка при створенні банки');
+    }
+  };
+
+  const handleDeleteJar = async (id: string) => {
+    if (!window.confirm('Ви впевнені, що хочете видалити цей збір?')) return;
+    try {
+      await api.delete(`/admin/jars/${id}`);
+      toast.success('Збір видалено');
+      fetchJars();
+    } catch (err: any) {
+      toast.error('Помилка при видаленні збору');
     }
   };
   return (
@@ -187,6 +210,36 @@ export default function AdminAnnouncementsPage() {
               ОПУБЛІКУВАТИ ЗБІР
             </button>
           </form>
+        </div>
+      </div>
+
+      <div className={`ui-card ${styles.jarsSection}`}>
+        <h2 className={styles.jarsTitle}>Наявні збори</h2>
+        <div className={styles.jarsList}>
+          {jars.length === 0 ? (
+            <p className={`ui-muted ${styles.emptyText}`}>Активних зборів не знайдено</p>
+          ) : (
+            jars.map((jar) => (
+              <div key={jar.id} className={`nm-flat ${styles.jarItem}`}>
+                <div className={styles.jarInfo}>
+                  <h3 className={styles.jarName}>{jar.title}</h3>
+                  <p className={`ui-muted ${styles.jarDesc}`}>{jar.description}</p>
+                  <div className={styles.jarMeta}>
+                    <span>Ціль: {jar.goalAmount} ₴</span>
+                    <span className={styles.jarSeparator}>|</span>
+                    <span>{jar.dormitory ? `Гуртожиток: ${jar.dormitory.name}` : 'Глобальний'}</span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDeleteJar(jar.id)}
+                  className={`nm-raised ${styles.deleteButton}`}
+                  title="Видалити збір"
+                >
+                  <Trash2 className={styles.deleteIcon} />
+                </button>
+              </div>
+            ))
+          )}
         </div>
       </div>
     </div>

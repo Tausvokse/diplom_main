@@ -86,7 +86,9 @@ router.patch('/complaints/:id/status', validate(updateComplaintStatusSchema), Ad
 router.post('/notifications/mass', validate(createMassNotificationSchema), AdminController.createMassNotification);
 
 // Jars
+router.get('/jars', AdminController.getJars);
 router.post('/jars', validate(createJarSchema), AdminController.createJar);
+router.delete('/jars/:id', AdminController.deleteJar);
 
 // Analytics
 router.get('/analytics', AdminController.getAnalytics);

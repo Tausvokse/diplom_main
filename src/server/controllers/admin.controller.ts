@@ -286,4 +286,23 @@ export class AdminController {
       next(error);
     }
   }
+
+  static async getJars(req: Request, res: Response, next: NextFunction) {
+    try {
+      const jars = await AdminService.getJars();
+      res.json(jars);
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  static async deleteJar(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { id } = req.params;
+      await AdminService.deleteJar(id);
+      res.json({ success: true });
+    } catch (error) {
+      next(error);
+    }
+  }
 }
