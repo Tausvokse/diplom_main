@@ -328,7 +328,6 @@ export const ApplicationForm: React.FC = () => {
           <div className={styles.previewList}>
             {files.map((file, idx) => {
               const isImage = file.type.startsWith('image/');
-              const isPdf = file.type === 'application/pdf';
               const previewUrl = categoryPreviews[idx];
 
               return (
