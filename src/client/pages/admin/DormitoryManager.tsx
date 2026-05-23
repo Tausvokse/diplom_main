@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronDown, Building, Layers, DoorOpen, Check, Edit2, Users, UserMinus, UserPlus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Dormitory, Room, RoomStatus } from '../../types';
 import { api } from '../../services/api';
 import Skeleton from 'react-loading-skeleton';
@@ -222,8 +223,23 @@ export const DormitoryManager: React.FC = () => {
       </header>
 
       <div className="ui-card p-6 md:p-8">
+        <motion.div 
+          initial="hidden" 
+          animate="visible" 
+          variants={{
+            hidden: { opacity: 0 },
+            visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
+          }}
+        >
         {dormitories.map(dorm => (
-          <div key={dorm.id} className="mb-6 select-none">
+          <motion.div 
+            key={dorm.id} 
+            className="mb-6 select-none"
+            variants={{
+              hidden: { opacity: 0, y: 15 },
+              visible: { opacity: 1, y: 0 }
+            }}
+          >
             <div 
               className="flex items-center p-4 nm-flat bg-[rgb(var(--surface))] rounded-2xl cursor-pointer hover:nm-inset-sm transition-all"
               onClick={() => toggleNode(dorm.id)}
@@ -238,8 +254,14 @@ export const DormitoryManager: React.FC = () => {
               <span className="ml-auto text-xs font-bold uppercase tracking-wider ui-pill nm-inset-sm">{dorm.totalCapacity} місць</span>
             </div>
 
+            <AnimatePresence>
             {expandedNodes.has(dorm.id) && (
-              <div className="ml-12 mt-4 space-y-4 border-l-2 border-[rgb(var(--border)/0.2)] pl-6">
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="ml-12 mt-4 space-y-4 border-l-2 border-[rgb(var(--border)/0.2)] pl-6 overflow-hidden"
+              >
                 {dorm.floors.map(floor => (
                   <div key={floor.id}>
                     <div 
@@ -249,16 +271,31 @@ export const DormitoryManager: React.FC = () => {
                       {expandedNodes.has(floor.id) ? <ChevronDown className="w-4 h-4 text-[rgb(var(--muted))] mr-3" /> : <ChevronRight className="w-4 h-4 text-[rgb(var(--muted))] mr-3" />}
                       <Layers className="w-4 h-4 text-blue-500 mr-3" />
                       <span className="font-bold text-[rgb(var(--text))]">Поверх {floor.floorNumber}</span>
-                      <span className="ml-auto text-xs font-medium ui-muted">{floor.rooms.length} кімнат</span>
+                      <span className="ml-auto text-xs font-medium ui-muted">{floor.rooms.reduce((acc, r) => acc + r.capacity, 0)} місць ({floor.rooms.length} кімнат)</span>
                     </div>
 
+                    <AnimatePresence>
                     {expandedNodes.has(floor.id) && (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 py-4 pl-4">
+                      <motion.div 
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        variants={{
+                          hidden: { opacity: 0, height: 0 },
+                          visible: { opacity: 1, height: 'auto', transition: { staggerChildren: 0.05 } }
+                        }}
+                        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 py-4 pl-4 overflow-hidden"
+                      >
                         {floor.rooms.map(room => (
-                          <div 
+                          <motion.div 
                             key={room.id} 
+                            variants={{
+                              hidden: { opacity: 0, scale: 0.95 },
+                              visible: { opacity: 1, scale: 1 }
+                            }}
+                            whileHover={{ scale: 1.02 }}
                             onClick={() => openRoomDetails(room)}
-                            className="nm-flat bg-[rgb(var(--surface))] rounded-2xl p-5 hover:nm-raised-sm transition-all cursor-pointer flex flex-col justify-between min-h-[140px]"
+                            className="nm-flat bg-[rgb(var(--surface))] rounded-2xl p-5 transition-all cursor-pointer flex flex-col justify-between min-h-[140px]"
                           >
                             <div className="flex justify-between items-start mb-4">
                               <div className="flex items-center">
@@ -316,23 +353,25 @@ export const DormitoryManager: React.FC = () => {
                                 )}
                               </div>
                             </div>
-                          </div>
+                          </motion.div>
                         ))}
-                      </div>
+                      </motion.div>
                     )}
+                    </AnimatePresence>
                   </div>
                 ))}
-              </div>
+              </motion.div>
             )}
-          </div>
+            </AnimatePresence>
+          </motion.div>
         ))}
-        {dormitories.length === 0 && (
+        </motion.div>
+      </div>
+      {dormitories.length === 0 && (
           <div className="text-center text-[rgb(var(--muted))] font-medium py-12 nm-inset-sm bg-[rgb(var(--surface-2))] rounded-3xl">
             Немає даних про гуртожитки. Переконайтесь, що ви запустили seed-скрипт.
           </div>
         )}
-      </div>
-
       {/* Room Details Modal */}
       {isRoomModalOpen && selectedRoom && (
         <div className="nm-modal-backdrop p-4">

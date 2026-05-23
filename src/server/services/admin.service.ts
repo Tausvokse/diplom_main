@@ -4,7 +4,7 @@ import { AppError } from '../utils/AppError';
 
 export class AdminService {
   static async getDormitories() {
-    return prisma.dormitory.findMany({
+    const dorms = await prisma.dormitory.findMany({
       include: {
         floors: {
           include: {
@@ -12,6 +12,22 @@ export class AdminService {
           }
         }
       }
+    });
+
+    return dorms.map(dorm => {
+      let totalCapacity = 0;
+      let currentOccupancy = 0;
+      dorm.floors.forEach(floor => {
+        floor.rooms.forEach(room => {
+          totalCapacity += room.capacity;
+          currentOccupancy += room.currentOccupancy;
+        });
+      });
+      return {
+        ...dorm,
+        totalCapacity,
+        currentOccupancy
+      };
     });
   }
 

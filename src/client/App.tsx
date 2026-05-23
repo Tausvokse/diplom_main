@@ -1,5 +1,7 @@
 import React, { Suspense, useState } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Link, useNavigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import { PageTransition } from './components/PageTransition';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'react-hot-toast';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -273,55 +275,92 @@ const queryClient = new QueryClient({
   },
 });
 
+const AnimatedStudentRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="dashboard" element={<PageTransition><StudentDashboard /></PageTransition>} />
+        <Route path="application" element={<PageTransition><ApplicationForm /></PageTransition>} />
+        <Route path="services" element={<PageTransition><StudentServices /></PageTransition>} />
+        <Route path="financials" element={<PageTransition><StudentFinancials /></PageTransition>} />
+        <Route path="*" element={<Navigate to="dashboard" replace />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
+const AnimatedAdminRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="analytics" element={<PageTransition><AnalyticsDashboard /></PageTransition>} />
+        <Route path="students" element={<PageTransition><DirectorDashboard /></PageTransition>} />
+        <Route path="dormitories" element={<PageTransition><DormitoryManager /></PageTransition>} />
+        <Route path="applications" element={<PageTransition><ApplicationsReview /></PageTransition>} />
+        <Route path="allocation" element={<PageTransition><AllocationDashboard /></PageTransition>} />
+        <Route path="users" element={<PageTransition><AdminUsers /></PageTransition>} />
+        <Route path="messages" element={<PageTransition><AdminMessagesPage /></PageTransition>} />
+        <Route path="debts" element={<PageTransition><AdminDebtsPage /></PageTransition>} />
+        <Route path="complaints" element={<PageTransition><AdminComplaintsPage /></PageTransition>} />
+        <Route path="announcements" element={<PageTransition><AdminAnnouncementsPage /></PageTransition>} />
+        <Route path="audit" element={<PageTransition><AdminAuditLog /></PageTransition>} />
+        <Route path="*" element={<Navigate to="analytics" replace />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
+const AnimatedMasterRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="repairs" element={<PageTransition><MasterRepairsPage /></PageTransition>} />
+        <Route path="*" element={<Navigate to="repairs" replace />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
+const RootRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname.split('/')[1] || 'root'}>
+        <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+        <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
+        <Route path="/unauthorized" element={<PageTransition><Unauthorized /></PageTransition>} />
+        
+        {/* Student Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
+          <Route path="/student/*" element={<Layout><AnimatedStudentRoutes /></Layout>} />
+        </Route>
+
+        {/* Admin Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ADMIN_CAMPUS', 'ADMIN_COMMANDANT']} />}>
+          <Route path="/admin/*" element={<Layout><AnimatedAdminRoutes /></Layout>} />
+        </Route>
+
+        {/* Master Routes */}
+        <Route element={<ProtectedRoute allowedRoles={['MASTER_SLESAR', 'MASTER_SANTEKHNIK', 'MASTER_ELECTRIC']} />}>
+          <Route path="/master/*" element={<Layout><AnimatedMasterRoutes /></Layout>} />
+        </Route>
+
+        {/* Default Route Redirect */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
 export const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <Suspense fallback={<FullScreenLoader />}>
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            
-            {/* Student Routes */}
-            <Route element={<ProtectedRoute allowedRoles={['STUDENT']} />}>
-              <Route path="/student/*" element={<Layout><Routes>
-                <Route path="dashboard" element={<StudentDashboard />} />
-                <Route path="application" element={<ApplicationForm />} />
-                <Route path="services" element={<StudentServices />} />
-                <Route path="financials" element={<StudentFinancials />} />
-                <Route path="*" element={<Navigate to="dashboard" replace />} />
-              </Routes></Layout>} />
-            </Route>
-
-            {/* Admin Routes */}
-            <Route element={<ProtectedRoute allowedRoles={['ADMIN', 'ADMIN_CAMPUS', 'ADMIN_COMMANDANT']} />}>
-              <Route path="/admin/*" element={<Layout><Routes>
-                <Route path="analytics" element={<AnalyticsDashboard />} />
-                <Route path="students" element={<DirectorDashboard />} />
-                <Route path="dormitories" element={<DormitoryManager />} />
-                <Route path="applications" element={<ApplicationsReview />} />
-                <Route path="allocation" element={<AllocationDashboard />} />
-                <Route path="users" element={<AdminUsers />} />
-                <Route path="messages" element={<AdminMessagesPage />} />
-                <Route path="debts" element={<AdminDebtsPage />} />
-                <Route path="complaints" element={<AdminComplaintsPage />} />
-                <Route path="announcements" element={<AdminAnnouncementsPage />} />
-                <Route path="audit" element={<AdminAuditLog />} />
-                <Route path="*" element={<Navigate to="analytics" replace />} />
-              </Routes></Layout>} />
-            </Route>
-
-            <Route element={<ProtectedRoute allowedRoles={['MASTER_SLESAR', 'MASTER_SANTEKHNIK', 'MASTER_ELECTRIC']} />}>
-              <Route path="/master/*" element={<Layout><Routes>
-                <Route path="repairs" element={<MasterRepairsPage />} />
-                <Route path="*" element={<Navigate to="repairs" replace />} />
-              </Routes></Layout>} />
-            </Route>
-
-            {/* Default Route Redirect */}
-            <Route path="*" element={<Navigate to="/login" replace />} />
-          </Routes>
+          <RootRoutes />
         </Suspense>
       </BrowserRouter>
       <Toaster position="top-right" />

@@ -70,6 +70,7 @@
   html {
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    scroll-behavior: smooth;
   }
 
   body {
@@ -83,6 +84,7 @@
     min-height: 100vh;
     background-attachment: fixed;
     transition: background 0.4s ease;
+    will-change: transform, opacity;
   }
 
   .dark body {
