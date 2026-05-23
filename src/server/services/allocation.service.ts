@@ -486,7 +486,7 @@ export class AllocationService {
           where: { roomId: room.id, status: 'ACTIVE' }
         });
         const freeBeds = room.capacity - activeOccupancy;
-        if (roomPlan.students.length > freeBeds) throw new AppError(`У кімнаті ${room.roomNumber} недостатньо вільних місць`, 400);
+        if (roomPlan.students.length > freeBeds) throw new AppError(`У кімнаті ${room.roomNumber} недостатньо вільних місць (спроба додати ${roomPlan.students.length}, вільно ${freeBeds}, місткість ${room.capacity}, зайнято ${activeOccupancy})`, 400);
 
         for (const studentRef of roomPlan.students) {
           const profile = await tx.studentProfile.findUnique({ where: { id: studentRef.id } });
