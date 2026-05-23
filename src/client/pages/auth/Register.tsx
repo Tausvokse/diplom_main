@@ -155,7 +155,7 @@ const Register: React.FC = () => {
                     name="lastName"
                     value={formData.lastName}
                     onChange={handleChange}
-                    placeholder="Студент"
+                    placeholder="Іваненко"
                     className="ui-input"
                   />
                 </div>
@@ -175,13 +175,13 @@ const Register: React.FC = () => {
 
               <div className={styles.grid}>
                 <div>
-                  <label className={styles.label}>Номер студентського/залікової</label>
+                  <label className={styles.label}>Номер студентського</label>
                   <input 
                     type="text" 
                     name="studentIdNumber"
                     value={formData.studentIdNumber}
                     onChange={handleChange}
-                    placeholder="КВ12345678"
+                    placeholder="1234567"
                     className="ui-input"
                   />
                 </div>

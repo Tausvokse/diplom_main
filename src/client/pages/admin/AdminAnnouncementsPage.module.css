@@ -41,11 +41,12 @@
 .grid {
   display: grid;
   grid-template-columns: repeat(1, minmax(0, 1fr));
-  gap: 1.5rem;
+  gap: 2rem;
+  align-items: start;
 }
 @media (min-width: 768px) {
   .grid {
-    gap: 2rem;
+    gap: 2.5rem;
   }
 }
 @media (min-width: 1024px) {
@@ -57,7 +58,7 @@
   padding: 1.5rem;
   display: flex;
   flex-direction: column;
-  height: 100%;
+  min-height: 0;
 }
 @media (min-width: 768px) {
   .card {
@@ -181,13 +182,17 @@
 }
 
 .jarsSection {
-  margin-top: 2rem;
+  margin-top: 3rem;
   padding: 1.5rem;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
   .jarsSection {
     padding: 2rem;
+    margin-top: 4rem;
   }
 }
 

@@ -362,7 +362,7 @@ export const ApplicationForm: React.FC = () => {
                       {studentProfile?.room?.roomNumber || 'Не вказано'}
                     </div>
                   </div>
-                  <div className="md:col-span-2">
+                  <div className={styles.fullWidth}>
                     <label className={`ui-muted ${styles.inputLabel}`}>Причина виселення</label>
                     <textarea
                       name="checkoutReason"

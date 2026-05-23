@@ -12,14 +12,14 @@ import { prisma } from '../lib/prisma';
 
 export class StudentController {
   static getDashboardData = asyncHandler(async (req: AuthRequest, res: Response) => {
-    const { application, group } = await ApplicationService.getApplication(req.user!.id);
+    const { application, group, profile } = await ApplicationService.getApplication(req.user!.id);
     
     const formattedApp = application ? {
       ...application,
       scanDocumentsUrl: application.scanDocumentsUrl ? application.scanDocumentsUrl.split(',').filter(Boolean) : []
     } : null;
 
-    res.json({ application: formattedApp, group });
+    res.json({ application: formattedApp, group, profile });
   });
 
   static submitApplication = asyncHandler(async (req: AuthRequest, res: Response) => {
