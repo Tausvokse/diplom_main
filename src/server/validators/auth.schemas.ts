@@ -19,6 +19,7 @@ export const registerSchema = z.object({
     studentIdNumber: z.string().min(1),
     course: z.number().min(1).max(6),
     faculty: z.string().min(1),
+    gender: z.enum(['MALE', 'FEMALE']),
     verificationCode: z.string().length(6, "Код підтвердження має містити 6 символів")
   })
 });
