@@ -529,6 +529,7 @@
   border: 1px solid rgba(var(--border), 0.2);
   color: rgb(var(--text));
   font-size: 0.875rem;
+  box-sizing: border-box;
 }
 
 .rejectTextarea:focus {

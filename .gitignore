@@ -46,3 +46,10 @@ uploads/
 # OS
 .DS_Store
 Thumbs.db
+
+# AI Tools
+.gemini/
+.claude/
+.cursorrules
+AGENT_INSTRUCTIONS.md
+.aider*
