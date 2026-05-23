@@ -6,7 +6,6 @@ import { AppError } from '../utils/AppError';
 import { getOccupancyStatus } from '../utils/occupancy';
 
 export class AllocationService {
-  // Helper to filter out already-fulfilled applications logically
   private static filterValidPool(
     profiles: (StudentProfile & { applications: Application[], allocations: RoomAllocation[], user?: any, privilege?: any })[]
   ) {
@@ -31,6 +30,100 @@ export class AllocationService {
     return this.filterValidPool(rawProfiles);
   }
 
+  // Helper to build smart room state including existing residents' vectors
+  private static async getSmartRoomsState() {
+    const availableRooms = await prisma.room.findMany({
+      where: { status: 'AVAILABLE', currentOccupancy: { lt: prisma.room.fields.capacity } },
+      include: { 
+        floor: { select: { dormitoryId: true } },
+        allocations: {
+          where: { status: 'ACTIVE' },
+          include: { student: { include: { user: true } } }
+        }
+      },
+      orderBy: [{ floor: { floorNumber: 'asc' } }, { roomNumber: 'asc' }]
+    });
+
+    return availableRooms.map(r => {
+      let gender: string | null = null;
+      let centroid: number[] | null = null;
+      let primaryFaculty: string | null = null;
+      
+      if (r.allocations.length > 0) {
+        gender = r.allocations[0].student.user.gender;
+        
+        const facultyCounts = new Map<string, number>();
+        const vectors = r.allocations.map(a => {
+          const fac = a.student.faculty;
+          facultyCounts.set(fac, (facultyCounts.get(fac) || 0) + 1);
+
+          let vec = { chronotype: 5, sociability: 5, noiseTolerance: 5, cleanliness: 5 };
+          if (a.student.clusteringVector) {
+            try { vec = JSON.parse(a.student.clusteringVector); } catch {}
+          }
+          return [vec.chronotype, vec.sociability, vec.noiseTolerance, vec.cleanliness];
+        });
+
+        // Most common faculty in the room
+        let maxCount = 0;
+        facultyCounts.forEach((count, fac) => {
+          if (count > maxCount) { maxCount = count; primaryFaculty = fac; }
+        });
+
+        centroid = [0, 0, 0, 0];
+        vectors.forEach(v => {
+          for (let i = 0; i < 4; i++) centroid![i] += v[i];
+        });
+        for (let i = 0; i < 4; i++) centroid![i] /= vectors.length;
+      }
+
+      return {
+        id: r.id,
+        roomNumber: r.roomNumber,
+        capacity: r.capacity,
+        currentOccupancy: r.currentOccupancy,
+        dormitoryId: r.floor.dormitoryId,
+        gender,
+        centroid,
+        primaryFaculty
+      };
+    });
+  }
+
+  // Calculate Euclidean Distance including Faculty Penalty (2.0)
+  private static calculateDistance(c1: number[], fac1: string, c2: number[], fac2: string | null) {
+    let dist = c1.reduce((sum, val, i) => sum + Math.pow(val - c2[i], 2), 0);
+    if (fac2 && fac1 !== fac2) dist += 2.0; 
+    return Math.sqrt(dist);
+  }
+
+  // Recalculate room centroid after adding students
+  private static updateRoomState(room: any, newStudents: KmeansStudent[]) {
+    room.currentOccupancy += newStudents.length;
+    
+    const newVectors = newStudents.map(s => {
+      return [s.vector.chronotype, s.vector.sociability, s.vector.noiseTolerance, s.vector.cleanliness];
+    });
+
+    if (!room.centroid) {
+      room.centroid = [0, 0, 0, 0];
+      newVectors.forEach(v => { for (let i = 0; i < 4; i++) room.centroid[i] += v[i]; });
+      for (let i = 0; i < 4; i++) room.centroid[i] /= newVectors.length;
+      room.primaryFaculty = newStudents[0].faculty; // rough approximation
+    } else {
+      // Weighted average
+      const oldWeight = room.currentOccupancy - newStudents.length;
+      const totalWeight = room.currentOccupancy;
+      
+      const newSum = [0, 0, 0, 0];
+      newVectors.forEach(v => { for (let i = 0; i < 4; i++) newSum[i] += v[i]; });
+
+      for (let i = 0; i < 4; i++) {
+        room.centroid[i] = ((room.centroid[i] * oldWeight) + newSum[i]) / totalWeight;
+      }
+    }
+  }
+
   static async runAllocationPipeline() {
     const rawProfiles = await prisma.studentProfile.findMany({
       where: { roomId: null },
@@ -38,9 +131,7 @@ export class AllocationService {
     });
     const validProfiles = this.filterValidPool(rawProfiles);
 
-    if (validProfiles.length === 0) {
-      throw new AppError('Немає схвалених заяв для розподілу', 400);
-    }
+    if (validProfiles.length === 0) throw new AppError('Немає схвалених заяв для розподілу', 400);
 
     const ahpInput: AhpStudent[] = validProfiles.map(p => ({
       id: p.id,
@@ -50,27 +141,16 @@ export class AllocationService {
     }));
 
     const ahpResults = AhpAlgorithm.calculatePriorityScores(ahpInput, DEFAULT_CRITERIA_MATRIX);
-
     for (const res of ahpResults) {
-      await prisma.studentProfile.update({
-        where: { id: res.id },
-        data: { priorityScore: res.priorityScore }
-      });
+      await prisma.studentProfile.update({ where: { id: res.id }, data: { priorityScore: res.priorityScore } });
     }
 
-    const availableRooms = await prisma.room.findMany({
-      where: { status: 'AVAILABLE', currentOccupancy: { lt: prisma.room.fields.capacity } },
-      include: { floor: { select: { dormitoryId: true } } },
-      orderBy: [{ floor: { floorNumber: 'asc' } }, { roomNumber: 'asc' }]
-    });
-
-    const totalAvailableBeds = availableRooms.reduce((sum, room) => sum + (room.capacity - room.currentOccupancy), 0);
+    const roomsState = await this.getSmartRoomsState();
+    const totalAvailableBeds = roomsState.reduce((sum, room) => sum + (room.capacity - room.currentOccupancy), 0);
     const sortedStudentIds = ahpResults.map(result => result.id);
     const topStudentIds = sortedStudentIds.slice(0, totalAvailableBeds);
 
-    if (topStudentIds.length === 0) {
-      throw new AppError('Немає вільних місць у гуртожитках', 400);
-    }
+    if (topStudentIds.length === 0) throw new AppError('Немає вільних місць у гуртожитках', 400);
 
     const students = validProfiles.filter(p => topStudentIds.includes(p.id));
 
@@ -83,41 +163,55 @@ export class AllocationService {
     const results: any[] = [];
     
     await prisma.$transaction(async (tx) => {
-      let roomIdx = 0;
-      const roomOccupancies = new Map<string, number>();
-      availableRooms.forEach(r => roomOccupancies.set(r.id, r.currentOccupancy));
-
       for (const gender of ['MALE', 'FEMALE', 'OTHER'] as const) {
         const blockStudents = genderBlocks[gender];
         if (blockStudents.length === 0) continue;
 
+        let availableGenderRooms = roomsState.filter(r => r.gender === gender || r.gender === null);
+
         const kmeansInput: KmeansStudent[] = blockStudents.map(student => {
           let vector = { chronotype: 5, sociability: 5, noiseTolerance: 5, cleanliness: 5 };
           if (student.clusteringVector) {
-            try { vector = JSON.parse(student.clusteringVector); } catch { /* ignore */ }
+            try { vector = JSON.parse(student.clusteringVector); } catch {}
           }
           return { id: student.id, vector, groupId: student.groupId, faculty: student.faculty };
         });
 
-        const k = Math.min(Math.ceil(blockStudents.length / 3), availableRooms.length - roomIdx);
-        if (k <= 0) break; // Not enough rooms for this gender
+        const k = Math.min(Math.ceil(blockStudents.length / 3), availableGenderRooms.length);
+        if (k <= 0) break;
         
         const clusters = KMeansAlgorithm.clusterize(kmeansInput, k);
 
         for (const cluster of clusters) {
-          let studentIdx = 0;
-          while (studentIdx < cluster.students.length && roomIdx < availableRooms.length) {
-            const targetRoom = availableRooms[roomIdx];
-            const currentOcc = roomOccupancies.get(targetRoom.id) || 0;
-            const availableSpace = targetRoom.capacity - currentOcc;
+          let unassignedStudents = [...cluster.students];
 
-            if (availableSpace <= 0) {
-              roomIdx++;
-              continue;
+          while (unassignedStudents.length > 0 && availableGenderRooms.length > 0) {
+            // Find best room
+            let bestRoomIdx = -1;
+            let minDistance = Infinity;
+
+            for (let i = 0; i < availableGenderRooms.length; i++) {
+              const room = availableGenderRooms[i];
+              if (room.currentOccupancy >= room.capacity) continue;
+
+              if (room.centroid) {
+                const dist = this.calculateDistance(cluster.centroid, cluster.students[0].faculty, room.centroid, room.primaryFaculty);
+                if (dist < minDistance) {
+                  minDistance = dist;
+                  bestRoomIdx = i;
+                }
+              } else if (bestRoomIdx === -1) {
+                // Pick the first empty room if no partially filled match found yet
+                bestRoomIdx = i;
+              }
             }
 
-            const studentsToAllocate = cluster.students.slice(studentIdx, studentIdx + availableSpace);
-            if (studentsToAllocate.length === 0) break;
+            if (bestRoomIdx === -1) break; // No rooms left with space
+
+            const targetRoom = availableGenderRooms[bestRoomIdx];
+            const availableSpace = targetRoom.capacity - targetRoom.currentOccupancy;
+            const studentsToAllocate = unassignedStudents.slice(0, availableSpace);
+            unassignedStudents = unassignedStudents.slice(availableSpace);
 
             const fullStudents = blockStudents.filter(s => studentsToAllocate.some(a => a.id === s.id));
 
@@ -127,33 +221,40 @@ export class AllocationService {
               });
               await tx.studentProfile.update({
                 where: { id: student.id },
-                data: { roomId: targetRoom.id, dormitoryId: targetRoom.floor.dormitoryId }
+                data: { roomId: targetRoom.id, dormitoryId: targetRoom.dormitoryId }
               });
             }
 
-            const newOccupancy = currentOcc + studentsToAllocate.length;
             await tx.room.update({
               where: { id: targetRoom.id },
               data: {
-                currentOccupancy: newOccupancy,
-                status: newOccupancy >= targetRoom.capacity ? 'FULL' : 'AVAILABLE'
+                currentOccupancy: targetRoom.currentOccupancy + studentsToAllocate.length,
+                status: (targetRoom.currentOccupancy + studentsToAllocate.length) >= targetRoom.capacity ? 'FULL' : 'AVAILABLE'
               }
             });
 
             // Update dormitory stats
             const dormitory = await tx.dormitory.findUnique({
-              where: { id: targetRoom.floor.dormitoryId },
+              where: { id: targetRoom.dormitoryId },
               select: { currentOccupancy: true, totalCapacity: true }
             });
             if (dormitory) {
               const updatedDormOccupancy = dormitory.currentOccupancy + studentsToAllocate.length;
               await tx.dormitory.update({
-                where: { id: targetRoom.floor.dormitoryId },
+                where: { id: targetRoom.dormitoryId },
                 data: {
                   currentOccupancy: updatedDormOccupancy,
                   occupancyStatus: getOccupancyStatus(updatedDormOccupancy, dormitory.totalCapacity)
                 }
               });
+            }
+
+            // Update local state
+            this.updateRoomState(targetRoom, studentsToAllocate);
+            targetRoom.gender = gender; // Ensure gender is locked
+
+            if (targetRoom.currentOccupancy >= targetRoom.capacity) {
+              availableGenderRooms.splice(bestRoomIdx, 1);
             }
 
             let existingResult = results.find(r => r.roomId === targetRoom.id);
@@ -169,23 +270,7 @@ export class AllocationService {
                 students: fullStudents
               });
             }
-
-            studentIdx += studentsToAllocate.length;
-            roomOccupancies.set(targetRoom.id, newOccupancy);
-
-            if (newOccupancy >= targetRoom.capacity) {
-              roomIdx++;
-            }
           }
-        }
-        
-        // Prevent next gender from mixing into a partially filled room
-        if (roomIdx < availableRooms.length) {
-            const currentRoomId = availableRooms[roomIdx].id;
-            const currentRoomOcc = roomOccupancies.get(currentRoomId) || 0;
-            if (currentRoomOcc > 0) {
-              roomIdx++;
-            }
         }
       }
     });
@@ -217,9 +302,7 @@ export class AllocationService {
     });
     const applications = this.filterValidPool(rawProfiles);
 
-    if (applications.length === 0) {
-      throw new AppError('Немає схвалених заяв для розподілу', 400);
-    }
+    if (applications.length === 0) throw new AppError('Немає схвалених заяв для розподілу', 400);
 
     const ahpInput: AhpStudent[] = applications.map(app => ({
       id: app.id,
@@ -229,20 +312,8 @@ export class AllocationService {
     }));
     const ahpResults = AhpAlgorithm.calculatePriorityScores(ahpInput, DEFAULT_CRITERIA_MATRIX);
 
-    for (const result of ahpResults) {
-      await prisma.studentProfile.update({
-        where: { id: result.id },
-        data: { priorityScore: result.priorityScore }
-      });
-    }
-
-    const availableRooms = await prisma.room.findMany({
-      where: { status: 'AVAILABLE', currentOccupancy: { lt: prisma.room.fields.capacity } },
-      include: { floor: { select: { dormitoryId: true } } },
-      orderBy: [{ floor: { floorNumber: 'asc' } }, { roomNumber: 'asc' }]
-    });
-    const totalAvailableBeds = availableRooms.reduce((sum, room) => sum + (room.capacity - room.currentOccupancy), 0);
-    
+    const roomsState = await this.getSmartRoomsState();
+    const totalAvailableBeds = roomsState.reduce((sum, room) => sum + (room.capacity - room.currentOccupancy), 0);
     const topStudentIds = ahpResults.map(result => result.id).slice(0, totalAvailableBeds);
     const students = applications.filter(p => topStudentIds.includes(p.id));
 
@@ -253,43 +324,65 @@ export class AllocationService {
     };
 
     const results: any[] = [];
-    let roomIdx = 0;
-    const roomOccupancies = new Map<string, number>();
 
     for (const gender of ['MALE', 'FEMALE', 'OTHER'] as const) {
       const blockStudents = genderBlocks[gender];
       if (blockStudents.length === 0) continue;
 
+      let availableGenderRooms = roomsState.filter(r => r.gender === gender || r.gender === null);
+
       const kmeansInput: KmeansStudent[] = blockStudents.map(student => {
         let vector = { chronotype: 5, sociability: 5, noiseTolerance: 5, cleanliness: 5 };
         if (student.clusteringVector) {
-          try { vector = JSON.parse(student.clusteringVector); } catch { /* ignore */ }
+          try { vector = JSON.parse(student.clusteringVector); } catch {}
         }
         return { id: student.id, vector, groupId: student.groupId, faculty: student.faculty };
       });
 
-      const k = Math.min(Math.ceil(blockStudents.length / 3), availableRooms.length - roomIdx);
+      const k = Math.min(Math.ceil(blockStudents.length / 3), availableGenderRooms.length);
       if (k <= 0 && blockStudents.length > 0) {
         throw new AppError(`Недостатньо вільних кімнат для розселення студентів статі: ${gender}`, 400);
       }
+      
       const clusters = KMeansAlgorithm.clusterize(kmeansInput, k);
 
       for (const cluster of clusters) {
-        let studentIdx = 0;
-        while (studentIdx < cluster.students.length && roomIdx < availableRooms.length) {
-          const targetRoom = availableRooms[roomIdx];
-          const currentOcc = roomOccupancies.get(targetRoom.id) || targetRoom.currentOccupancy;
-          const availableSpace = targetRoom.capacity - currentOcc;
+        let unassignedStudents = [...cluster.students];
 
-          if (availableSpace <= 0) {
-            roomIdx++;
-            continue;
+        while (unassignedStudents.length > 0 && availableGenderRooms.length > 0) {
+          let bestRoomIdx = -1;
+          let minDistance = Infinity;
+
+          for (let i = 0; i < availableGenderRooms.length; i++) {
+            const room = availableGenderRooms[i];
+            if (room.currentOccupancy >= room.capacity) continue;
+
+            if (room.centroid) {
+              const dist = this.calculateDistance(cluster.centroid, cluster.students[0].faculty, room.centroid, room.primaryFaculty);
+              if (dist < minDistance) {
+                minDistance = dist;
+                bestRoomIdx = i;
+              }
+            } else if (bestRoomIdx === -1) {
+              bestRoomIdx = i;
+            }
           }
 
-          const studentsToAllocate = cluster.students.slice(studentIdx, studentIdx + availableSpace);
-          if (studentsToAllocate.length === 0) break;
+          if (bestRoomIdx === -1) break;
+
+          const targetRoom = availableGenderRooms[bestRoomIdx];
+          const availableSpace = targetRoom.capacity - targetRoom.currentOccupancy;
+          const studentsToAllocate = unassignedStudents.slice(0, availableSpace);
+          unassignedStudents = unassignedStudents.slice(availableSpace);
 
           const allocatedDetails = blockStudents.filter(s => studentsToAllocate.some(a => a.id === s.id));
+
+          this.updateRoomState(targetRoom, studentsToAllocate);
+          targetRoom.gender = gender;
+
+          if (targetRoom.currentOccupancy >= targetRoom.capacity) {
+            availableGenderRooms.splice(bestRoomIdx, 1);
+          }
 
           let existingResult = results.find(r => r.roomId === targetRoom.id);
           if (existingResult) {
@@ -304,24 +397,7 @@ export class AllocationService {
               students: allocatedDetails
             });
           }
-
-          studentIdx += studentsToAllocate.length;
-          const newOcc = currentOcc + studentsToAllocate.length;
-          roomOccupancies.set(targetRoom.id, newOcc);
-
-          if (newOcc >= targetRoom.capacity) {
-            roomIdx++;
-          }
         }
-      }
-
-      // Prevent next gender from mixing
-      if (roomIdx < availableRooms.length) {
-          const currentRoomId = availableRooms[roomIdx].id;
-          const currentRoomOcc = roomOccupancies.get(currentRoomId) || 0;
-          if (currentRoomOcc > 0) {
-            roomIdx++;
-          }
       }
     }
 
@@ -329,9 +405,7 @@ export class AllocationService {
   }
 
   static async confirmAllocationPlan(plan: Array<{ roomId: string; students: Array<{ id: string }> }>) {
-    if (!plan.length) {
-      throw new AppError('План поселення порожній', 400);
-    }
+    if (!plan.length) throw new AppError('План поселення порожній', 400);
 
     const allocatedStudents: Array<{ studentId: string; dormitoryName: string; roomNumber: string }> = [];
 
@@ -341,39 +415,25 @@ export class AllocationService {
           where: { id: roomPlan.roomId },
           include: { floor: { include: { dormitory: true } } }
         });
-        if (!room) {
-          throw new AppError('Кімнату з плану не знайдено', 404);
-        }
-        if (room.status === 'MAINTENANCE') {
-          throw new AppError(`Кімната ${room.roomNumber} перебуває на ремонті`, 400);
-        }
+        if (!room) throw new AppError('Кімнату з плану не знайдено', 404);
+        if (room.status === 'MAINTENANCE') throw new AppError(`Кімната ${room.roomNumber} перебуває на ремонті`, 400);
 
         const activeOccupancy = await tx.roomAllocation.count({
           where: { roomId: room.id, status: 'ACTIVE' }
         });
         const freeBeds = room.capacity - activeOccupancy;
-        if (roomPlan.students.length > freeBeds) {
-          throw new AppError(`У кімнаті ${room.roomNumber} недостатньо вільних місць`, 400);
-        }
+        if (roomPlan.students.length > freeBeds) throw new AppError(`У кімнаті ${room.roomNumber} недостатньо вільних місць`, 400);
 
         for (const studentRef of roomPlan.students) {
           const profile = await tx.studentProfile.findUnique({ where: { id: studentRef.id } });
-          if (!profile) {
-            throw new AppError('Студента з плану не знайдено', 404);
-          }
-          if (profile.roomId) {
-            throw new AppError(`Студент ${profile.fullName} вже поселений`, 400);
-          }
+          if (!profile) throw new AppError('Студента з плану не знайдено', 404);
+          if (profile.roomId) throw new AppError(`Студент ${profile.fullName} вже поселений`, 400);
 
-          // Validation that they have an active app is handled by filterValidPool theoretically,
-          // but let's double check they have one.
           const approvedApplication = await tx.application.findFirst({
             where: { studentId: profile.id, status: 'APPROVED', type: 'CHECK_IN' },
             orderBy: { submittedAt: 'desc' }
           });
-          if (!approvedApplication) {
-            throw new AppError(`У студента ${profile.fullName} немає схваленої заяви`, 400);
-          }
+          if (!approvedApplication) throw new AppError(`У студента ${profile.fullName} немає схваленої заяви`, 400);
 
           await tx.roomAllocation.create({
             data: { roomId: room.id, studentId: profile.id, status: 'ACTIVE' }
@@ -424,12 +484,8 @@ export class AllocationService {
     const admin = adminUserId ? await prisma.user.findUnique({ where: { id: adminUserId } }) : null;
     const profile = await prisma.studentProfile.findUnique({ where: { id: studentId } });
 
-    if (!profile) {
-      throw new AppError('Профіль студента не знайдено', 404);
-    }
-    if (adminUserId && !admin) {
-      throw new AppError('Адміністратора не знайдено', 404);
-    }
+    if (!profile) throw new AppError('Профіль студента не знайдено', 404);
+    if (adminUserId && !admin) throw new AppError('Адміністратора не знайдено', 404);
     if (admin?.role === 'ADMIN_COMMANDANT' && admin.dormitoryId !== profile.dormitoryId) {
       throw new AppError('Ви не маєте прав виселяти студентів з іншого гуртожитку', 403);
     }
@@ -438,9 +494,7 @@ export class AllocationService {
       where: { studentId, status: 'ACTIVE' }
     });
 
-    if (!allocation) {
-      throw new AppError('Студент не проживає в гуртожитку', 400);
-    }
+    if (!allocation) throw new AppError('Студент не проживає в гуртожитку', 400);
 
     const dormitoryId = profile.dormitoryId;
     let updatedRoom: Room | null = null;
@@ -496,46 +550,28 @@ export class AllocationService {
 
   static async allocateStudentToRoom(studentId: string, roomId: string, adminUserId?: string) {
     const admin = adminUserId ? await prisma.user.findUnique({ where: { id: adminUserId } }) : null;
-    if (adminUserId && !admin) {
-      throw new AppError('Адміністратора не знайдено', 404);
-    }
+    if (adminUserId && !admin) throw new AppError('Адміністратора не знайдено', 404);
 
     const profile = await prisma.studentProfile.findUnique({
       where: { id: studentId },
       include: { user: true }
     });
-    if (!profile) {
-      throw new AppError('Профіль студента не знайдено', 404);
-    }
-    if (profile.roomId) {
-      throw new AppError('Студент вже поселений', 400);
-    }
+    if (!profile) throw new AppError('Профіль студента не знайдено', 404);
+    if (profile.roomId) throw new AppError('Студент вже поселений', 400);
 
     const approvedApplication = await prisma.application.findFirst({
-      where: {
-        studentId,
-        status: 'APPROVED',
-        type: 'CHECK_IN'
-      },
+      where: { studentId, status: 'APPROVED', type: 'CHECK_IN' },
       orderBy: { reviewedAt: 'desc' }
     });
-    if (!approvedApplication) {
-      throw new AppError('Немає схваленої заяви на поселення', 400);
-    }
+    if (!approvedApplication) throw new AppError('Немає схваленої заяви на поселення', 400);
 
     const room = await prisma.room.findUnique({
       where: { id: roomId },
       include: { floor: { select: { dormitoryId: true } } }
     });
-    if (!room) {
-      throw new AppError('Кімнату не знайдено', 404);
-    }
-    if (room.status === 'MAINTENANCE') {
-      throw new AppError('Кімната на ремонті', 400);
-    }
-    if (room.currentOccupancy >= room.capacity) {
-      throw new AppError('Кімната заповнена', 400);
-    }
+    if (!room) throw new AppError('Кімнату не знайдено', 404);
+    if (room.status === 'MAINTENANCE') throw new AppError('Кімната на ремонті', 400);
+    if (room.currentOccupancy >= room.capacity) throw new AppError('Кімната заповнена', 400);
 
     if (admin?.role === 'ADMIN_COMMANDANT' && admin.dormitoryId !== room.floor.dormitoryId) {
       throw new AppError('Ви не маєте прав заселяти в інший гуртожиток', 403);
@@ -545,9 +581,7 @@ export class AllocationService {
       where: { id: room.floor.dormitoryId },
       select: { id: true, name: true, currentOccupancy: true, totalCapacity: true }
     });
-    if (!dormitory) {
-      throw new AppError('Гуртожиток не знайдено', 404);
-    }
+    if (!dormitory) throw new AppError('Гуртожиток не знайдено', 404);
 
     let updatedRoom: Room | null = null;
     let updatedDormitory: Dormitory | null = null;
@@ -556,16 +590,10 @@ export class AllocationService {
       const activeAllocation = await tx.roomAllocation.findFirst({
         where: { studentId: profile.id, status: 'ACTIVE' }
       });
-      if (activeAllocation) {
-        throw new AppError('Студент вже має активне поселення', 400);
-      }
+      if (activeAllocation) throw new AppError('Студент вже має активне поселення', 400);
 
       await tx.roomAllocation.create({
-        data: {
-          roomId: room.id,
-          studentId: profile.id,
-          status: 'ACTIVE'
-        }
+        data: { roomId: room.id, studentId: profile.id, status: 'ACTIVE' }
       });
 
       await tx.studentProfile.update({
