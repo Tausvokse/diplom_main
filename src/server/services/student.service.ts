@@ -24,7 +24,7 @@ export class StudentService {
   static async approveApplication(appId: string) {
     const app = await prisma.application.findUnique({
       where: { id: appId },
-      include: { student: true }
+      include: { student: { include: { user: true } } }
     });
     if (!app) {
       throw new AppError('Заяву не знайдено', 404);
@@ -54,11 +54,14 @@ export class StudentService {
     const { NotificationService } = await import('./notification.service');
     await NotificationService.createApplicationStatusNotification(appId, 'APPROVED');
 
+    const { emitToUser } = await import('../socket');
+    emitToUser(app.student.userId, 'application_status_updated', updated);
+
     return updated;
   }
 
   static async updateApplicationStatus(appId: string, status: any) {
-    const app = await prisma.application.findUnique({ where: { id: appId } });
+    const app = await prisma.application.findUnique({ where: { id: appId }, include: { student: true } });
     if (!app) {
       throw new AppError('Заяву не знайдено', 404);
     }
@@ -73,6 +76,9 @@ export class StudentService {
 
     const { NotificationService } = await import('./notification.service');
     await NotificationService.createApplicationStatusNotification(appId, status);
+
+    const { emitToUser } = await import('../socket');
+    emitToUser(app.student.userId, 'application_status_updated', updated);
 
     return updated;
   }

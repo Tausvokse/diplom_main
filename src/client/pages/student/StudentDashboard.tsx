@@ -9,6 +9,8 @@ import 'react-loading-skeleton/dist/skeleton.css';
 import InputMask from 'react-input-mask';
 import styles from './StudentDashboard.module.css';
 
+import { socketService } from '../../services/socket';
+
 export const StudentDashboard: React.FC = () => {
   const navigate = useNavigate();
   const [application, setApplication] = useState<Application | null>(null);
@@ -32,6 +34,20 @@ export const StudentDashboard: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardData();
+
+    const socket = socketService.getSocket();
+    if (socket) {
+      socket.on('application_status_updated', (updated: Application) => {
+        setApplication(updated);
+        toast.success(`Статус вашої заяви змінено на: ${updated.status}`);
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('application_status_updated');
+      }
+    };
   }, [fetchDashboardData]);
 
   const handleGenerateGroup = async () => {

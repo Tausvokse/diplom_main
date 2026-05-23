@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { api } from '../../services/api';
 import { Send, UserCircle, Check, CheckCheck } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
+import { socketService } from '../../services/socket';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import styles from './AdminMessagesPage.module.css';
@@ -29,30 +30,11 @@ export const AdminMessagesPage: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuthStore();
 
-  useEffect(() => {
-    fetchConversations();
-    const interval = setInterval(fetchConversations, 30000); // 30s
-    return () => clearInterval(interval);
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
-  useEffect(() => {
-    if (activeContact) {
-      fetchMessages(activeContact.id);
-      markConversationRead(activeContact.id);
-      const interval = setInterval(() => fetchMessages(activeContact.id), 30000); // 30s
-      return () => clearInterval(interval);
-    }
-  }, [activeContact]);
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  const fetchConversations = async () => {
+  const fetchConversations = useCallback(async () => {
     try {
       const res = await api.get('/messages/conversations');
       setConversations(res.data);
@@ -61,16 +43,16 @@ export const AdminMessagesPage: React.FC = () => {
       console.error(error);
       setIsLoading(false);
     }
-  };
+  }, []);
 
-  const fetchMessages = async (contactId: string) => {
+  const fetchMessages = useCallback(async (contactId: string) => {
     try {
       const res = await api.get(`/messages?contactId=${contactId}`);
       setMessages(res.data);
     } catch (error) {
       console.error(error);
     }
-  };
+  }, []);
 
   const markConversationRead = async (contactId: string) => {
     try {
@@ -82,6 +64,38 @@ export const AdminMessagesPage: React.FC = () => {
       console.error(error);
     }
   };
+
+  useEffect(() => {
+    fetchConversations();
+  }, [fetchConversations]);
+
+  useEffect(() => {
+    const socket = socketService.getSocket();
+    if (!socket) return;
+
+    socket.on('new_message', (message: any) => {
+      fetchConversations();
+      if (activeContact?.id === message.senderId) {
+        setMessages(prev => [...prev, message]);
+        markConversationRead(activeContact.id);
+      }
+    });
+
+    return () => {
+      socket.off('new_message');
+    };
+  }, [activeContact, fetchConversations]);
+
+  useEffect(() => {
+    if (activeContact) {
+      fetchMessages(activeContact.id);
+      markConversationRead(activeContact.id);
+    }
+  }, [activeContact, fetchMessages]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, scrollToBottom]);
 
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();

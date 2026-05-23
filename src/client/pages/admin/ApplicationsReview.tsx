@@ -7,6 +7,8 @@ import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import styles from './ApplicationsReview.module.css';
 
+import { socketService } from '../../services/socket';
+
 export const ApplicationsReview: React.FC = () => {
   const [applications, setApplications] = useState<Application[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -19,6 +21,23 @@ export const ApplicationsReview: React.FC = () => {
 
   useEffect(() => {
     fetchApplications();
+
+    const socket = socketService.getSocket();
+    if (socket) {
+      socket.on('new_application', (app: Application) => {
+        setApplications(prev => [app, ...prev]);
+      });
+      socket.on('application_status_updated', (updated: Application) => {
+        setApplications(prev => prev.map(item => item.id === updated.id ? updated : item));
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('new_application');
+        socket.off('application_status_updated');
+      }
+    };
   }, []);
 
   const fetchApplications = async () => {

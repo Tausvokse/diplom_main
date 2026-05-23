@@ -4,7 +4,7 @@ import { MonobankService } from './monobank.service';
 
 export class FinancialService {
   static async createInvoice(studentId: string, amount: number, dueDate: Date, description: string) {
-    const student = await prisma.studentProfile.findUnique({ where: { id: studentId } });
+    const student = await prisma.studentProfile.findUnique({ where: { id: studentId }, include: { user: true } });
     if (!student) {
       throw new AppError('Студента не знайдено', 404);
     }
@@ -25,6 +25,9 @@ export class FinancialService {
       `Вам виставлено рахунок на суму ${amount} грн. Оплатити до ${dueDate.toLocaleDateString()}. Призначення: ${description}`,
       'PAYMENT_REMINDER'
     );
+
+    const { emitToUser } = await import('../socket');
+    emitToUser(student.userId, 'new_payment', payment);
 
     return payment;
   }

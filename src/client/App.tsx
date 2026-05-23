@@ -81,8 +81,11 @@ const FullScreenLoader = () => (
   </div>
 );
 
+import { socketService } from './services/socket';
+import toast from 'react-hot-toast';
+
 // NavItem component — Neumorphic active/hover states
-const NavItem = ({ to, icon: Icon, label, onClick, isActive }: { to: string, icon: any, label: string, onClick: () => void, isActive: boolean }) => {
+const NavItem = ({ to, icon: Icon, label, onClick, isActive, hasNotification }: { to: string, icon: any, label: string, onClick: () => void, isActive: boolean, hasNotification?: boolean }) => {
   return (
     <Link
       to={to}
@@ -90,7 +93,10 @@ const NavItem = ({ to, icon: Icon, label, onClick, isActive }: { to: string, ico
       className={`${styles.navItem} ${isActive ? styles.navItemActive : styles.navItemInactive} ${isActive ? 'nm-inset-sm' : ''}`}
       style={isActive ? { boxShadow: 'var(--nm-inset-sm)' } : {}}
     >
-      <Icon className={`${styles.navItemIcon} ${isActive ? styles.navItemIconActive : styles.navItemIconInactive}`} />
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+        <Icon className={`${styles.navItemIcon} ${isActive ? styles.navItemIconActive : styles.navItemIconInactive}`} />
+        {hasNotification && <div className={styles.navNotificationDot} />}
+      </div>
       {label}
     </Link>
   );
@@ -103,6 +109,55 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const { theme, toggleTheme } = useTheme();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [adminNotifications, setAdminNotifications] = useState({
+    applications: false,
+    complaints: false,
+    messages: false
+  });
+
+  useEffect(() => {
+    socketService.connect();
+    const socket = socketService.getSocket();
+
+    if (socket) {
+      socket.on('new_application', (app: any) => {
+        setAdminNotifications(prev => ({ ...prev, applications: true }));
+        toast('Нова заява від студента!', { icon: '📄' });
+      });
+
+      socket.on('new_complaint', (complaint: any) => {
+        setAdminNotifications(prev => ({ ...prev, complaints: true }));
+        toast.error(`Нова скарга від ${complaint.accuser.fullName}`);
+      });
+
+      socket.on('new_message', (msg: any) => {
+        if (!location.pathname.includes('/messages')) {
+          setAdminNotifications(prev => ({ ...prev, messages: true }));
+        }
+      });
+      
+      socket.on('new_notification', (notif: any) => {
+        toast(notif.title, { icon: '🔔' });
+      });
+    }
+
+    return () => {
+      socketService.disconnect();
+    };
+  }, [location.pathname]);
+
+  // Reset notification dot when visiting the page
+  useEffect(() => {
+    if (location.pathname.startsWith('/admin/applications')) {
+      setAdminNotifications(prev => ({ ...prev, applications: false }));
+    }
+    if (location.pathname.startsWith('/admin/complaints')) {
+      setAdminNotifications(prev => ({ ...prev, complaints: false }));
+    }
+    if (location.pathname.startsWith('/admin/messages')) {
+      setAdminNotifications(prev => ({ ...prev, messages: false }));
+    }
+  }, [location.pathname]);
 
   const handleLogout = () => {
     if (window.confirm('Ви впевнені, що хочете вийти з системи?')) {
@@ -164,14 +219,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               <NavItem to="/admin/analytics" icon={LayoutDashboard} label="Аналітика" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/analytics')} />
               <NavItem to="/admin/students" icon={Users} label="Студенти" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/students')} />
               <NavItem to="/admin/dormitories" icon={Building2} label="Гуртожитки" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/dormitories')} />
-              <NavItem to="/admin/applications" icon={FileText} label="Заяви" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/applications')} />
+              <NavItem to="/admin/applications" icon={FileText} label="Заяви" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/applications')} hasNotification={adminNotifications.applications} />
               <NavItem to="/admin/allocation" icon={GitMerge} label="Поселення" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/allocation')} />
               <NavItem to="/admin/debts" icon={CreditCard} label="Боржники" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/debts')} />
-              <NavItem to="/admin/complaints" icon={AlertTriangle} label="Скарги" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/complaints')} />
+              <NavItem to="/admin/complaints" icon={AlertTriangle} label="Скарги" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/complaints')} hasNotification={adminNotifications.complaints} />
               <NavItem to="/admin/announcements" icon={Megaphone} label="Оголошення" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/announcements')} />
               <NavItem to="/admin/audit" icon={Shield} label="Аудит" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/audit')} />
               <NavItem to="/admin/users" icon={UsersRound} label="Користувачі" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/users')} />
-              <NavItem to="/admin/messages" icon={MessageSquare} label="Чати" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/messages')} />
+              <NavItem to="/admin/messages" icon={MessageSquare} label="Чати" onClick={closeSidebar} isActive={location.pathname.startsWith('/admin/messages')} hasNotification={adminNotifications.messages} />
             </>
           )}
           {user?.role === 'STUDENT' && (

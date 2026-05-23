@@ -12,18 +12,83 @@ export class ComplaintService {
     });
     if (!neighbor) throw new AppError('Можна подати скаргу лише на сусіда по кімнаті', 400);
 
-    return prisma.complaint.create({
+    const complaint = await prisma.complaint.create({
       data: {
         accuserId: accuser.id,
         accusedId,
         content,
         evidenceUrl,
         status: 'PENDING'
+      },
+      include: {
+        accuser: {
+          select: {
+            id: true,
+            fullName: true,
+            studentIdNumber: true,
+            dormitory: { select: { name: true } },
+            room: { select: { roomNumber: true } }
+          }
+        },
+        accused: {
+          select: {
+            id: true,
+            fullName: true,
+            studentIdNumber: true,
+            dormitory: { select: { name: true } },
+            room: { select: { roomNumber: true } }
+          }
+        }
       }
     });
+
+    const { emitToAdmins } = await import('../socket');
+    emitToAdmins('new_complaint', complaint);
+
+    return complaint;
   }
 
   static async getComplaints(userId: string) {
+    const { Role } = await import('@prisma/client');
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) return [];
+
+    // If admin, show all (with commandant filtering)
+    if (user.role !== Role.STUDENT) {
+      return prisma.complaint.findMany({
+        where: user.role === Role.ADMIN_COMMANDANT && user.dormitoryId
+          ? {
+              OR: [
+                { accuser: { dormitoryId: user.dormitoryId } },
+                { accused: { dormitoryId: user.dormitoryId } }
+              ]
+            }
+          : undefined,
+        include: {
+          accuser: {
+            select: {
+              id: true,
+              fullName: true,
+              studentIdNumber: true,
+              dormitory: { select: { name: true } },
+              room: { select: { roomNumber: true } }
+            }
+          },
+          accused: {
+            select: {
+              id: true,
+              fullName: true,
+              studentIdNumber: true,
+              dormitory: { select: { name: true } },
+              room: { select: { roomNumber: true } }
+            }
+          }
+        },
+        orderBy: { createdAt: 'desc' }
+      });
+    }
+
+    // If student, show only theirs
     const profile = await prisma.studentProfile.findUnique({ where: { userId } });
     if (!profile) return [];
 
@@ -44,7 +109,7 @@ export class ComplaintService {
 
     const complaint = await prisma.complaint.findUnique({
       where: { id: complaintId },
-      include: { accuser: true, accused: true }
+      include: { accuser: { include: { user: true } }, accused: true }
     });
     if (!complaint) {
       throw new AppError('Скаргу не знайдено', 404);
@@ -90,6 +155,9 @@ export class ComplaintService {
       `Вашу скаргу змінено на статус: ${status}.`,
       'COMPLAINT_ALERT'
     );
+
+    const { emitToUser } = await import('../socket');
+    emitToUser(complaint.accuser.userId, 'complaint_status_updated', updated);
 
     return updated;
   }

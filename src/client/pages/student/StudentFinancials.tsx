@@ -31,6 +31,8 @@ interface Payment {
   description: string;
 }
 
+import { socketService } from '../../services/socket';
+
 const StudentFinancials: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'payments' | 'jars'>('payments');
   const [jars, setJars] = useState<Jar[]>([]);
@@ -43,6 +45,20 @@ const StudentFinancials: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+
+    const socket = socketService.getSocket();
+    if (socket) {
+      socket.on('new_payment', (payment: Payment) => {
+        setPayments(prev => [payment, ...prev]);
+        toast('Виставлено новий рахунок!', { icon: '💰' });
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('new_payment');
+      }
+    };
   }, []);
 
   const fetchData = async () => {

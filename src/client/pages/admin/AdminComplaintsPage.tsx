@@ -58,6 +58,8 @@ const getFileUrl = (url: string) => {
   return `${origin}${url.startsWith('/') ? url : `/${url}`}`;
 };
 
+import { socketService } from '../../services/socket';
+
 const AdminComplaintsPage: React.FC = () => {
   const [complaints, setComplaints] = useState<AdminComplaint[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -67,6 +69,23 @@ const AdminComplaintsPage: React.FC = () => {
 
   useEffect(() => {
     fetchComplaints();
+
+    const socket = socketService.getSocket();
+    if (socket) {
+      socket.on('new_complaint', (complaint: AdminComplaint) => {
+        setComplaints(prev => [complaint, ...prev]);
+      });
+      socket.on('complaint_status_updated', (updated: AdminComplaint) => {
+        setComplaints(prev => prev.map(item => item.id === updated.id ? updated : item));
+      });
+    }
+
+    return () => {
+      if (socket) {
+        socket.off('new_complaint');
+        socket.off('complaint_status_updated');
+      }
+    };
   }, []);
 
   const fetchComplaints = async () => {

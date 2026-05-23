@@ -1,7 +1,8 @@
-import { Server as SocketIOServer } from 'socket.io';
+import { Server as SocketIOServer, Socket } from 'socket.io';
 import { Server } from 'http';
 import jwt from 'jsonwebtoken';
 import { config } from './config';
+import { Role } from '@prisma/client';
 
 let io: SocketIOServer;
 
@@ -14,12 +15,12 @@ export const initSocket = (server: Server) => {
   });
 
   io.use((socket, next) => {
-    const token = socket.handshake.auth?.token;
+    const token = socket.handshake.auth?.token || socket.handshake.query?.token;
     if (!token) {
       return next(new Error('Unauthorized'));
     }
     try {
-      const decoded = jwt.verify(token, config.jwtSecret) as { id: string; email: string; role: string };
+      const decoded = jwt.verify(token as string, config.jwtSecret) as { id: string; email: string; role: string };
       socket.data.user = decoded;
       return next();
     } catch {
@@ -27,10 +28,22 @@ export const initSocket = (server: Server) => {
     }
   });
 
-  io.on('connection', (socket) => {
-    console.log(`Socket connected: ${socket.id}`);
+  io.on('connection', (socket: Socket) => {
+    const user = socket.data.user;
+    if (!user) return;
 
-    // Join room for specific Diia session
+    console.log(`Socket connected: ${socket.id} (User: ${user.id}, Role: ${user.role})`);
+
+    // Join personal room
+    socket.join(`user_${user.id}`);
+
+    // If admin, join admin room
+    if ([Role.ADMIN, Role.ADMIN_CAMPUS, Role.ADMIN_COMMANDANT].includes(user.role)) {
+      socket.join('admin_room');
+      console.log(`Socket ${socket.id} joined admin_room`);
+    }
+
+    // Join specific Diia session
     socket.on('join_diia_session', (data: { sessionId: string }) => {
       socket.join(`diia_${data.sessionId}`);
       console.log(`Socket ${socket.id} joined room diia_${data.sessionId}`);
@@ -54,3 +67,22 @@ export const getIO = () => {
   }
   return io;
 };
+
+export const emitToUser = (userId: string, event: string, data: any) => {
+  if (io) {
+    io.to(`user_${userId}`).emit(event, data);
+  }
+};
+
+export const emitToAdmins = (event: string, data: any) => {
+  if (io) {
+    io.to('admin_room').emit(event, data);
+  }
+};
+
+export const emitToAll = (event: string, data: any) => {
+  if (io) {
+    io.emit(event, data);
+  }
+};
+

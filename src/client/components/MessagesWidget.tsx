@@ -3,6 +3,7 @@ import { Send, MessageCircle, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api } from '../services/api';
 import { useAuthStore } from '../store/authStore';
+import { socketService } from '../services/socket';
 import styles from './MessagesWidget.module.css';
 
 interface Message {
@@ -79,20 +80,27 @@ export const MessagesWidget: React.FC = () => {
     if (isOpen) {
       fetchConversations();
       fetchMessages();
-
-      const interval = setInterval(() => {
-        fetchConversations();
-        fetchMessages();
-      }, 30000); // Polling every 30s
-      return () => clearInterval(interval);
     } else {
       fetchConversations();
-      const interval = setInterval(() => {
-        fetchConversations();
-      }, 60000); // Check for notifications every minute when closed
-      return () => clearInterval(interval);
     }
   }, [isOpen, fetchConversations, fetchMessages]);
+
+  useEffect(() => {
+    const socket = socketService.getSocket();
+    if (!socket) return;
+
+    socket.on('new_message', (message: Message) => {
+      setMessages(prev => [...prev, message]);
+      fetchConversations();
+      if (isOpen && selectedContact?.id === message.senderId) {
+        markRead(selectedContact.id);
+      }
+    });
+
+    return () => {
+      socket.off('new_message');
+    };
+  }, [selectedContact, isOpen]);
 
   useEffect(() => {
     if (selectedContact) {

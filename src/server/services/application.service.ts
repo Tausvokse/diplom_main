@@ -131,8 +131,19 @@ export class ApplicationService {
         scanDocumentsUrl: fileUrls.join(','),
         previousRoom,
         checkoutReason
+      },
+      include: {
+        student: {
+          include: {
+            user: { select: { firstName: true, lastName: true, email: true } },
+            privilege: true
+          }
+        }
       }
     });
+
+    const { emitToAdmins } = await import('../socket');
+    emitToAdmins('new_application', application);
 
     return application;
   }

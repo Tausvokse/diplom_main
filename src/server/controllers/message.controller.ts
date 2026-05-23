@@ -30,6 +30,7 @@ export class MessageController {
 
   static async sendMessage(req: AuthRequest, res: Response, next: NextFunction) {
     try {
+      const { emitToUser } = await import('../socket');
       const senderId = req.user!.id;
       const { receiverId, content } = req.body;
 
@@ -40,10 +41,13 @@ export class MessageController {
           content
         },
         include: {
-          sender: { select: { id: true, firstName: true, lastName: true, role: true } },
-          receiver: { select: { id: true, firstName: true, lastName: true, role: true } }
+          sender: { select: { id: true, firstName: true, lastName: true, role: true, email: true } },
+          receiver: { select: { id: true, firstName: true, lastName: true, role: true, email: true } }
         }
       });
+
+      // Real-time update to receiver
+      emitToUser(receiverId, 'new_message', message);
 
       res.json(message);
     } catch (error) {

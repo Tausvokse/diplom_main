@@ -1,5 +1,6 @@
 import { NotificationType } from '@prisma/client';
 import { prisma } from '../lib/prisma';
+import { emitToUser } from '../socket';
 
 export class NotificationService {
   static async create(
@@ -8,15 +9,23 @@ export class NotificationService {
     message: string,
     type: NotificationType = 'INFO'
   ) {
-    return prisma.notification.create({
+    const notification = await prisma.notification.create({
       data: {
         studentId: studentProfileId,
         title,
         message,
         type,
         isRead: false
+      },
+      include: {
+        student: { select: { userId: true } }
       }
     });
+
+    // Real-time update to user
+    emitToUser(notification.student.userId, 'new_notification', notification);
+
+    return notification;
   }
 
   static async createApplicationStatusNotification(
