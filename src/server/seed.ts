@@ -79,14 +79,19 @@ async function main() {
 
   // 4. Create Privilege Categories
   const privileges = [
-    { name: 'Сирота', multiplier: 1.5, description: 'Пріоритетне заселення' },
-    { name: 'ВПО', multiplier: 1.3, description: 'Внутрішньо переміщені особи' },
-    { name: 'Учасник бойових дій', multiplier: 1.4, description: 'Пільга для ветеранів' }
+    { id: 'id_orphans', name: 'Сирота', multiplier: 1.5, description: 'Пріоритетне заселення' },
+    { id: 'id_disabled', name: 'Особи з інвалідністю', multiplier: 1.4, description: 'Студенти з особливими потребами' },
+    { id: 'id_combat', name: 'Учасник бойових дій', multiplier: 1.4, description: 'Пільга для ветеранів' },
+    { id: 'id_vpo', name: 'ВПО', multiplier: 1.3, description: 'Внутрішньо переміщені особи' }
   ];
 
   const privilegeList = [];
   for (const p of privileges) {
-    privilegeList.push(await prisma.privilegeCategory.create({ data: p }));
+    privilegeList.push(await prisma.privilegeCategory.upsert({
+      where: { id: p.id },
+      update: p,
+      create: p
+    }));
   }
 
   // 5. Create Roles (Admins, Masters, Commandant)

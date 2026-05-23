@@ -52,7 +52,18 @@ export class ApplicationService {
       ? clusteringVectorRaw
       : JSON.stringify(clusteringVectorRaw);
 
-    const parsedPrivilegeId = (privilegeCategoryId === 'null' || privilegeCategoryId === 'undefined' || !privilegeCategoryId) ? null : privilegeCategoryId;
+    // Robust privilege validation
+    let validPrivilegeId: string | null = null;
+    if (privilegeCategoryId && privilegeCategoryId !== 'null' && privilegeCategoryId !== 'undefined' && privilegeCategoryId !== '') {
+      const privilegeExists = await prisma.privilegeCategory.findUnique({
+        where: { id: privilegeCategoryId }
+      });
+      if (privilegeExists) {
+        validPrivilegeId = privilegeCategoryId;
+      } else {
+        console.warn(`[ApplicationService] Invalid privilegeCategoryId: ${privilegeCategoryId}. Using null.`);
+      }
+    }
 
     if (!profile) {
       const studentIdNumber = `KB-${Math.floor(100000 + Math.random() * 900000)}`;
@@ -65,7 +76,7 @@ export class ApplicationService {
           phone: '+380000000000',
           course: Number(course),
           faculty: faculty || 'Unknown',
-          privilegeCategoryId: parsedPrivilegeId,
+          privilegeCategoryId: validPrivilegeId,
           clusteringVector: clusteringVectorString,
           isVerifiedByDiia: false
         },
@@ -77,7 +88,7 @@ export class ApplicationService {
         data: {
           course: course ? Number(course) : profile.course,
           faculty: faculty || profile.faculty,
-          privilegeCategoryId: parsedPrivilegeId !== undefined ? parsedPrivilegeId : profile.privilegeCategoryId,
+          privilegeCategoryId: validPrivilegeId,
           clusteringVector: clusteringVectorString
         },
         include: { room: true }
