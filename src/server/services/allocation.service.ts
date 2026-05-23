@@ -442,7 +442,7 @@ export class AllocationService {
 
           const allocatedDetailsWithCluster = allocatedDetails.map(s => ({
             ...s,
-            clusterId: clusterIdx
+            clusterId: clusters.indexOf(cluster)
           }));
 
           let existingResult = results.find(r => r.roomId === targetRoom.id);
