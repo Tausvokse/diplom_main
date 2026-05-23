@@ -53,7 +53,7 @@ export const AllocationDashboard: React.FC = () => {
     if (!student || !results) return;
 
     const room = results.find(r => r.roomId === roomId);
-    if (room && room.students.length >= room.capacity) {
+    if (room && ((room.currentOccupancy || 0) + room.students.length) >= room.capacity) {
       toast.error('У кімнаті немає вільних місць');
       return;
     }
@@ -262,7 +262,7 @@ export const AllocationDashboard: React.FC = () => {
                   ))}
                   
                   {/* Manual Assignment Slot */}
-                  {result.students.length < result.capacity && unassignedStudents.length > 0 && (
+                  {((result.currentOccupancy || 0) + result.students.length) < result.capacity && unassignedStudents.length > 0 && (
                     <div className={styles.manualSlot}>
                       <select 
                         onChange={(e) => {

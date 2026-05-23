@@ -280,6 +280,7 @@ export class AllocationService {
               });
             }
 
+            const preUpdateOccupancy = targetRoom.currentOccupancy;
             this.updateRoomState(targetRoom, studentsToAllocate);
             targetRoom.gender = gender;
 
@@ -295,6 +296,7 @@ export class AllocationService {
                 roomId: targetRoom.id,
                 roomNumber: targetRoom.roomNumber,
                 capacity: targetRoom.capacity,
+                currentOccupancy: preUpdateOccupancy,
                 gender,
                 compatibilityScore: cluster.score,
                 students: fullStudents
@@ -430,6 +432,7 @@ export class AllocationService {
 
           const allocatedDetails = blockStudents.filter(s => studentsToAllocate.some(a => a.id === s.id));
 
+          const preUpdateOccupancy = targetRoom.currentOccupancy;
           this.updateRoomState(targetRoom, studentsToAllocate);
           targetRoom.gender = gender;
 
@@ -445,6 +448,7 @@ export class AllocationService {
               roomId: targetRoom.id,
               roomNumber: targetRoom.roomNumber,
               capacity: targetRoom.capacity,
+              currentOccupancy: preUpdateOccupancy,
               gender, 
               compatibilityScore: cluster.score,
               students: allocatedDetails
