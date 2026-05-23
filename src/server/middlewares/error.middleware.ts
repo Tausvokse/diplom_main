@@ -20,7 +20,12 @@ const sendErrorProd = (err: AppError | Error, res: Response) => {
     });
   } else {
     // Programming or other unknown error: don't leak error details
-    console.error('ERROR 💥', err);
+    console.error('ERROR 💥', {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+      err
+    });
     res.status(500).json({
       status: 'error',
       message: 'Внутрішня помилка сервера',

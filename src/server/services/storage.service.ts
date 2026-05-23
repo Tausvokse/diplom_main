@@ -18,6 +18,12 @@ export class StorageService {
     const fileName = `${uuidv4()}${fileExt}`;
     const filePath = `${folder}/${fileName}`;
 
+    console.log(`Starting Supabase upload for bucket: ${this.bucket}, path: ${filePath}`);
+    
+    if (!file.buffer) {
+      throw new Error('File buffer is empty');
+    }
+
     const { error } = await supabase.storage
       .from(this.bucket)
       .upload(filePath, file.buffer, {
@@ -26,7 +32,7 @@ export class StorageService {
       });
 
     if (error) {
-      console.error('Supabase Storage Error:', error);
+      console.error('Supabase Storage Error Details:', JSON.stringify(error, null, 2));
       throw new AppError(`Помилка завантаження файлу: ${error.message}`, 500);
     }
 
@@ -35,6 +41,7 @@ export class StorageService {
       .from(this.bucket)
       .getPublicUrl(filePath);
 
+    console.log(`Upload successful, public URL: ${publicUrl}`);
     return publicUrl;
   }
 

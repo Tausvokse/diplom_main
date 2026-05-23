@@ -108,11 +108,14 @@ export class ApplicationService {
     }
 
     // Upload files to Supabase
+    console.log(`Uploading ${allFiles.length} files to Supabase bucket: ${StorageService['bucket']}`);
     const fileUrls = await Promise.all(allFiles.map(async ({ file, category }) => {
       const folder = `applications/${profile!.id}/${category}`;
+      console.log(`Uploading file ${file.originalname} to ${folder}`);
       return await StorageService.uploadFile(file, folder);
     }));
 
+    console.log('Files uploaded successfully, creating database record...');
     const application = await prisma.application.create({
       data: {
         studentId: profile.id,
