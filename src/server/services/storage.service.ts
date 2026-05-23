@@ -18,7 +18,7 @@ export class StorageService {
     const fileName = `${uuidv4()}${fileExt}`;
     const filePath = `${folder}/${fileName}`;
 
-    const { data, error } = await supabase.storage
+    const { error } = await supabase.storage
       .from(this.bucket)
       .upload(filePath, file.buffer, {
         contentType: file.mimetype,
