@@ -144,7 +144,7 @@
 .chartCard {
   background: rgb(var(--surface));
   border-radius: 1rem;
-  box-shadow: var(--nm-flat);
+  box-shadow: var(--nm-raised);
   padding: 1.5rem;
 }
 
