@@ -57,6 +57,12 @@ export const NotificationBell: React.FC = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    if (isOpen) {
+      fetchNotifications();
+    }
+  }, [isOpen]);
+
   const markAsRead = async (id: string) => {
     try {
       await api.patch(`/student/notifications/${id}/read`);
