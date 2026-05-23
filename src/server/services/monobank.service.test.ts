@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { prisma } from '../lib/prisma';
+
 import { MonobankService } from './monobank.service';
 import https from 'https';
 
@@ -35,7 +35,7 @@ describe('MonobankService', () => {
       end: vi.fn(),
     };
     
-    vi.mocked(https.request).mockImplementation((options: any, callback?: (res: any) => void) => {
+    vi.mocked(https.request).mockImplementation(((options: any, callback?: (res: any) => void) => {
       if (callback) {
         const resMock = {
           statusCode,
@@ -46,8 +46,8 @@ describe('MonobankService', () => {
         };
         callback(resMock);
       }
-      return requestMock as any;
-    });
+      return requestMock;
+    }) as any);
   };
 
   describe('getClientInfo', () => {

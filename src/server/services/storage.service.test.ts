@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { prisma } from '../lib/prisma';
+
 import { StorageService } from './storage.service';
 import { supabase } from '../lib/supabase';
 

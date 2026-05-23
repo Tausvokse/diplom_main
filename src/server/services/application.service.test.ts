@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../lib/prisma';
 import { ApplicationService } from './application.service';
-import { StorageService } from './storage.service';
+
 import { AppError } from '../utils/AppError';
 
 vi.mock('../lib/prisma');

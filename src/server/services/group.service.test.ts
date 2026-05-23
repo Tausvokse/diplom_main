@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { prisma } from '../lib/prisma';
 import { GroupService } from './group.service';
-import crypto from 'crypto';
+
 
 vi.mock('../lib/prisma');
 vi.mock('crypto', () => ({
