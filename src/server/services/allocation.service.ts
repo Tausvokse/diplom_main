@@ -62,7 +62,7 @@ export class AllocationService {
 
           let vec = { chronotype: 5, sociability: 5, noiseTolerance: 5, cleanliness: 5 };
           if (p.clusteringVector) {
-            try { vec = JSON.parse(p.clusteringVector); } catch {}
+            try { vec = JSON.parse(p.clusteringVector); } catch (e) { void e; }
           }
           return [vec.chronotype, vec.sociability, vec.noiseTolerance, vec.cleanliness];
         });
@@ -174,7 +174,7 @@ export class AllocationService {
         const kmeansInput: KmeansStudent[] = blockStudents.map(student => {
           let vector = { chronotype: 5, sociability: 5, noiseTolerance: 5, cleanliness: 5 };
           if (student.clusteringVector) {
-            try { vector = JSON.parse(student.clusteringVector); } catch {}
+            try { vector = JSON.parse(student.clusteringVector); } catch (e) { void e; }
           }
           return { id: student.id, vector, groupId: student.groupId, faculty: student.faculty };
         });
@@ -366,7 +366,7 @@ export class AllocationService {
       const kmeansInput: KmeansStudent[] = blockStudents.map(student => {
         let vector = { chronotype: 5, sociability: 5, noiseTolerance: 5, cleanliness: 5 };
         if (student.clusteringVector) {
-          try { vector = JSON.parse(student.clusteringVector); } catch {}
+          try { vector = JSON.parse(student.clusteringVector); } catch (e) { void e; }
         }
         return { id: student.id, vector, groupId: student.groupId, faculty: student.faculty };
       });

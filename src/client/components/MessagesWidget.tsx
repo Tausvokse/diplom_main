@@ -67,14 +67,14 @@ export const MessagesWidget: React.FC = () => {
     }
   }, []);
 
-  const markRead = async (contactId: string) => {
+  const markRead = useCallback(async (contactId: string) => {
     try {
       await api.patch(`/messages/conversation/${contactId}/read-all`);
       fetchConversations();
     } catch (error) {
       console.error(error);
     }
-  };
+  }, [fetchConversations]);
 
   useEffect(() => {
     if (isOpen) {
@@ -100,13 +100,13 @@ export const MessagesWidget: React.FC = () => {
     return () => {
       socket.off('new_message');
     };
-  }, [selectedContact, isOpen]);
+  }, [selectedContact, isOpen, fetchConversations, markRead]);
 
   useEffect(() => {
     if (selectedContact) {
       markRead(selectedContact.id);
     }
-  }, [selectedContact]);
+  }, [selectedContact, markRead]);
 
   useEffect(() => {
     if (isOpen) {

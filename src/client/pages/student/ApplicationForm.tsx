@@ -207,7 +207,7 @@ export const ApplicationForm: React.FC = () => {
     return () => {
       Object.values(previews).flat().forEach(url => URL.revokeObjectURL(url));
     };
-  }, []);
+  }, [previews]);
 
   const nextStep = () => {
     if (currentStep === 1) {
