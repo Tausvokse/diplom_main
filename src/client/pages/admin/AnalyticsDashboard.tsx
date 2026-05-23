@@ -133,27 +133,35 @@ const AnalyticsDashboard: React.FC = () => {
             Психотипи (K-Means Кластери)
           </h2>
           <div className={styles.chartList}>
-            {data.clusters.map((cluster) => {
-              const clusterNames = ['Сови (Інтроверти)', 'Жайворонки (Екстраверти)', 'Збалансовані', 'Любителі тиші', 'Толерантні до шуму'];
-              const name = clusterNames[cluster.clusterId] || `Кластер ${cluster.clusterId}`;
-              const totalStudents = data.clusters.reduce((acc, curr) => acc + curr.count, 0);
-              const percent = totalStudents ? Math.round((cluster.count / totalStudents) * 100) : 0;
-              
-              return (
-                <div key={cluster.clusterId}>
-                  <div className={styles.chartItemHeader}>
-                    <span className={styles.chartItemName}>{name}</span>
-                    <span className={styles.chartItemValue}>{cluster.count} чол. ({percent}%)</span>
-                  </div>
-                  <div className={styles.progressBarBg}>
-                    <div 
-                      className={`${styles.progressBarFill} ${styles.fillAccent}`} 
-                      style={{ width: `${percent}%` }}
-                    ></div>
-                  </div>
-                </div>
-              );
-            })}
+            {data.clusters.length === 0 ? (
+              <div className={styles.emptyChartState}>
+                <p className="ui-muted">Дані про психотипи з'являться після проведення автоматичного розподілу студентів.</p>
+              </div>
+            ) : (
+              (() => {
+                const totalStudentsInClusters = data.clusters.reduce((acc, curr) => acc + curr.count, 0);
+                return data.clusters.map((cluster) => {
+                  const clusterNames = ['Сови (Інтроверти)', 'Жайворонки (Екстраверти)', 'Збалансовані', 'Любителі тиші', 'Толерантні до шуму'];
+                  const name = clusterNames[cluster.clusterId] || `Кластер ${cluster.clusterId}`;
+                  const percent = totalStudentsInClusters ? Math.round((cluster.count / totalStudentsInClusters) * 100) : 0;
+                  
+                  return (
+                    <div key={cluster.clusterId}>
+                      <div className={styles.chartItemHeader}>
+                        <span className={styles.chartItemName}>{name}</span>
+                        <span className={styles.chartItemValue}>{cluster.count} чол. ({percent}%)</span>
+                      </div>
+                      <div className={styles.progressBarBg}>
+                        <div 
+                          className={`${styles.progressBarFill} ${styles.fillAccent}`} 
+                          style={{ width: `${percent}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  );
+                });
+              })()
+            )}
           </div>
         </div>
 

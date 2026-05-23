@@ -85,15 +85,14 @@
   padding: 1rem;
   margin-bottom: 0.5rem;
   border-radius: 1rem;
-  transition-property: all;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-  transition-duration: 150ms;
+  transition: all 150ms cubic-bezier(0.4, 0, 0.2, 1);
   display: flex;
   align-items: flex-start;
   box-sizing: border-box;
   background: transparent;
   border: none;
   cursor: pointer;
+  color: inherit;
 }
 .contactButtonActive {
   background-color: rgb(var(--surface-2));

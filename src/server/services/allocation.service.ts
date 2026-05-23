@@ -187,7 +187,8 @@ export class AllocationService {
         
         const clusters = KMeansAlgorithm.clusterize(kmeansInput, k);
 
-        for (const cluster of clusters) {
+        for (let clusterIdx = 0; clusterIdx < clusters.length; clusterIdx++) {
+          const cluster = clusters[clusterIdx];
           let unassignedStudents = [...cluster.students];
 
           while (unassignedStudents.length > 0 && availableGenderRooms.length > 0) {
@@ -248,7 +249,11 @@ export class AllocationService {
               });
               await tx.studentProfile.update({
                 where: { id: student.id },
-                data: { roomId: targetRoom.id, dormitoryId: targetRoom.dormitoryId }
+                data: { 
+                  roomId: targetRoom.id, 
+                  dormitoryId: targetRoom.dormitoryId,
+                  clusterId: clusterIdx
+                }
               });
             }
 

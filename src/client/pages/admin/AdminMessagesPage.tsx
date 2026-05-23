@@ -153,7 +153,7 @@ export const AdminMessagesPage: React.FC = () => {
                   key={conv.contact.id}
                   onClick={() => setActiveContact(conv.contact)}
                   className={`${styles.contactButton} ${
-                    activeContact?.id === conv.contact.id ? `nm-flat ${styles.contactButtonActive}` : `hover:nm-raised-sm ${styles.contactButtonInactive}`
+                    activeContact?.id === conv.contact.id ? styles.contactButtonActive : styles.contactButtonInactive
                   }`}
                 >
                   <div className={styles.avatarWrapper}>
