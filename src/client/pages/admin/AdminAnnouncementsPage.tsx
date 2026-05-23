@@ -56,7 +56,7 @@ export default function AdminAnnouncementsPage() {
         title: jarTitle,
         goalAmount: Number(jarGoal),
         description: jarDesc,
-        dormitoryId,
+        dormitoryId: dormitoryId || null,
         monobankUrl
       });
       toast.success('Банку створено успішно');
@@ -189,7 +189,6 @@ export default function AdminAnnouncementsPage() {
                 <div>
                 <label className={`ui-muted ${styles.label}`}>Для кого цей збір?</label>
                 <select
-                  required
                   className={`ui-input ${styles.input}`}
                   value={dormitoryId}
                   onChange={(e) => setDormitoryId(e.target.value)}
