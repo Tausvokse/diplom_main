@@ -294,7 +294,6 @@ async function main() {
       description: 'Збираємо на Mavic 3T',
       goalAmount: 100000,
       currentAmount: 45000,
-      dormitoryId: null, // Global
       monobankUrl: 'https://send.monobank.ua/jar/123456789'
     }
   });
