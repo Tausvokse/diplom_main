@@ -1,21 +1,11 @@
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-// Create a transporter using config or some default for dev
-// Note: In a real app, use environment variables (e.g. SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS)
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST || 'smtp.gmail.com',
-  port: Number(process.env.SMTP_PORT) || 587,
-  secure: false, // true for 465, false for other ports
-  auth: {
-    user: process.env.SMTP_USER || 'your-email@gmail.com',
-    pass: process.env.SMTP_PASS || 'your-app-password',
-  },
-});
+const resend = new Resend(process.env.RESEND_API_KEY || 're_SLCrzRUt_KQMpFWkRP5KRphYqHprqR4yc');
 
 export const sendVerificationEmail = async (to: string, code: string) => {
   try {
-    const mailOptions = {
-      from: `"Система Поселення КАІ" <${process.env.SMTP_USER || 'noreply@kai.edu.ua'}>`,
+    const { data, error } = await resend.emails.send({
+      from: 'Система Поселення КАІ <noreply@mydormitory.tech>',
       to,
       subject: 'Код підтвердження реєстрації',
       text: `Ваш код підтвердження: ${code}\nКод дійсний протягом 10 хвилин.`,
@@ -29,19 +19,18 @@ export const sendVerificationEmail = async (to: string, code: string) => {
           <p style="color: #777; font-size: 14px; text-align: center;">Код дійсний протягом 10 хвилин.</p>
         </div>
       `,
-    };
+    });
 
-    await transporter.sendMail(mailOptions);
-    console.log(`Verification email sent to ${to} with code ${code}`);
+    if (error) {
+      throw error;
+    }
+
+    console.log(`Verification email sent to ${to} with code ${code}. ID: ${data?.id}`);
   } catch (error) {
-    console.error('Error sending verification email:', error);
-    // If SMTP is not configured or fails, we DO NOT throw the error 
-    // so that local development/testing can continue using the console log.
+    console.error('Error sending verification email via Resend:', error);
+    // Fallback for dev mode
     console.log(`\n=================================================`);
     console.log(`[DEV MODE] Verification code for ${to} is: ${code}`);
     console.log(`=================================================\n`);
-    
-    // In production, if you strictly need emails to work, you could throw:
-    // if (process.env.NODE_ENV === 'production') throw error;
   }
 };
