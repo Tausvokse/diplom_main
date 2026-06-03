@@ -73,7 +73,7 @@
   height: 1.25rem;
 }
 .select {
-  padding-left: 3rem;
+  padding-left: 2.5rem !important;
   padding-right: 1.5rem;
   background-color: rgb(var(--surface-2));
 }
