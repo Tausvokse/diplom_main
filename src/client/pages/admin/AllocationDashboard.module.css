@@ -221,6 +221,7 @@
   background-color: rgba(var(--border), 0.2);
   border-radius: 9999px;
   overflow: hidden;
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 

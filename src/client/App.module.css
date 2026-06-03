@@ -3,6 +3,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 .unauthorizedCard {
@@ -45,6 +46,7 @@
   align-items: center;
   justify-content: center;
   min-height: 100vh;
+  min-height: 100dvh;
   padding: 1rem;
 }
 
@@ -91,6 +93,7 @@
 .layoutContainer {
   display: flex;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
   transition: background-color 300ms, border-color 300ms, color 300ms;
 }
@@ -100,6 +103,7 @@
   inset: 0;
   z-index: 20;
   background-color: rgba(0, 0, 0, 0.3);
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 
@@ -341,6 +345,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 

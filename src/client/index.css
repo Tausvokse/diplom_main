@@ -1,9 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@500;600;700&family=Manrope:wght@300;400;500;600;700;800&display=swap');
-
-
-
-@layer base {
-  :root {
+:root {
     /* ─── Neumorphic Light Theme ─── */
     --bg: 214 225 237;
     --surface: 224 232 240;
@@ -68,6 +63,7 @@
   html {
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
+    -webkit-text-size-adjust: 100%;
     scroll-behavior: smooth;
   }
 
@@ -80,9 +76,11 @@
     );
     color: rgb(var(--text));
     min-height: 100vh;
+    min-height: 100dvh;
     background-attachment: fixed;
     transition: background 0.4s ease;
     will-change: transform, opacity;
+    touch-action: manipulation;
   }
 
   .dark body {
@@ -106,10 +104,15 @@
     outline: 2px solid rgb(var(--accent) / 0.5);
     outline-offset: 2px;
   }
+
+/* Prevent iOS zoom on input focus */
+@media screen and (max-width: 768px) {
+  input, select, textarea {
+    font-size: 16px !important;
+  }
 }
 
-@layer components {
-  /* ─── Shell ─── */
+/* ─── Shell ─── */
   .ui-shell {
     background: rgb(var(--bg));
   }
@@ -338,6 +341,7 @@
     align-items: center;
     justify-content: center;
     background: rgba(0, 0, 0, 0.35);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
   }
 
@@ -370,7 +374,6 @@
     --base-color: rgb(var(--surface-3)) !important;
     --highlight-color: rgb(var(--surface-2)) !important;
   }
-}
 
 @media (prefers-reduced-motion: reduce) {
   * {
@@ -380,8 +383,7 @@
   }
 }
 
-@layer utilities {
-  /* ─── Background overrides (catch raw Tailwind) ─── */
+/* ─── Background overrides (catch raw Tailwind) ─── */
   .bg-white {
     background-color: rgb(var(--surface)) !important;
   }
@@ -466,7 +468,6 @@
   .divide-gray-700 > :not([hidden]) ~ :not([hidden]) {
     border-color: rgb(var(--border) / 0.25) !important;
   }
-}
 
 /* ─── Custom Scrollbar (Neumorphic) ─── */
 ::-webkit-scrollbar {

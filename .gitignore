@@ -53,3 +53,6 @@ Thumbs.db
 .cursorrules
 AGENT_INSTRUCTIONS.md
 .aider*
+
+playwright-report/
+test-results/

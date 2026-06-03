@@ -19,6 +19,9 @@ app.set('trust proxy', 1);
 // 1. Безпекові HTTP-заголовки (Helmet)
 app.use(helmet({
   contentSecurityPolicy: false, // Відключаємо суворий CSP, щоб не блокувати скрипти Cloudflare
+  crossOriginOpenerPolicy: false,
+  crossOriginEmbedderPolicy: false,
+  crossOriginResourcePolicy: false,
 }));
 
 // 2. CORS (Динамічний захист)

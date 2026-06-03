@@ -6,4 +6,7 @@ export default defineConfig({
   server: {
     port: 3000,
   },
+  build: {
+    target: ['es2017', 'chrome80', 'safari13'],
+  },
 });
