@@ -119,6 +119,8 @@
   left: 0;
   z-index: 30;
   width: 16rem;
+  height: 100dvh;
+  max-height: 100dvh;
   flex-shrink: 0;
   background-color: rgb(var(--surface));
   display: flex;

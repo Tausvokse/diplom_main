@@ -16,6 +16,32 @@ interface AuthState {
   setHasHydrated: (state: boolean) => void;
 }
 
+// Safe local storage wrapper for Telegram WebView and strict incognito modes
+const safeStorage = {
+  getItem: (name: string): string | null => {
+    try {
+      return localStorage.getItem(name);
+    } catch (e) {
+      console.warn('localStorage is blocked, returning null');
+      return null;
+    }
+  },
+  setItem: (name: string, value: string): void => {
+    try {
+      localStorage.setItem(name, value);
+    } catch (e) {
+      console.warn('localStorage is blocked, cannot save', name);
+    }
+  },
+  removeItem: (name: string): void => {
+    try {
+      localStorage.removeItem(name);
+    } catch (e) {
+      console.warn('localStorage is blocked, cannot remove', name);
+    }
+  }
+};
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
@@ -52,7 +78,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'dormitory-auth-storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => safeStorage),
       onRehydrateStorage: () => (state) => {
         state?.setHasHydrated(true);
       },
