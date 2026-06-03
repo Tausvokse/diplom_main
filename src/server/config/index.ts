@@ -37,7 +37,14 @@ export const config = {
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:3000',
   diiaWebhookSecret: process.env.DIIA_WEBHOOK_SECRET || 'dev_diia_webhook_secret',
   environment: process.env.NODE_ENV || 'development',
-  corsOrigins: process.env.CORS_ORIGINS ? process.env.CORS_ORIGINS.split(',') : ['http://localhost:3000', 'http://localhost:5173'],
+  corsOrigins: process.env.CORS_ORIGINS ? 
+    process.env.CORS_ORIGINS.split(',').flatMap(o => {
+      const clean = o.trim();
+      if (clean.startsWith('https://')) return [clean, clean.replace('https://', 'http://')];
+      if (clean.startsWith('http://')) return [clean, clean.replace('http://', 'https://')];
+      return [clean];
+    }) : 
+    ['http://localhost:3000', 'http://localhost:5173'],
   monobankToken: process.env.MONOBANK_API_TOKEN || '',
   supabase: {
     url: process.env.SUPABASE_URL || '',
