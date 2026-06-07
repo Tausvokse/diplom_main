@@ -85,6 +85,7 @@ export class AllocationService {
         capacity: r.capacity,
         currentOccupancy: actualOccupancy, // Fix: use dynamically calculated actualOccupancy
         dormitoryId: r.floor.dormitoryId,
+        dormitoryName: r.floor.dormitory.name,
         gender,
         centroid,
         primaryFaculty
