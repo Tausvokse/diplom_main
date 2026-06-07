@@ -12,6 +12,7 @@ interface AllocationResult {
   roomNumber: string;
   capacity: number;
   currentOccupancy?: number;
+  dormitoryName?: string;
   students: StudentProfile[];
   compatibilityScore: number;
 }
@@ -230,7 +231,7 @@ export const AllocationDashboard: React.FC = () => {
               <div key={result.roomId} className={styles.roomCard}>
                 <div className={styles.roomHeader}>
                   <div>
-                    <h4 className={styles.roomTitle}>Кімната {result.roomNumber}</h4>
+                    <h4 className={styles.roomTitle}>{result.dormitoryName ? `${result.dormitoryName.replace('№', '').trim()}, Кімната ${result.roomNumber}` : `Кімната ${result.roomNumber}`}</h4>
                     <p className={styles.roomCapacity}>Місткість: {result.capacity} місця</p>
                   </div>
                   <div className={styles.roomScore}>

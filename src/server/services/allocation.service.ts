@@ -35,7 +35,7 @@ export class AllocationService {
     const allRooms = await txClient.room.findMany({
       where: { status: { not: 'MAINTENANCE' } },
       include: { 
-        floor: { select: { dormitoryId: true } },
+        floor: { select: { dormitoryId: true, dormitory: { select: { name: true } } } },
         studentProfiles: {
           include: { user: true }
         }
@@ -453,6 +453,7 @@ export class AllocationService {
               roomNumber: targetRoom.roomNumber,
               capacity: targetRoom.capacity,
               currentOccupancy: preUpdateOccupancy,
+              dormitoryName: targetRoom.dormitoryName,
               gender, 
               compatibilityScore: cluster.score,
               students: allocatedDetailsWithCluster

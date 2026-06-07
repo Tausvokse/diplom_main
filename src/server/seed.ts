@@ -139,21 +139,31 @@ async function main() {
   const faculties = ['АКФ', 'ФКНТ', 'ФЕБА', 'ФЛСК', 'ЮФ', 'ФНСА', 'ФЕБ'];
   const genders = ['MALE', 'FEMALE'];
   
-  const maleFirstNames = ['Олександр', 'Максим', 'Артем', 'Дмитро', 'Іван'];
-  const maleLastNames = ['Коваленко', 'Мельник', 'Шевченко', 'Поліщук', 'Бондаренко'];
-  const femaleFirstNames = ['Марія', 'Анна', 'Анастасія', 'Вікторія', 'Олена'];
-  const femaleLastNames = ['Шевченко', 'Коваленко', 'Бондар', 'Мельник', 'Лисенко'];
+  const maleFirstNames = ['Олександр', 'Максим', 'Артем', 'Дмитро', 'Іван', 'Тарас', 'Микола', 'Андрій', 'Богдан', 'Володимир', 'Денис', 'Євген', 'Сергій', 'Олег', 'Юрій', 'Роман', 'Ігор', 'Віталій', 'Олексій', 'Михайло'];
+  const maleLastNames = ['Коваленко', 'Мельник', 'Шевченко', 'Поліщук', 'Бондаренко', 'Ткаченко', 'Кравченко', 'Олійник', 'Мороз', 'Степаненко', 'Лисенко', 'Петренко', 'Клименко', 'Павленко', 'Марченко', 'Руденко', 'Савченко', 'Левченко', 'Макаренко', 'Яковенко'];
+  const femaleFirstNames = ['Марія', 'Анна', 'Анастасія', 'Вікторія', 'Олена', 'Дарина', 'Катерина', 'Юлія', 'Наталія', 'Ірина', 'Оксана', 'Тетяна', 'Світлана', 'Людмила', 'Галина', 'Валентина', 'Надія', 'Аліна', 'Діана', 'Софія'];
+  const femaleLastNames = ['Шевченко', 'Коваленко', 'Бондар', 'Мельник', 'Лисенко', 'Ткачук', 'Кравчук', 'Олійник', 'Мороз', 'Степанюк', 'Петрук', 'Клименко', 'Павлюк', 'Марчук', 'Руденко', 'Савчук', 'Левченко', 'Макаренко', 'Яковенко', 'Бойко'];
+
+  const archetypes = [
+    { chronotype: 2, sociability: 2, noiseTolerance: 2, cleanliness: 9 }, // Introvert, neat, quiet
+    { chronotype: 9, sociability: 9, noiseTolerance: 9, cleanliness: 3 }, // Extrovert, messy, loud
+    { chronotype: 5, sociability: 5, noiseTolerance: 5, cleanliness: 5 }, // Average
+    { chronotype: 8, sociability: 3, noiseTolerance: 2, cleanliness: 8 }, // Morning person, quiet, neat
+    { chronotype: 2, sociability: 8, noiseTolerance: 8, cleanliness: 4 }, // Night owl, loud, messy
+    { chronotype: 1, sociability: 1, noiseTolerance: 1, cleanliness: 10 },// Extreme neat freak
+    { chronotype: 10, sociability: 10, noiseTolerance: 10, cleanliness: 1 } // Extreme party animal
+  ];
 
   for (let i = 0; i < 50; i++) {
     const gender = genders[i % 2];
-    const faculty = faculties[Math.floor(Math.random() * faculties.length)];
+    const faculty = faculties[i % faculties.length]; // align faculty with archetype
     
     const firstName = gender === 'MALE' 
-      ? maleFirstNames[Math.floor(Math.random() * maleFirstNames.length)]
-      : femaleFirstNames[Math.floor(Math.random() * femaleFirstNames.length)];
+      ? maleFirstNames[i % maleFirstNames.length]
+      : femaleFirstNames[i % femaleFirstNames.length];
     const lastName = gender === 'MALE'
-      ? maleLastNames[Math.floor(Math.random() * maleLastNames.length)]
-      : femaleLastNames[Math.floor(Math.random() * femaleLastNames.length)];
+      ? maleLastNames[(i + Math.floor(i / maleFirstNames.length)) % maleLastNames.length]
+      : femaleLastNames[(i + Math.floor(i / femaleFirstNames.length)) % femaleLastNames.length];
 
     const user = await prisma.user.create({
       data: {
@@ -166,11 +176,14 @@ async function main() {
       }
     });
 
+    const baseVector = archetypes[i % archetypes.length];
+    
+    // Add small random noise (-1, 0, or 1) to make it slightly realistic but highly compatible
     const vector = {
-      chronotype: Math.floor(Math.random() * 10) + 1,
-      sociability: Math.floor(Math.random() * 10) + 1,
-      noiseTolerance: Math.floor(Math.random() * 10) + 1,
-      cleanliness: Math.floor(Math.random() * 10) + 1
+      chronotype: Math.max(1, Math.min(10, baseVector.chronotype + Math.floor(Math.random() * 3) - 1)),
+      sociability: Math.max(1, Math.min(10, baseVector.sociability + Math.floor(Math.random() * 3) - 1)),
+      noiseTolerance: Math.max(1, Math.min(10, baseVector.noiseTolerance + Math.floor(Math.random() * 3) - 1)),
+      cleanliness: Math.max(1, Math.min(10, baseVector.cleanliness + Math.floor(Math.random() * 3) - 1))
     };
 
     const hasPrivilege = Math.random() > 0.85;
@@ -213,8 +226,8 @@ async function main() {
   
   for (let i = 0; i < 10; i++) {
     const gender = 'MALE';
-    const firstName = maleFirstNames[i % maleFirstNames.length];
-    const lastName = maleLastNames[i % maleLastNames.length];
+    const firstName = maleFirstNames[(i + 10) % maleFirstNames.length];
+    const lastName = maleLastNames[(i + 15) % maleLastNames.length];
     const targetRoom = rooms[i]; // Put them in different rooms
 
     const user = await prisma.user.create({
